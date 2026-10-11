@@ -5,34 +5,64 @@ using EFT;
 using Unity;
 using UnityEngine;
 using static RealismCommonLib.Plugin;
+using RootMotion.FinalIK;
+using StanceOverhaul.Events;
 
 namespace StanceOverhaul
 {
     [BepInDependency(RealismCommonLib.Plugin.MOD_GUID)]
-    [BepInPlugin("com.fontaine.stanceoverhaul", "Fontaine-StanceOverhaul", "1.0.0")]
+    [BepInPlugin(MOD_GUID, MOD_NAME, MOD_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
         public static StanceController StanceControllerInstance;
+
+        public const string MOD_GUID = "com.fontaine.spt-stance-overhaul";
+        public const string MOD_NAME = "Fontaine-SPTStanceOverhaul";
+        public const string MOD_VERSION = "0.0.2";
 
         void Awake()
         {
             PluginConfig.InitConfigBindings(Config);
 
-            SubscribeToEvents(); 
+            SubscribeToEvents();
 
             EnablePatches();
         }
 
-        void EnablePatches() 
+        void EnablePatches()
         {
-            //new TacticalReloadPatch().Enable();
+            //Spring
+            new ZeroAdjustmentsPatch().Enable();
+            new SpringResetPatch().Enable();
+            new SpringGetPatch().Enable();
+            new SpringUpdatePatch().Enable();
+
+            //Animation
+            new SetFireModePatch().Enable();
+            new InitTransformsPatch().Enable();
+            //new ComplexRotationsPatch().Enable();
+            new ShouldMoveWeapCloserPatch().Enable();
+            new HandIKPatch().Enable();
+            new ElbowIKPatch().Enable();
+            new PropSoundPatch().Enable();
+            new LerpCameraPatch().Enable();
+            new VisualPassPatch().Enable();
+
+            //State & Stats
+            //new OperateStationaryWeaponPatch().Enable();
+            new UpdateWeaponVariablesPatch().Enable();
+            new UpdateHipInaccuracyPatch().Enable();
+            new ApplyTransformsPatch().Enable();
+            new CalculateCameraPositionPatch().Enable();
+            new OperateStationaryWeaponPatch().Enable();
+
+                        //new TacticalReloadPatch().Enable();
             /*            new SprintPatch().Enable();
                         new DisableAimOnReloadPatch().Enable();*/
             /*            new ChangeScopePatch().Enable();*/
             /*        new MountingAndCollisionPatch().Enable();
                     new CollisionPatch().Enable();*/
-            new SetFireModePatch().Enable();
-            new OperateStationaryWeaponPatch().Enable();
+
             /*            new WeaponOverlapViewPatch().Enable();
                         new WeaponOverlappingPatch().Enable();*/
             /*            new ShouldMoveWeapCloserPatch().Enable();*/
@@ -43,20 +73,7 @@ namespace StanceOverhaul
 
             //new ProcessEffectorsPatch().Enable();
 
-
-            new ZeroAdjustmentsPatch().Enable();
-            new SpringResetPatch().Enable();
-
-            new SpringGetPatch().Enable();
-            new SpringGetRelativePatch().Enable();
-
-            new UpdateWeaponVariablesPatch().Enable();
-
-            new UpdateHipInaccuracyPatch().Enable();
-
-            new ShouldMoveWeapCloserPatch().Enable();
-
-
+            //new SpringGetRelativePatch().Enable();
 
             /*            new ShiftWeaponRootPatch().Enable();
                         new HeadPatch().Enable();*/
@@ -81,7 +98,7 @@ namespace StanceOverhaul
 
 
             //new ApplyPositionPatch().Enable();
-            new SpringUpdatePatch().Enable();
+
             //new TacticalReloadMethodPatch().Enable();
             /*           new FOVPatch().Enable();
                        new IsAimingPatch().Enable();
@@ -95,14 +112,16 @@ namespace StanceOverhaul
                        new UpdateAimWeightPatch().Enable();*/
         }
 
-        void SubscribeToEvents() 
+        void SubscribeToEvents()
         {
-            RealismCommonLib.Events.PlayerEvents.OnPlayerInitArgs += AddStanceComponentsToPlayer;
+            RealismCommonLib.Events.PlayerEvents.OnPlayerInitRef += AddStanceComponentsToPlayer;
         }
 
         void AddStanceComponentsToPlayer(Player player)
         {
             player.gameObject.AddComponent<StanceController>();
+
+            StanceEvents.RaiseOnPlayerLoad(player);
         }
     }
 }

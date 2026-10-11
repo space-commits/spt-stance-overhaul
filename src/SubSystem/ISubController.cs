@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace StanceOverhaul.Handlers
+namespace StanceOverhaul.SubSystem
 {
-    public interface IControllerHelper
+    public interface ISubSystem
     {
         public void RunOnAwake();
 

@@ -4,12 +4,13 @@ using StanceOverhaul.Stances;
 using Comfort.Common;
 using static RealismCommonLib.Plugin;
 using static StanceOverhaul.Plugin;
+using EFT;
 
-namespace StanceOverhaul.Handlers
+namespace StanceOverhaul.SubSystem
 {
 
     //TODO weapon stats should affect this
-    internal class StanceMovementHandler : IControllerHelper
+    internal class StanceMovementSystem : ISubSystem
     {
         private FloatMultiplierHandle _walkSpeed;
         private FloatMultiplierHandle _sprintSpeed;
@@ -65,7 +66,7 @@ namespace StanceOverhaul.Handlers
                 return;
             }
 
-            BackendConfigSettingsClass.InertiaSettings inertia = Singleton<BackendConfigSettingsClass>.Instance.Inertia;
+            GlobalConfiguration.InertiaSettings inertia = Singleton<GlobalConfiguration>.Instance.Inertia;
 
             //Todo: move to common lib
             physical.SprintAcceleration = inertia.SprintAccelerationLimits.InverseLerp(physical.Inertia);
@@ -94,7 +95,7 @@ namespace StanceOverhaul.Handlers
             var physical = PlayerStateInstance.Player?.Physical;
             if (physical == null) return;
 
-            BackendConfigSettingsClass.InertiaSettings inertia = Singleton<BackendConfigSettingsClass>.Instance.Inertia;
+            GlobalConfiguration.InertiaSettings inertia = Singleton<GlobalConfiguration>.Instance.Inertia;
 
             physical.SprintAcceleration = inertia.SprintAccelerationLimits.InverseLerp(physical.Inertia);
             physical.PreSprintAcceleration = inertia.PreSprintAccelerationLimits.Evaluate(physical.Inertia);

@@ -10,7 +10,7 @@ public enum EStanceType
     PatrolStance,
     LeftShoulder,
     Melee,
-    PistolCompressed,
+    PistolCompress,
     Mounting,
     Aiming
 }

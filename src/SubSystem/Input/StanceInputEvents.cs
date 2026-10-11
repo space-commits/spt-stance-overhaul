@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using RealismCommonLib.Events;
 
-namespace StanceOverhaul.Handlers.StanceInput
+namespace StanceOverhaul.SubSystem.StanceInput
 {
     public static class StanceInputEvents
     {

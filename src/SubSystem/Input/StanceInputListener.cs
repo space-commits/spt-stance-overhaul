@@ -6,9 +6,9 @@ using UnityEngine;
 using static RealismCommonLib.Plugin;
 using static StanceOverhaul.Plugin;
 
-namespace StanceOverhaul.Handlers.StanceInput
+namespace StanceOverhaul.SubSystem.StanceInput
 {
-    internal class StanceInputListener : IControllerHelper
+    internal class StanceInputListener : ISubSystem
     {
         private bool _activeAimHoldInProgress;
         private bool _meleeIsToggleable = true;
@@ -20,7 +20,9 @@ namespace StanceOverhaul.Handlers.StanceInput
             {
                 return AimStateInstance.IsAiming
                     || PlayerStateInstance.IsSprinting
-                    || PlayerStateInstance.IsInventoryOpen;
+                    || PlayerStateInstance.IsInventoryOpen
+                    || !PlayerStateInstance.WeaponIsReady
+                    || PlayerStateInstance.IsUsingStationaryWeapon;
             }
         }
 
@@ -41,9 +43,7 @@ namespace StanceOverhaul.Handlers.StanceInput
         {
             MeleeCooldownTimer(deltaTime);
 
-            if (PlayerStateInstance.WeaponIsReady &&
-                !PlayerStateInstance.IsUsingStationaryWeapon &&
-                !StanceInputBlocked)
+            if (!StanceInputBlocked)
             {
                 CheckForActimeAimInput(); // always runs first to keep _activeAimHoldInProgress current
 
@@ -107,29 +107,24 @@ namespace StanceOverhaul.Handlers.StanceInput
 
             if (direction < 0)
             {
-                // LowReady → no-op
                 if (current == EStanceType.LowReady)
                     return;
 
-                // HighReady → toggle off (back to idle)
                 if (current == EStanceType.HighReady)
                 {
                     StanceInputEvents.RaiseToggleHighReady();
                     return;
                 }
 
-                // Idle or any other stance → LowReady
                 StanceInputEvents.RaiseToggleLowReady();
                 return;
             }
 
             if (direction > 0)
             {
-                // HighReady → no-op
                 if (current == EStanceType.HighReady)
                     return;
 
-                // LowReady → toggle off (back to idle)
                 if (current == EStanceType.LowReady)
                 {
                     StanceInputEvents.RaiseToggleLowReady();
@@ -187,6 +182,10 @@ namespace StanceOverhaul.Handlers.StanceInput
 
         public void CheckForActimeAimInput()
         {
+            //TODO: add active aim varient for pistols
+            if (WeaponStateInstance.TreatAsPistol)
+                return;
+
             bool activeAimOverridesAds = (Input.GetKeyDown(KeyCode.Mouse1) || Input.GetKey(KeyCode.Mouse1))
                && StanceControllerInstance.AdsIsBlocked;
             bool keyIsHeld = Input.GetKey(PluginConfig.ActiveAimKeybind.Value.MainKey)
@@ -209,7 +208,10 @@ namespace StanceOverhaul.Handlers.StanceInput
             else
             {
                 if (!_activeAimHoldInProgress && anyHeld)
+                {
                     StanceInputEvents.RaiseToggleActiveAim();
+                }
+
                 _activeAimHoldInProgress = anyHeld;
             }
         }

@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace StanceOverhaul.Handlers
+namespace StanceOverhaul.SubSystem
 {
-    internal class MountingHandler
+    internal class CollisionSystem
     {
     }
 }

@@ -9,7 +9,7 @@ namespace StanceOverhaul.Stances;
 public class HighReady : StanceBase
 {
     public override EStanceType StanceType => EStanceType.HighReady;
-    public override EStaminaMode StaminaMode => EStaminaMode.Regen;
+    public override EStanceStaminaType StaminaMode => EStanceStaminaType.Regen;
 
     public override Vector3Curve EnterPositionCurve => _enterPos;
     public override Vector3Curve EnterRotationCurve => _enterRot;
@@ -22,6 +22,21 @@ public class HighReady : StanceBase
     public override float SprintAccelBonus => PluginConfig.HighReadySprintAccelBonus.Value;
     public override bool CanDoTacSprint => true;
     public override bool RememberStance => true;
+    public override bool BlocksFiring => true;
+
+    public override float MagazineReloadSpeedModifier => PluginConfig.HighReadyMagazineReloadSpeedModifier.Value;
+    public override float TubeReloadSpeedModifier => PluginConfig.HighReadyTubeReloadSpeedModifier.Value;
+    public override float TopReloadSpeedModifier => PluginConfig.HighReadyTopReloadSpeedModifier.Value;
+    public override float WeaponManipSpeedModifier => PluginConfig.HighReadyWeaponManipSpeedModifier.Value;
+
+    public override EStanceReloadType[] ReloadTypesThatPauseStance => new EStanceReloadType[]
+    {
+        EStanceReloadType.PumpBolt,
+    };
+
+    public override AnimationCurve ExitAimSpeedCurve => CurveDrawer.GetCurve("high_ready_exit_aim_speed", CurveAxis.X)!;
+
+    public override AnimationCurve EnterAimSpeedCurve => CurveDrawer.GetCurve("high_ready_enter_aim_speed", CurveAxis.X)!;
 
     public override float BlendIntoThreshold(EStanceType nextStance)
     {
@@ -38,27 +53,31 @@ public class HighReady : StanceBase
 
     public override float TransitionFromModifier(EStanceType? previousStance)
     {
+        float speed = PluginConfig.HighReadySpeedModifier.Value;
         switch (previousStance)
         {
-            case EStanceType.ActiveAiming: return PluginConfig.HighReadyTransitionFromActiveAim.Value;
-            case EStanceType.LowReady: return PluginConfig.HighReadyTransitionFromLowReady.Value;
-            case EStanceType.LeftShoulder: return PluginConfig.HighReadyTransitionFromLeftShoulder.Value;
-            case EStanceType.PatrolStance: return PluginConfig.HighReadyTransitionFromPatrol.Value;
-            case EStanceType.ShortStock: return PluginConfig.HighReadyTransitionFromShortStock.Value;
-            default: return PluginConfig.HighReadyTransitionFromIdle.Value;
+            case EStanceType.ActiveAiming: speed *= PluginConfig.HighReadyTransitionFromActiveAim.Value; return speed;
+            case EStanceType.LowReady: speed *= PluginConfig.HighReadyTransitionFromLowReady.Value; return speed;
+            case EStanceType.LeftShoulder: speed *= PluginConfig.HighReadyTransitionFromLeftShoulder.Value; return speed;
+            case EStanceType.PatrolStance: speed *= PluginConfig.HighReadyTransitionFromPatrol.Value; return speed;
+            case EStanceType.ShortStock: speed *= PluginConfig.HighReadyTransitionFromShortStock.Value; return speed;
+            case EStanceType.None: speed *= PluginConfig.HighReadyTransitionFromIdle.Value; return speed;
+            default: return speed;
         }
     }
 
     public override float TransitionToSpeedModifier(EStanceType? nextStance)
     {
+        float speed = PluginConfig.HighReadySpeedModifier.Value;
         switch (nextStance)
         {
-            case EStanceType.ActiveAiming: return PluginConfig.HighReadyTransitionToActiveAim.Value;
-            case EStanceType.LowReady: return PluginConfig.HighReadyTransitionToLowReady.Value;
-            case EStanceType.LeftShoulder: return PluginConfig.HighReadyTransitionToLeftShoulder.Value;
-            case EStanceType.PatrolStance: return PluginConfig.HighReadyTransitionToPatrol.Value;
-            case EStanceType.ShortStock: return PluginConfig.HighReadyTransitionToShortStock.Value;
-            default: return 1f;
+            case EStanceType.ActiveAiming: speed *= PluginConfig.HighReadyTransitionToActiveAim.Value; return speed;
+            case EStanceType.LowReady: speed *= PluginConfig.HighReadyTransitionToLowReady.Value; return speed;
+            case EStanceType.LeftShoulder: speed *= PluginConfig.HighReadyTransitionToLeftShoulder.Value; return speed;
+            case EStanceType.PatrolStance: speed *= PluginConfig.HighReadyTransitionToPatrol.Value; return speed;
+            case EStanceType.ShortStock: speed *= PluginConfig.HighReadyTransitionToShortStock.Value; return speed;
+            case EStanceType.None: speed *= PluginConfig.HighReadyTransitionToIdle.Value; return speed;
+            default: return speed;
         }
     }
 
@@ -70,10 +89,10 @@ public class HighReady : StanceBase
 
     public HighReady()
     {
-        _enterPos = RealismCommonLib.Utils.CurveDrawer.GetCurve("high_ready_enter_position")!;
-        _enterRot = RealismCommonLib.Utils.CurveDrawer.GetCurve("high_ready_enter_rotation")!;
+        _enterPos = CurveDrawer.GetCurve("high_ready_enter_position")!;
+        _enterRot = CurveDrawer.GetCurve("high_ready_enter_rotation")!;
 
-        _exitPos = RealismCommonLib.Utils.CurveDrawer.GetCurve("high_ready_exit_position")!;
-        _exitRot = RealismCommonLib.Utils.CurveDrawer.GetCurve("high_ready_exit_rotation")!;
+        _exitPos = CurveDrawer.GetCurve("high_ready_exit_position")!;
+        _exitRot = CurveDrawer.GetCurve("high_ready_exit_rotation")!;
     }
 }

@@ -9,7 +9,7 @@ namespace StanceOverhaul.Stances;
 public class ShortStock : StanceBase
 {
     public override EStanceType StanceType => EStanceType.ShortStock;
-    public override EStaminaMode StaminaMode => EStaminaMode.Regen;
+    public override EStanceStaminaType StaminaMode => EStanceStaminaType.Regen;
 
     public override Vector3Curve EnterPositionCurve => _enterPos;
     public override Vector3Curve EnterRotationCurve => _enterRot;
@@ -22,23 +22,28 @@ public class ShortStock : StanceBase
     public override float SprintAccelBonus => PluginConfig.ShortStockSprintAccelBonus.Value;
     public override float HipfireBonus => PluginConfig.ShortStockHipfireBonus.Value;
     public override bool RememberStance => true;
-    public override AnimationCurve ExitAimSpeedCurve { get; } = new AnimationCurve
-            (
-                new Keyframe { time = 0f, value = 0f },
-                new Keyframe { time = 0.7f, value = 0.0f },
-                new Keyframe { time = 0.85f, value = 0.1f },
-                new Keyframe { time = 0.95f, value = 0.25f },
-                new Keyframe { time = 1f, value = 1f }
-            );
+    public override float PumpBoltSpeedModifier => PluginConfig.ShortStockPumpBoltSpeedModifier.Value;
 
-    public override AnimationCurve EnterAimSpeedCurve { get; } = new AnimationCurve
-            (
-                new Keyframe { time = 0f, value = 0f },
-                new Keyframe { time = 0.7f, value = 0.0f },
-                new Keyframe { time = 0.85f, value = 0.1f },
-                new Keyframe { time = 0.95f, value = 0.25f },
-                new Keyframe { time = 1f, value = 1f }
-            );
+    public override bool BlocksFiring => false;
+
+    public override EStanceReloadType[] ReloadTypesThatPauseStance => new EStanceReloadType[]
+    {
+        EStanceReloadType.Magazine,
+        EStanceReloadType.QuickReload,
+        EStanceReloadType.Tube,
+        EStanceReloadType.Top,
+        EStanceReloadType.Revolver,
+        EStanceReloadType.CheckAmmo,
+        EStanceReloadType.CheckChamber,
+        EStanceReloadType.Rechamber,
+        EStanceReloadType.ClearMalfunction,
+        EStanceReloadType.InsertMagazine,
+        EStanceReloadType.RemoveMagazine
+    };
+
+    public override AnimationCurve ExitAimSpeedCurve => CurveDrawer.GetCurve("short_exit_aim_speed", CurveAxis.X)!;
+
+    public override AnimationCurve EnterAimSpeedCurve => CurveDrawer.GetCurve("short_enter_aim_speed", CurveAxis.X)!;
 
     public override float BlendIntoThreshold(EStanceType nextStance)
     {
@@ -55,27 +60,31 @@ public class ShortStock : StanceBase
 
     public override float TransitionFromModifier(EStanceType? previousStance)
     {
+        float speed = PluginConfig.ShortStockSpeedModifier.Value;
         switch (previousStance)
         {
-            case EStanceType.ActiveAiming: return PluginConfig.ShortStockTransitionFromActiveAim.Value;
-            case EStanceType.HighReady: return PluginConfig.ShortStockTransitionFromHighReady.Value;
-            case EStanceType.LowReady: return PluginConfig.ShortStockTransitionFromLowReady.Value;
-            case EStanceType.PatrolStance: return PluginConfig.ShortStockTransitionFromPatrol.Value;
-            case EStanceType.LeftShoulder: return PluginConfig.ShortStockTransitionFromLeftShoulder.Value;
-            default: return PluginConfig.ShortStockTransitionFromIdle.Value;
+            case EStanceType.ActiveAiming: speed *= PluginConfig.ShortStockTransitionFromActiveAim.Value; return speed;
+            case EStanceType.HighReady: speed *= PluginConfig.ShortStockTransitionFromHighReady.Value; return speed;
+            case EStanceType.LowReady: speed *= PluginConfig.ShortStockTransitionFromLowReady.Value; return speed;
+            case EStanceType.PatrolStance: speed *= PluginConfig.ShortStockTransitionFromPatrol.Value; return speed;
+            case EStanceType.LeftShoulder: speed *= PluginConfig.ShortStockTransitionFromLeftShoulder.Value; return speed;
+            case EStanceType.None: speed *= PluginConfig.ShortStockTransitionFromIdle.Value; return speed;
+            default: return speed;
         }
     }
 
     public override float TransitionToSpeedModifier(EStanceType? nextStance)
     {
+        float speed = PluginConfig.ShortStockSpeedModifier.Value;
         switch (nextStance)
         {
-            case EStanceType.ActiveAiming: return PluginConfig.ShortStockTransitionToActiveAim.Value;
-            case EStanceType.HighReady: return PluginConfig.ShortStockTransitionToHighReady.Value;
-            case EStanceType.LowReady: return PluginConfig.ShortStockTransitionToLowReady.Value;
-            case EStanceType.PatrolStance: return PluginConfig.ShortStockTransitionToPatrol.Value;
-            case EStanceType.LeftShoulder: return PluginConfig.ShortStockTransitionToLeftShoulder.Value;
-            default: return 1f;
+            case EStanceType.ActiveAiming: speed *= PluginConfig.ShortStockTransitionToActiveAim.Value; return speed;
+            case EStanceType.HighReady: speed *= PluginConfig.ShortStockTransitionToHighReady.Value; return speed;
+            case EStanceType.LowReady: speed *= PluginConfig.ShortStockTransitionToLowReady.Value; return speed;
+            case EStanceType.PatrolStance: speed *= PluginConfig.ShortStockTransitionToPatrol.Value; return speed;
+            case EStanceType.LeftShoulder: speed *= PluginConfig.ShortStockTransitionToLeftShoulder.Value; return speed;
+            case EStanceType.None: speed *= PluginConfig.ShortStockTransitionToIdle.Value; return speed;
+            default: return speed;
         }
     }
 

@@ -368,8 +368,8 @@
             "outTangent": 0.0
           },
           {
-            "time": 0.35,
-            "value": 1.0,
+            "time": 0.3,
+            "value": 2.0,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
@@ -390,20 +390,14 @@
             "outTangent": 0.0
           },
           {
-            "time": 0.1,
-            "value": -1.5,
-            "inTangent": 0.0,
-            "outTangent": 0.0
-          },
-          {
-            "time": 0.3,
-            "value": -1.0,
+            "time": 0.15,
+            "value": 0.0,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
           {
             "time": 0.8,
-            "value": -6.0,
+            "value": -7.0,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
@@ -424,13 +418,13 @@
             "outTangent": 0.0
           },
           {
-            "time": 0.15,
+            "time": 0.2,
             "value": -1.0,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
           {
-            "time": 0.5,
+            "time": 0.75,
             "value": -0.5,
             "inTangent": 0.0,
             "outTangent": 0.0
@@ -642,24 +636,6 @@
           {
             "time": 0.0,
             "value": 0.0,
-            "inTangent": 0.0,
-            "outTangent": 0.0
-          },
-          {
-            "time": 0.15,
-            "value": -2.0,
-            "inTangent": 0.0,
-            "outTangent": 0.0
-          },
-          {
-            "time": 0.5,
-            "value": -2.0,
-            "inTangent": 0.0,
-            "outTangent": 0.0
-          },
-          {
-            "time": 0.75,
-            "value": -0.75,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
@@ -959,7 +935,7 @@
           },
           {
             "time": 1.0,
-            "value": -0.037,
+            "value": -0.035,
             "inTangent": 0.0,
             "outTangent": 0.0
           }
@@ -1049,13 +1025,13 @@
           },
           {
             "time": 0.9,
-            "value": -22.0,
+            "value": -19.0,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
           {
             "time": 1.0,
-            "value": -21.0,
+            "value": -18.0,
             "inTangent": 0.0,
             "outTangent": 0.0
           }
@@ -1089,7 +1065,7 @@
         "keys": [
           {
             "time": 0.0,
-            "value": -0.037,
+            "value": -0.035,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
@@ -1179,7 +1155,7 @@
         "keys": [
           {
             "time": 0.0,
-            "value": -20.0,
+            "value": -18.0,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
@@ -1822,6 +1798,1174 @@
             "outTangent": 0.0
           }
         ]
+      }
+    },
+    "pistol_patrol_enter_position": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 0.18,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": -0.06,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Z": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.1,
+            "value": -0.01,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 0.03,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      }
+    },
+    "pistol_patrol_enter_rotation": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.1,
+            "value": 3.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 16.0,
+            "inTangent": 2.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.5,
+            "value": -20.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": -25.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Z": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": -25.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      }
+    },
+    "pistol_patrol_exit_position": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.18,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": -0.06,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Z": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.03,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      }
+    },
+    "pistol_patrol_exit_rotation": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 18.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": -25.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Z": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": -25.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      }
+    },
+    "pistol_compress_enter_position": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 0.03,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Z": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": -0.04,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      }
+    },
+    "pistol_compress_enter_rotation": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.5,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.75,
+            "value": -1.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.8,
+            "value": -9.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": -8.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Z": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": -0.5
+          },
+          {
+            "time": 1.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      }
+    },
+    "pistol_compress_exit_position": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.03,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.9,
+            "value": -0.0025,
+            "inTangent": -0.05,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Z": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": -0.04,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.05,
+            "value": -0.02,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.1,
+            "value": -0.02,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      }
+    },
+    "pistol_compress_exit_rotation": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.5,
+            "value": -0.5,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": -8.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.8,
+            "value": 0.75,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Z": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      }
+    },
+    "high_ready_exit_aim_speed": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.15,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.25,
+            "value": 0.05,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.5,
+            "value": 0.15,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.85,
+            "value": 0.5,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 1.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": []
+      },
+      "Z": {
+        "keys": []
+      }
+    },
+    "high_ready_enter_aim_speed": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.15,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.25,
+            "value": 0.05,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.5,
+            "value": 0.15,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.85,
+            "value": 0.5,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 1.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": []
+      },
+      "Z": {
+        "keys": []
+      }
+    },
+    "pistol_compress_exit_aim_speed": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.25,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.75,
+            "value": 0.2,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.85,
+            "value": 0.4,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 1.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": []
+      },
+      "Z": {
+        "keys": []
+      }
+    },
+    "pistol_compress_enter_aim_speed": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.15,
+            "value": 0.05,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.5,
+            "value": 0.1,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.75,
+            "value": 0.15,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.85,
+            "value": 0.25,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 1.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": []
+      },
+      "Z": {
+        "keys": []
+      }
+    },
+    "short_exit_aim_speed": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.7,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.85,
+            "value": 0.1,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.95,
+            "value": 0.25,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 1.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": []
+      },
+      "Z": {
+        "keys": []
+      }
+    },
+    "short_enter_aim_speed": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.7,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.85,
+            "value": 0.1,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.95,
+            "value": 0.25,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 1.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": []
+      },
+      "Z": {
+        "keys": []
+      }
+    },
+    "patrol_exit_aim_speed": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.25,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.5,
+            "value": 0.1,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.7,
+            "value": 0.25,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.85,
+            "value": 0.5,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.95,
+            "value": 0.8,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 1.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": []
+      },
+      "Z": {
+        "keys": []
+      }
+    },
+    "patrol_enter_aim_speed": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.25,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.5,
+            "value": 0.1,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.7,
+            "value": 0.25,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.85,
+            "value": 0.5,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.95,
+            "value": 0.8,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 1.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": []
+      },
+      "Z": {
+        "keys": []
+      }
+    },
+    "low_ready_exit_aim_speed": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.25,
+            "value": 0.1,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.5,
+            "value": 0.35,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.7,
+            "value": 0.5,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.85,
+            "value": 0.7,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.95,
+            "value": 0.8,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 1.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": []
+      },
+      "Z": {
+        "keys": []
+      }
+    },
+    "low_ready_enter_aim_speed": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.25,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.5,
+            "value": 0.1,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.7,
+            "value": 0.25,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.85,
+            "value": 0.5,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.95,
+            "value": 0.8,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 1.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": []
+      },
+      "Z": {
+        "keys": []
+      }
+    },
+    "active_exit_aim_speed": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.25,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.5,
+            "value": 0.1,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.7,
+            "value": 0.25,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.85,
+            "value": 0.5,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.95,
+            "value": 0.8,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 1.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": []
+      },
+      "Z": {
+        "keys": []
+      }
+    },
+    "active_enter_aim_speed": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.25,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.5,
+            "value": 0.1,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.7,
+            "value": 0.25,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.85,
+            "value": 0.5,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.95,
+            "value": 0.8,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 1.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": []
+      },
+      "Z": {
+        "keys": []
+      }
+    },
+    "left_exit_aim_speed": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.25,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.5,
+            "value": 0.1,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.7,
+            "value": 0.25,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.85,
+            "value": 0.5,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.95,
+            "value": 0.8,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 1.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": []
+      },
+      "Z": {
+        "keys": []
+      }
+    },
+    "left_enter_aim_speed": {
+      "X": {
+        "keys": [
+          {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.25,
+            "value": 0.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.5,
+            "value": 0.1,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.7,
+            "value": 0.25,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.85,
+            "value": 0.5,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.95,
+            "value": 0.8,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 1.0,
+            "value": 1.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          }
+        ]
+      },
+      "Y": {
+        "keys": []
+      },
+      "Z": {
+        "keys": []
       }
     }
   }

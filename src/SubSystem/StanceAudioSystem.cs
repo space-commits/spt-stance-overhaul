@@ -1,9 +1,9 @@
 using StanceOverhaul.Events;
 using static RealismCommonLib.Plugin;
 
-namespace StanceOverhaul.Handlers;
+namespace StanceOverhaul.SubSystem;
 
-public class StanceAudioHandler : IControllerHelper
+public class StanceAudioSystem : ISubSystem
 {
       public void RunOnAwake()
         {
@@ -21,7 +21,7 @@ public class StanceAudioHandler : IControllerHelper
 
         private void OnShoulderHit()
         {
-            AudioControllerInstance.PlayADSSound(PluginConfig.StanceSfxModifier.Value, false);
+            AudioControllerInstance.PlayADSSound(PlayerStateInstance.Player, PluginConfig.StanceSfxModifier.Value);
         }
 
 }

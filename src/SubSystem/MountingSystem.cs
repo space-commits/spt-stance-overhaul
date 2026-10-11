@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace StanceOverhaul.SpringAnimators
+namespace StanceOverhaul.SubSystem
 {
-    internal interface ISpringAnimator
+    internal class MountingSystem
     {
     }
 }

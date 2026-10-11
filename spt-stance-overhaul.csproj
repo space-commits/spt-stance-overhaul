@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <AssemblyName>StanceOverhaul</AssemblyName>
+    <AssemblyName>spt-stance-overhaul</AssemblyName>
     <Description></Description>
     <Version>1.0.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -18,77 +18,77 @@
 
   <ItemGroup>
     <Reference Include="SPTarkov.Reflection">
-      <HintPath>F:\SP EFT\SPT-406\BepInEx\plugins\spt\spt-reflection.dll</HintPath>
+      <HintPath>F:\SP EFT\SPT-41X\BepInEx\plugins\spt\spt-reflection.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="SPTarkov.Common">
-      <HintPath>F:\SP EFT\SPT-406\BepInEx\plugins\spt\spt-common.dll</HintPath>
+      <HintPath>F:\SP EFT\SPT-41X\BepInEx\plugins\spt\spt-common.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.AudioModule">
-      <HintPath>F:\SP EFT\SPT-406\EscapeFromTarkov_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
+      <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="ItemComponent.Types">
-      <HintPath>F:\SP EFT\SPT-406\EscapeFromTarkov_Data\Managed\ItemComponent.Types.dll</HintPath>
+      <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\ItemComponent.Types.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Comfort">
-      <HintPath>F:\SP EFT\SPT-406\EscapeFromTarkov_Data\Managed\Comfort.dll</HintPath>
+      <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\Comfort.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>F:\SP EFT\SPT-406\EscapeFromTarkov_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="AnimationSystem.Types">
-      <HintPath>F:\SP EFT\SPT-406\EscapeFromTarkov_Data\Managed\AnimationSystem.Types.dll</HintPath>
+      <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\AnimationSystem.Types.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>F:\SP EFT\SPT-406\EscapeFromTarkov_Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>F:\SP EFT\SPT-406\EscapeFromTarkov_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+      <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>F:\SP EFT\SPT-406\EscapeFromTarkov_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UIModule">
-      <HintPath>F:\SP EFT\SPT-406\EscapeFromTarkov_Data\Managed\UnityEngine.UIModule.dll</HintPath>
+      <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\UnityEngine.UIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.PhysicsModule">
-      <HintPath>F:\SP EFT\SPT-406\EscapeFromTarkov_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+      <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>F:\SP EFT\SPT-406\EscapeFromTarkov_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\UnityEngine.UI.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>F:\SP EFT\SPT-406\EscapeFromTarkov_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+      <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.InputModule">
-      <HintPath>F:\SP EFT\SPT-406\EscapeFromTarkov_Data\Managed\UnityEngine.InputModule.dll</HintPath>
+      <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\UnityEngine.InputModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="BepInEx">
-      <HintPath>F:\SP EFT\SPT-406\BepInEx\core\BepInEx.dll</HintPath>
+      <HintPath>F:\SP EFT\SPT-41X\BepInEx\core\BepInEx.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="AnimationSystem.Types">
-      <HintPath>F:\SP EFT\SPT-406\EscapeFromTarkov_Data\Managed\AnimationSystem.Types.dll</HintPath>
+      <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\AnimationSystem.Types.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RealismCommonLib\RealismCommonLib.csproj" />
+    <ProjectReference Include="..\spt-realism-common-lib\spt-realism-common-lib.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -103,8 +103,8 @@
 
   <Target Name="PostBuildCopy" AfterTargets="Build">
     <Copy SourceFiles="$(ProjectDir)src\Resources\curves.json" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="$(TargetDir)$(TargetFileName)" DestinationFolder="F:\SP EFT\SPT-406\BepInEx\plugins\Realism" />
-    <Copy SourceFiles="$(TargetDir)curves.json" DestinationFolder="F:\SP EFT\SPT-406\BepInEx\plugins\Realism" />
+    <Copy SourceFiles="$(TargetDir)$(TargetFileName)" DestinationFolder="F:\SP EFT\SPT-41X\BepInEx\plugins\Realism" />
+    <Copy SourceFiles="$(TargetDir)curves.json" DestinationFolder="F:\SP EFT\SPT-41X\BepInEx\plugins\Realism" />
   </Target>
 
 </Project>

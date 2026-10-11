@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace StanceOverhaul.Handlers
+namespace StanceOverhaul.SubSystem.Animator
 {
-    internal class StanceHealthHandler
+    internal class WiggleAnimator
     {
     }
 }
