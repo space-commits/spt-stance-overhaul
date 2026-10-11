@@ -85,7 +85,8 @@ namespace StanceOverhaul.Patches
         [PatchPostfix]
         private static void Postfix(Player __instance)
         {
-            if (!WeaponStateInstance.TreatAsPistol) return;
+            if (!WeaponStateInstance.TreatAsPistol || ReloadStateInstance.IsInReloadOpertation)
+                return;
 
             LimbIK[] limbs = (LimbIK[])_iKArrayField.GetValue(__instance);
 
@@ -126,7 +127,7 @@ namespace StanceOverhaul.Patches
         {
             BaseSoundPlayer.IObserverToPlayerBridge player = (BaseSoundPlayer.IObserverToPlayerBridge)_playerBridgeField.GetValue(__instance);
             var clipMathces = soundElement == player.PropIn || soundElement == player.PropOut;
-            if (player.iPlayer.IsYourPlayer && StanceControllerInstance.LeftHandOverrideActive && clipMathces)
+            if (player.iPlayer.IsYourPlayer && StanceControllerInstance.BlockLeftHandSFX && clipMathces)
             {
                 return false;
             }
@@ -557,27 +558,48 @@ namespace StanceOverhaul.Patches
         }
     }
 
-    public class ComplexRotationsPatch : ModulePatch
+    public class CalculateCameraPositionPatch : ModulePatch
     {
         private static FieldInfo _playerField;
         private static FieldInfo _fcField;
+        private static FieldInfo _poseBlendField;
+        private static FieldInfo _cameraByFOVOffsetField;
 
         protected override MethodBase GetTargetMethod()
         {
             _playerField = AccessTools.Field(typeof(FirearmController), "_player");
             _fcField = AccessTools.Field(typeof(ProceduralWeaponAnimation), "_firearmController");
-            return AccessTools.Method(typeof(ProceduralWeaponAnimation), nameof(ProceduralWeaponAnimation.ApplyComplexRotation));
+            _poseBlendField = AccessTools.Field(typeof(ProceduralWeaponAnimation), "_animatorPoseBlend");
+            _cameraByFOVOffsetField = AccessTools.Field(typeof(ProceduralWeaponAnimation), "_cameraByFOVOffset");
+            return AccessTools.Method(typeof(ProceduralWeaponAnimation), nameof(ProceduralWeaponAnimation.CalculateCameraPosition));
         }
 
         [PatchPostfix]
-        private static void PatchPostfix(ProceduralWeaponAnimation __instance, float dt)
+        private static void PatchPostfix(ProceduralWeaponAnimation __instance)
         {
             FirearmController firearmController = (FirearmController)_fcField.GetValue(__instance);
             if (firearmController == null) return;
             Player player = (Player)_playerField.GetValue(firearmController);
-            if (player != null && player.IsYourPlayer)
+            if (player != null && player.IsYourPlayer && __instance.HandsContainer.WeaponRootAnim)
             {
-                //StanceControllerInstance.RunAfterEFTTransformsSet(__instance, dt);
+                if (StanceControllerInstance.CanMoveGunToCamera && PlayerStateInstance.WeaponIsReady)
+                {
+                    Vector3 animatorBlendTarget = Vector3.zero;
+                    foreach (ValueTuple<AnimatorPose, float, bool> valueTuple in __instance.ActiveBlends)
+                    {
+                        float blendValue = valueTuple.Item1.Blend.Evaluate(valueTuple.Item2);
+                        animatorBlendTarget += valueTuple.Item1.CameraPosition * blendValue;
+                        //__instance.HandsContainer.CameraRotation.Zero += valueTuple.Item1.CameraRotation * blendValue;
+                    }
+
+                    var animatorPoseBlend = (float)_poseBlendField.GetValue(__instance);
+                    var cameraByFOVOffset = (Vector3)_cameraByFOVOffsetField.GetValue(__instance);
+                    var xyOverride = __instance.HandsContainer.CameraOffset + cameraByFOVOffset + __instance.TurnAway.CameraShift;
+                    xyOverride = ((animatorPoseBlend > 0f) ? (xyOverride + animatorBlendTarget) : xyOverride);
+                    __instance._vCameraTarget = new Vector3(xyOverride.x, xyOverride.y, __instance._vCameraTarget.z);
+
+                }
+
             }
         }
     }

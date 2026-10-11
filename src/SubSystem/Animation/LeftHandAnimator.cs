@@ -28,6 +28,14 @@ namespace StanceOverhaul.SubSystem.Animator
             }
         }
 
+        public bool IsDoingOverride
+        {
+            get
+            {
+                return _updateOverride;
+            }
+        }
+
         public Vector3 LeftHandMarkerPosition
         {
             get

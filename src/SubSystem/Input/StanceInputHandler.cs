@@ -10,53 +10,53 @@ using static StanceOverhaul.Plugin;
 
 namespace StanceOverhaul.SubSystem.StanceInput
 {
-    // Flags so overlapping interrupts (e.g. ADS while reloading) can start and end independently
-    [Flags]
-    internal enum EStanceInterruptType
-    {
-        None = 0,
-        ADS = 1,
-        Reload = 2
-    }
-
+    // Yes, the input system is AI-slopified, except it saved me hours of work dealing with persistent bugs, sue me!
+    //
+    //
+    // Turns player input and game events into stance changes.
+    //
+    // The handler keeps two kinds of state and nothing else:
+    //
+    //   Intent       _chosen            the stance the player has toggled on (null = none)
+    //                _beforeActiveAim   the stance to go back to when active aim is switched off
+    //
+    //   Suppressors  aiming (plus a short settle delay), a reload that pauses the stance, an item in hand.
+    //                While one applies, the stance is put away but the intent is left alone.
+    //
+    // Every event edits intent and/or a suppressor and then calls Reconcile(), the only method that talks to
+    // StanceState:
+    //
+    //      wanted = suppressed ? nothing : (chosen ?? default stance)
+    //
+    // Putting a stance back is therefore never a separate code path, it is just "recompute". Overlapping
+    // interrupts (ADS during a reload, a weapon swap while aiming, ...) need no special cases: whichever
+    // suppressor ends last lets the stance back in.
+    //
+    // This handler is assumed to be the only thing requesting stances from StanceState.
     internal class StanceInputHandler : ISubSystem
     {
         // After ADS ends, wait this long before bringing the stance back. If the aim state flickers while the
         // ADS transition settles, the stance is never re-requested, so it can't flash on screen.
         private const float RestoreAfterADSDelay = 0.1f;
 
-        private IStance? _stanceThatWasToggledOriginally;
-        private IStance? _stanceBeforeInterrupt;
-        private IStance? _stanceBeforeActiveAim;
+        private readonly StanceState _stanceState;
 
-        private EStanceInterruptType _interruptType = EStanceInterruptType.None;
-        private float _restoreCountdown;
+        // ---- Intent ----
+        private IStance? _chosen;
+        private IStance? _beforeActiveAim;
 
-        private bool IsInterrupted => _interruptType != EStanceInterruptType.None;
+        // ---- Suppressors ----
+        private bool _isAiming;
+        private float _aimSettleTimer;
+        private bool _reloadPausesStance;
+        private bool _itemInHand;
 
-        //in future can expand on this if want to force low ready, combine with ShouldForceADefaultStance or similar?
-        private IStance? EffectiveRememberedStance =>
-            DefaultStance ?? _stanceThatWasToggledOriginally;
-
-        //the stance the player is in, including one that ADS has cancelled.
-        // ADS cancels the active stance, so ActiveStance on its own is null while aiming.
-        private IStance? StanceInEffect =>
-            _stanceState.ActiveStance ?? EffectiveRememberedStance;
-
-        //should always return null if there's no reaon to force a stance
-        private IStance? DefaultStance
-        {
-            get
-            {
-                return WeaponStateInstance.TreatAsPistol ? StanceControllerInstance.PistolCompress : null;
-            }
-        }
-
-        private StanceState _stanceState;
         public StanceInputHandler(StanceState stanceState)
         {
             _stanceState = stanceState;
         }
+
+        // ================= Lifecycle =================
 
         public void RunOnAwake()
         {
@@ -70,13 +70,13 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
         public void RunOnUpdate(float deltaTime)
         {
-            if (_restoreCountdown <= 0f)
+            if (_aimSettleTimer <= 0f)
                 return;
 
-            _restoreCountdown -= deltaTime;
+            _aimSettleTimer -= deltaTime;
 
-            if (_restoreCountdown <= 0f)
-                RestoreStance(EffectiveRememberedStance);
+            if (_aimSettleTimer <= 0f)
+                Reconcile();
         }
 
         private void SubscribeToEvents()
@@ -84,8 +84,9 @@ namespace StanceOverhaul.SubSystem.StanceInput
             PlayerEvents.OnWeaponSwap += OnWeaponSwap;
             PlayerEvents.OnSwappedFromItemToGun += OnSwappedBackToGun;
             PlayerEvents.OnSwappedFromGunToItem += OnSwappedToItem;
-            PlayerEvents.AimStateChanged += OnADSToggled;
-            PlayerEvents.OnShotFired += OnShotFired;
+            PlayerEvents.AimStateChanged += OnAimStateChanged;
+            PlayerEvents.OnShotFired += OnFireAttempt;
+            StanceInputEvents.OnAttemptedToFireFromStance += OnFireAttempt;
             StanceInputEvents.TogglePatrolStance += TogglePatrolStance;
             StanceInputEvents.ToggleHighReady += ToggleHighReady;
             StanceInputEvents.ToggleLowReady += ToggleLowReady;
@@ -93,14 +94,13 @@ namespace StanceOverhaul.SubSystem.StanceInput
             StanceInputEvents.ToggleActiveAim += ToggleActiveAim;
             StanceInputEvents.OnActiveAimKeyDown += EnterActiveAim;
             StanceInputEvents.OnActiveAimKeyUp += ExitActiveAim;
-            StanceInputEvents.ToggleMelee += ToggleMelee;
             InputEvents.ToggleLeftStanceInput += ToggleLeftShoulder;
-            StanceInputEvents.OnAttemptedToFireFromStance += OnAttemptedToFireFromStance;
-            StanceEvents.OnStanceReloadReset += ResetReloadState;
-            StanceEvents.OnStanceReload += CheckIfReloadInterruptsStance;
+            StanceEvents.OnStanceReload += OnReloadStarted;
+            StanceEvents.OnStanceReloadReset += OnReloadFinished;
             StanceEvents.OnTransformsInit += OnWeaponInit;
-            StanceEvents.OnStationaryWeaponOperated += CancelStancesAndResetState;
-            //StanceInputEvents.ToggleMounting += ToggleMounting; TODO: decide if will override BSG mounting
+            StanceEvents.OnStationaryWeaponOperated += _stanceState.CancelAll;
+            // TODO: StanceInputEvents.ToggleMelee
+            // TODO: StanceInputEvents.ToggleMounting, decide if it will override BSG mounting
         }
 
         private void UnSubscribeToEvents()
@@ -108,8 +108,9 @@ namespace StanceOverhaul.SubSystem.StanceInput
             PlayerEvents.OnWeaponSwap -= OnWeaponSwap;
             PlayerEvents.OnSwappedFromItemToGun -= OnSwappedBackToGun;
             PlayerEvents.OnSwappedFromGunToItem -= OnSwappedToItem;
-            PlayerEvents.AimStateChanged -= OnADSToggled;
-            PlayerEvents.OnShotFired -= OnShotFired;
+            PlayerEvents.AimStateChanged -= OnAimStateChanged;
+            PlayerEvents.OnShotFired -= OnFireAttempt;
+            StanceInputEvents.OnAttemptedToFireFromStance -= OnFireAttempt;
             StanceInputEvents.TogglePatrolStance -= TogglePatrolStance;
             StanceInputEvents.ToggleHighReady -= ToggleHighReady;
             StanceInputEvents.ToggleLowReady -= ToggleLowReady;
@@ -117,250 +118,119 @@ namespace StanceOverhaul.SubSystem.StanceInput
             StanceInputEvents.ToggleActiveAim -= ToggleActiveAim;
             StanceInputEvents.OnActiveAimKeyDown -= EnterActiveAim;
             StanceInputEvents.OnActiveAimKeyUp -= ExitActiveAim;
-            StanceInputEvents.ToggleMelee -= ToggleMelee;
             InputEvents.ToggleLeftStanceInput -= ToggleLeftShoulder;
-            StanceInputEvents.OnAttemptedToFireFromStance -= OnAttemptedToFireFromStance;
-            StanceEvents.OnStanceReloadReset -= ResetReloadState;
-            StanceEvents.OnStanceReload -= CheckIfReloadInterruptsStance;
+            StanceEvents.OnStanceReload -= OnReloadStarted;
+            StanceEvents.OnStanceReloadReset -= OnReloadFinished;
             StanceEvents.OnTransformsInit -= OnWeaponInit;
-            StanceEvents.OnStationaryWeaponOperated -= CancelStancesAndResetState;
+            StanceEvents.OnStationaryWeaponOperated -= _stanceState.CancelAll;
         }
 
-        private void RequestStance(IStance stance)
+        // ================= Rules and policy =================
+
+        // The stance that is on by default whenever nothing is chosen and nothing is suppressing it.
+        // Null = no default. To make a rifle default (e.g. low ready) later, return it here under a config
+        // check, nothing else needs to change.
+        private static IStance? DefaultStance =>
+            WeaponStateInstance.TreatAsPistol ? StanceControllerInstance.PistolCompress : null;
+
+        // Aiming, including the short settle window after it ends.
+        private bool IsAimSuppressing => _isAiming || _aimSettleTimer > 0f;
+
+        private bool IsSuppressed(IStance stance)
         {
-            if (!IsInterrupted)
-            {
-                _stanceState.RequestStance(stance);
-            }
+            if (_itemInHand || _reloadPausesStance)
+                return true;
+
+            return IsAimSuppressing && !SurvivesADS(stance);
         }
 
-        private void CheckIfReloadInterruptsStance()
+        // Left shoulder is compatible with ADS: aiming leaves it alone.
+        // (Could become a flag on IStance if more stances need this.)
+        private static bool SurvivesADS(IStance stance)
         {
-            // StanceInEffect rather than ActiveStance: a reload can start while ADS has the stance put away
-            var stance = StanceInEffect;
-            if (stance == null)
-                return;
-
-            if (stance.ReloadTypesThatPauseStance.Contains(StanceControllerInstance.CurrentReloadType))
-            {
-                _interruptType |= EStanceInterruptType.Reload;
-                _stanceBeforeInterrupt = stance;
-                InterruptStances();
-            }
+            return stance.StanceType == EStanceType.LeftShoulder;
         }
 
-        private void ResetReloadState()
+        // Stances that come back after aiming (and after item use, if RememberStanceItem is on).
+        // Active aim always counts, whatever its RememberStance flag says.
+        private static bool IsRemembered(IStance? stance)
         {
-            if (!_interruptType.HasFlag(EStanceInterruptType.Reload))
-                return;
-
-            _interruptType &= ~EStanceInterruptType.Reload;
-            RestoreStance(_stanceBeforeInterrupt);
-            _stanceBeforeInterrupt = null;
+            return stance != null &&
+                   (stance.RememberStance || stance.StanceType == EStanceType.ActiveAiming);
         }
 
-        private void OnWeaponSwap()
+        private static bool IsActiveAim(IStance? stance)
         {
-            if (WeaponStateInstance.TreatAsPistol)
-            {
-                TryInitializePisolStance();
-            }
-            else
-            {
-                CancelStancesAndResetState();
-            }
-
-            ModLogger.LogWarning($"OnWeaponSwap: ActiveStance={_stanceState?.ActiveStance?.StanceType}, weapon is pistol={WeaponStateInstance.TreatAsPistol}");
-
+            return stance?.StanceType == EStanceType.ActiveAiming;
         }
 
-        private void OnSwappedToItem()
+        // A stance that blocks firing is dropped when the player tries to shoot, so the shot can go through.
+        // (Flip this if you want the opposite: "firing cancels stances that do NOT block it".)
+        private static bool FiringDropsStance(IStance stance)
         {
-            if (PluginConfig.RememberStanceItem.Value || WeaponStateInstance.TreatAsPistol)
-                _stanceBeforeInterrupt = EffectiveRememberedStance;
-
-            InterruptStances();
+            return stance.BlocksFiring;
         }
 
-        private void OnSwappedBackToGun()
+        // What the player may toggle on the current weapon: pistols only get patrol (plus their default,
+        // which is never toggled), rifles never get the pistol stance.
+        private static bool IsAllowedOnCurrentWeapon(IStance stance)
         {
-            if (PluginConfig.RememberStanceItem.Value || WeaponStateInstance.TreatAsPistol)
-                RestoreStance(_stanceBeforeInterrupt);
-
-            _stanceBeforeInterrupt = null;
+            return WeaponStateInstance.TreatAsPistol
+                ? stance.StanceType == StanceControllerInstance.PatrolStance.StanceType
+                : stance.StanceType != EStanceType.PistolCompress;
         }
 
-        private void OnWeaponInit()
-        {
-            if (WeaponStateInstance.TreatAsPistol)
-                TryInitializePisolStance();
-            else if (_stanceState.ActiveStanceType == EStanceType.PistolCompress)
-                CancelAndForgetStances();
+        // ================= Core =================
 
-            ModLogger.LogWarning($"OnWeaponInit: ActiveStance={_stanceState?.ActiveStance?.StanceType}, weapon is pistol={WeaponStateInstance.TreatAsPistol}");
+        private void SetChosen(IStance? stance)
+        {
+            _chosen = stance;
+            _beforeActiveAim = null; // only meaningful while active aim is chosen, callers set it afterwards
         }
 
-        private void TryInitializePisolStance()
+        // Makes StanceState match what should be showing right now. Idempotent, safe to call from anywhere.
+        private void Reconcile()
         {
-            if (_stanceState.ActiveStanceType != EStanceType.PistolCompress) //&& !IsInterrupted && _stanceBeforeInterrupt is null
-            {
-                ModLogger.LogWarning($"toggle pistol");
-
-                ToggleStance(StanceControllerInstance.PistolCompress);
-            }
-        }
-
-        // Cancels the active stance and drops everything that would bring one back.
-        // Leaves interrupts alone: firing during ADS must not end the ADS interrupt.
-        private void CancelAndForgetStances()
-        {
-            _stanceState.CancelAll();
-            _stanceThatWasToggledOriginally = null;
-            _stanceBeforeInterrupt = null;
-            _stanceBeforeActiveAim = null;
-        }
-
-        // Full reset, for weapon swaps
-        private void CancelStancesAndResetState()
-        {
-            CancelAndForgetStances();
-            _interruptType = EStanceInterruptType.None;
-            _restoreCountdown = 0f;
-        }
-
-        // Cancels the stance but remembers nothing new: the caller keeps whatever it wants restored
-        private void InterruptStances()
-        {
-            _stanceState.CancelAll();
-            _stanceThatWasToggledOriginally = null;
-        }
-
-        // The one path for putting a stance back after an interruption (ADS, reload, item, leaving active aim).
-        // Unlike ToggleStance it never un-toggles. It records the stance before checking for interrupts, so if
-        // something else is still interrupting, whichever interrupt ends last brings the stance back.
-        private void RestoreStance(IStance? stance)
-        {
-            if (stance == null)
-                return;
-
-            if (DefaultStance != null && _stanceState.ActiveStance != DefaultStance)
-            {
-                RequestStance(DefaultStance);
-                return;
-            }
-
-            // Active aim is always remembered across interrupts, regardless of its RememberStance flag
-            _stanceThatWasToggledOriginally =
-                (stance.RememberStance || stance.StanceType == EStanceType.ActiveAiming) ? stance : null;
-
-            if (_stanceState.ActiveStance?.StanceType != stance.StanceType)
-                RequestStance(stance);
-        }
-
-        private void AssessStanceOnShotAttempt()
-        {
-            if (PluginConfig.RememberStanceFiring.Value && AimStateInstance.IsAiming)
-                return;
-
-            // While ADS the stance is put away (ActiveStance is null), so also look at the one waiting to come back
-            if (StanceInEffect?.BlocksFiring != true)
-                return;
-
-            CancelAndForgetStances();
-
-            if (DefaultStance != null)
-                RequestStance(DefaultStance);
-        }
-
-        private void OnShotFired()
-        {
-            AssessStanceOnShotAttempt();
-        }
-
-        private void OnAttemptedToFireFromStance()
-        {
-            AssessStanceOnShotAttempt();
-        }
-
-        private void OnADSToggled()
-        {
-            if (AimStateInstance.IsAiming)
-                OnADSStarted();
-            else
-                OnADSEnded();
-        }
-
-        private void OnADSStarted()
-        {
-            // Aiming again before the stance came back: drop the pending restore
-            _restoreCountdown = 0f;
-
+            var target = _chosen ?? DefaultStance;
+            var wanted = target != null && !IsSuppressed(target) ? target : null;
             var active = _stanceState.ActiveStance;
 
-            // Left shoulder is compatible with ADS, leave it alone
-            if (active?.StanceType == EStanceType.LeftShoulder)
+            if (wanted == null)
+            {
+                if (active != null)
+                    _stanceState.CancelAll();
+            }
+            else if (active?.StanceType != wanted.StanceType)
+            {
+                // Never request what is already active: RequestStance toggles.
+                _stanceState.RequestStance(wanted);
+            }
+        }
+
+        // ================= Player input =================
+
+        // Shared by every stance key. Keys are ignored while the stance they would turn on is suppressed.
+        private void ToggleStance(IStance? stance)
+        {
+            if (stance == null || !IsAllowedOnCurrentWeapon(stance) || IsSuppressed(stance))
                 return;
 
-            // High Ready -> Active Aim -> ADS: forget High Ready, ADS ends back in Active Aim
-            if (active?.StanceType == EStanceType.ActiveAiming)
-                _stanceBeforeActiveAim = null;
+            // Decide on/off from what is really active, so a stance that got cancelled behind our back can be
+            // re-entered with a single press.
+            bool switchingOff = _stanceState.ActiveStance?.StanceType == stance.StanceType;
 
-            _interruptType |= EStanceInterruptType.ADS;
-            _stanceState.CancelAll();
-        }
-
-        private void OnADSEnded()
-        {
-            _interruptType &= ~EStanceInterruptType.ADS;
-
-            // Restore is deferred to RunOnUpdate so a flicker in the aim state can't re-request the stance
-            _restoreCountdown = _stanceState.IsTransitioning ? 0f : RestoreAfterADSDelay;
-        }
-
-        private bool IsTogglingActiveStance(EStanceType stance)
-        {
-            return _stanceState.ActiveStance?.StanceType == stance;
-        }
-
-        // Only reached from user input. Restores go through RestoreStance.
-        private void ToggleStance(
-            IStance? targetStance,
-            bool forgetPrevious = false)
-        {
-            if (targetStance == null || IsInterrupted) return;
-
-            _stanceBeforeActiveAim = null;
-
-            if (DefaultStance != null && _stanceState.ActiveStance != DefaultStance)
-            {
-                RequestStance(DefaultStance);
-                return;
-            }
-
-            if (targetStance.RememberStance)
-            {
-                _stanceThatWasToggledOriginally =
-                    !IsTogglingActiveStance(targetStance.StanceType) ?
-                    targetStance : null;
-            }
-
-            if (forgetPrevious)
-                _stanceThatWasToggledOriginally = null;
-
-            RequestStance(targetStance);
+            SetChosen(switchingOff ? null : stance);
+            Reconcile();
         }
 
         private void TogglePatrolStance()
         {
-            ToggleStance(StanceControllerInstance.PatrolStance, forgetPrevious: true);
+            ToggleStance(StanceControllerInstance.PatrolStance);
         }
 
         private void ToggleLeftShoulder()
         {
-            if (WeaponStateInstance.TreatAsPistol)
-                return;
-
-            ToggleStance(StanceControllerInstance.LeftShoulder, forgetPrevious: true);
+            ToggleStance(StanceControllerInstance.LeftShoulder);
         }
 
         private void ToggleHighReady()
@@ -380,71 +250,152 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
         private void ToggleActiveAim()
         {
-            if (_stanceState.ActiveStanceType == EStanceType.ActiveAiming) ExitActiveAim();
-            else EnterActiveAim();
+            if (_stanceState.ActiveStance?.StanceType == EStanceType.ActiveAiming)
+                ExitActiveAim();
+            else
+                EnterActiveAim();
         }
 
         private void EnterActiveAim()
         {
-            if (IsInterrupted) return;
-            if (_stanceState.ActiveStanceType == EStanceType.ActiveAiming) return;
+            var activeAim = StanceControllerInstance.ActiveAim;
 
-            _stanceBeforeActiveAim = EffectiveRememberedStance;
-            _stanceThatWasToggledOriginally = StanceControllerInstance.ActiveAim;
-            RequestStance(StanceControllerInstance.ActiveAim);
-        }
-
-        private void ExitActiveAim()
-        {
-            var toRestore = _stanceBeforeActiveAim;
-            _stanceBeforeActiveAim = null;
-            _stanceThatWasToggledOriginally = null;
-
-            // Active aim was put away by a reload/item: what comes back is the stance we had before it
-            if (_stanceBeforeInterrupt?.StanceType == EStanceType.ActiveAiming)
-                _stanceBeforeInterrupt = toRestore;
-
-            // Already cancelled (e.g. by ADS), nothing to switch away from
-            if (_stanceState.ActiveStanceType != EStanceType.ActiveAiming)
+            if (!IsAllowedOnCurrentWeapon(activeAim) || IsSuppressed(activeAim))
                 return;
 
-            if (toRestore != null)
-                RestoreStance(toRestore);
+            if (!IsActiveAim(_chosen))
+            {
+                // Only a remembered stance is worth going back to
+                var previous = IsRemembered(_chosen) ? _chosen : null;
+
+                SetChosen(activeAim);
+                _beforeActiveAim = previous;
+            }
+
+            Reconcile();
+        }
+
+        // Also the key-up path for hold-to-active-aim, so it is honoured even while the stance is put away
+        // (released during ADS or a reload): what comes back is the stance we had before active aim.
+        private void ExitActiveAim()
+        {
+            if (!IsActiveAim(_chosen))
+                return;
+
+            SetChosen(_beforeActiveAim);
+            Reconcile();
+        }
+
+        // ================= Aiming =================
+
+        private void OnAimStateChanged()
+        {
+            bool aiming = AimStateInstance.IsAiming;
+
+            if (aiming == _isAiming)
+                return;
+
+            _isAiming = aiming;
+
+            if (aiming)
+                OnADSStarted();
             else
-                _stanceState.CancelAll();
+                _aimSettleTimer = _stanceState.IsTransitioning ? RestoreAfterADSDelay : 0.001f; // restored from RunOnUpdate, so a flicker can't flash the stance
         }
 
-        private void ToggleMelee()
+        private void OnADSStarted()
         {
-            /*   if (_stanceState.CurrentStance?.StanceType == EStance.Melee)
-                   return;*/
+            // Aiming again before the stance came back: drop the pending restore
+            _aimSettleTimer = 0f;
 
-            //ToggleStance(StanceControllerInstance.Melee);
+            // Only remembered stances (and ones that are compatible with ADS) outlive aiming
+            if (_chosen != null && !SurvivesADS(_chosen) && !IsRemembered(_chosen))
+                SetChosen(null);
 
-            /*StanceControllerInstance.MeleeHitSomething = false;*/
+            // High Ready -> Active Aim -> ADS: forget High Ready, ADS ends back in Active Aim
+            _beforeActiveAim = null;
+
+            Reconcile();
         }
 
-        /*       public void ToggleMounting() 
-               {
-                   ToggleStance(StanceControllerInstance.Mounting);
-               }
-        
-         
-                 private void OnToggleStepOut()
+        // ================= Firing =================
+
+        // Both "a shot was fired" and "tried to fire from a stance" end up here.
+        private void OnFireAttempt()
         {
-            IsMounting = false;
+            if (_chosen == null || !FiringDropsStance(_chosen))
+                return;
+
+            // RememberStanceFiring: shooting while aiming doesn't forget the stance waiting to come back.
+            if (PluginConfig.RememberStanceFiring.Value && IsAimSuppressing)
+                return;
+
+            // The default stance is the baseline and is never dropped, Reconcile puts it back if needed
+            SetChosen(null);
+            Reconcile();
         }
 
-        private void OnChangeStance()
+        // ================= Reload =================
+
+        private void OnReloadStarted()
         {
-            IsMounting = false;
+            // Look at the stance the player is in, even if ADS currently has it put away
+            var target = _chosen ?? DefaultStance;
+
+            _reloadPausesStance = target != null &&
+                                  target.ReloadTypesThatPauseStance.Contains(StanceControllerInstance.CurrentReloadType);
+
+            Reconcile();
         }
 
-        private void OnToggleBipod()
+        private void OnReloadFinished()
         {
-            IsMounting = false;
+            _reloadPausesStance = false;
+            Reconcile();
         }
-         
-         */
+
+        // ================= Items and weapons =================
+
+        private void OnSwappedToItem()
+        {
+            _itemInHand = true;
+
+            // Swapping hands ends aiming and aborts any reload. Don't wait for events that might not come.
+            _isAiming = false;
+            _aimSettleTimer = 0f;
+            _reloadPausesStance = false;
+
+            if (_chosen != null && !(PluginConfig.RememberStanceItem.Value && IsRemembered(_chosen)))
+                SetChosen(null);
+
+            Reconcile();
+        }
+
+        private void OnSwappedBackToGun()
+        {
+            _itemInHand = false;
+            Reconcile();
+        }
+
+        // Swapping weapons wipes everything, including the suppressors, so nothing from the previous weapon
+        // (an ADS that never reported ending, a reload that never finished) can leak into the new one.
+        // The default stance of the new weapon, if it has one, comes straight back through Reconcile.
+        private void OnWeaponSwap()
+        {
+            SetChosen(null);
+            _isAiming = false;
+            _aimSettleTimer = 0f;
+            _reloadPausesStance = false;
+            _itemInHand = false;
+
+            Reconcile();
+        }
+
+        // The new weapon is ready: make sure the stance state matches it (pistol compressed up, or a stance from
+        // the previous weapon gone).
+        private void OnWeaponInit()
+        {
+            Reconcile();
+        }
     }
 }

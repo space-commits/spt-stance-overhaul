@@ -2215,7 +2215,7 @@
           },
           {
             "time": 0.5,
-            "value": -0.25,
+            "value": -0.5,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
@@ -2372,26 +2372,20 @@
             "outTangent": 0.0
           },
           {
-            "time": 0.15,
-            "value": 0.05,
-            "inTangent": 0.0,
-            "outTangent": 0.0
-          },
-          {
-            "time": 0.5,
-            "value": 0.1,
+            "time": 0.25,
+            "value": 0.0,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
           {
             "time": 0.75,
-            "value": 0.15,
+            "value": 0.2,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
           {
             "time": 0.85,
-            "value": 0.25,
+            "value": 0.4,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
@@ -2661,25 +2655,25 @@
           },
           {
             "time": 0.25,
-            "value": 0.0,
-            "inTangent": 0.0,
-            "outTangent": 0.0
-          },
-          {
-            "time": 0.5,
             "value": 0.1,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
           {
+            "time": 0.5,
+            "value": 0.35,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
             "time": 0.7,
-            "value": 0.25,
+            "value": 0.5,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
           {
             "time": 0.85,
-            "value": 0.5,
+            "value": 0.7,
             "inTangent": 0.0,
             "outTangent": 0.0
           },

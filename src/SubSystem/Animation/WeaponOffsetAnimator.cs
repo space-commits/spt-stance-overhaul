@@ -358,8 +358,8 @@ namespace StanceOverhaul.SubSystem.Animator
             if (DoOffsets)
             {
                 HandleReloadOffsets();
-                HandleHeightStanceOffset();
-                HandleErgoOffset();
+                if (PluginConfig.EnableExtraProcEffects.Value) HandleHeightStanceOffset();
+                if (PluginConfig.EnableExtraProcEffects.Value) HandleErgoOffset();
             }
 
             float smoothFactorRot = Mathf.Clamp01(Time.deltaTime * 5f); //TODO speed needs to be factored by reload type modified speed from all modifiers ( StatModifiers.RechamberSpeed etc)

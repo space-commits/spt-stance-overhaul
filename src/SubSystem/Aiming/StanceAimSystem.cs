@@ -9,16 +9,13 @@ namespace StanceOverhaul.SubSystem.Aiming
 {
     public class StanceAimSystem : ISubSystem
     {
-        private const float StanceslessDamping = 0.82f;
-        private const float StanceslessReturnSpeed = 0.06f;
-
         private BoolGateHandle _canAim;
         private bool _blockerInterruptedAim;
         private static Vector3 _smoothedOffset;
-        private static Vector3 _offsetVelocity;
 
         public void RunOnAwake()
         {
+            RealismCommonLib.Events.PlayerEvents.OnPlayerInit += CheckForAimBlockers;
             RealismCommonLib.Events.PlayerEvents.AimStateChanged += CheckForAimBlockers;
             RealismCommonLib.Events.PlayerEvents.ToggleHeadDevice += CheckForAimBlockers;
             WeaponStateInstance.OnWeaponStateChanged += CheckForAimBlockers;
@@ -28,6 +25,7 @@ namespace StanceOverhaul.SubSystem.Aiming
 
         public void RunOnDestroy()
         {
+            RealismCommonLib.Events.PlayerEvents.OnPlayerInit -= CheckForAimBlockers;
             RealismCommonLib.Events.PlayerEvents.AimStateChanged -= CheckForAimBlockers;
             RealismCommonLib.Events.PlayerEvents.ToggleHeadDevice -= CheckForAimBlockers;
             WeaponStateInstance.OnWeaponStateChanged -= CheckForAimBlockers;
@@ -76,7 +74,7 @@ namespace StanceOverhaul.SubSystem.Aiming
         public void MoveGunToCamera(ProceduralWeaponAnimation pwa, float dt)
         {
             if (!PlayerStateInstance.WeaponIsReady
-                  || PlayerStateInstance.IsUsingStationaryWeapon
+                  || !StanceControllerInstance.CanMoveGunToCamera
                   || pwa == null || pwa.HandsContainer == null
                   || pwa.HandsContainer.WeaponRootAnim == null
                   || pwa.HandsContainer.CameraTransform == null)
@@ -119,7 +117,7 @@ namespace StanceOverhaul.SubSystem.Aiming
                 correction.y = 0f;
             }
 
-            float speed = pwa.IsAiming ? PluginConfig.test3.Value : PluginConfig.test4.Value;
+            float speed = (pwa.IsAiming ? 8f : 4f) * StanceControllerInstance.PwaAimSpeed;
             float t = 1f - Mathf.Exp(-speed * dt);
             _smoothedOffset = Vector3.Lerp(_smoothedOffset, correction, t);
 

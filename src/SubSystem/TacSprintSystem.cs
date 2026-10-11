@@ -80,12 +80,13 @@ namespace StanceOverhaul.SubSystem
         {
         }
 
-        private void ChangeSprintAnimation(bool canDoTacSprint)
+        private void ChangeSprintAnimation(bool tacSprint)
         {
-            if (canDoTacSprint && PlayerStateInstance.Player.BodyAnimatorCommon.GetFloat(PlayerAnimator.WEAPON_SIZE_MODIFIER_PARAM_HASH) != 2f)
-                PlayerStateInstance.Player.BodyAnimatorCommon.SetFloat(PlayerAnimator.WEAPON_SIZE_MODIFIER_PARAM_HASH, 2f);
-            else if (PlayerStateInstance.Player.BodyAnimatorCommon.GetFloat(PlayerAnimator.WEAPON_SIZE_MODIFIER_PARAM_HASH) != WeaponStateInstance.WeaponLength)
-                PlayerStateInstance.Player.BodyAnimatorCommon.SetFloat(PlayerAnimator.WEAPON_SIZE_MODIFIER_PARAM_HASH, WeaponStateInstance.WeaponLength);
+            var animator = PlayerStateInstance.Player.BodyAnimatorCommon;
+            float target = tacSprint ? 2f : WeaponStateInstance.WeaponLength;
+
+            if (animator.GetFloat(PlayerAnimator.WEAPON_SIZE_MODIFIER_PARAM_HASH) != target)
+                animator.SetFloat(PlayerAnimator.WEAPON_SIZE_MODIFIER_PARAM_HASH, target);
         }
 
         public void RunOnUpdate(float deltaTime)
@@ -97,6 +98,7 @@ namespace StanceOverhaul.SubSystem
 
             if (!IsDoingTacSprint && canDoTacSprint)
             {
+                _tacSprintDelayTimer.Stop();
                 IsDoingTacSprint = true;
                 ChangeSprintAnimation(true);
             }

@@ -178,7 +178,7 @@ public class StatsSystem : ISubSystem
     {
         var weightExp = WeaponStateInstance.TreatAsPistol ? 5f : 1.5f;
         var weightFactor = Mathf.Pow(EffectiveWeaponWeight, weightExp);
-        var modifier = WeaponStateInstance.TreatAsPistol ? -0.4f : -0.35f;
-        return Mathf.Clamp(weightFactor * modifier, -5f, 0f);
+        var modifier = WeaponStateInstance.TreatAsPistol ? -0.4f : -0.45f;
+        return Mathf.Clamp(weightFactor * modifier, -5f, -0.5f);
     }
 }

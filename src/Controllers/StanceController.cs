@@ -128,6 +128,14 @@ namespace StanceOverhaul.Controllers
             }
         }
 
+        public bool CanMoveGunToCamera
+        {
+            get
+            {
+                return PluginConfig.EnableAltAim.Value && _stanceState.ActiveStanceType != EStanceType.LeftShoulder && !PlayerStateInstance.IsMounting && !PlayerStateInstance.IsUsingStationaryWeapon;
+            }
+        }
+
         //TODO: use const for weight
         //replace with debuffs and animations
         /*       public bool ShouldForceLowReady
@@ -145,14 +153,6 @@ namespace StanceOverhaul.Controllers
                            && !IsBracing;
                    }
                }*/
-
-        public bool ShouldAllowActiveOnReload
-        {
-            get
-            {
-                return PluginConfig.AllowActiveAimReload.Value && ReloadStateInstance.ReloadAnimationSupportsActiveAim;
-            }
-        }
 
         public Vector3 StanceRotation
         {
@@ -194,15 +194,19 @@ namespace StanceOverhaul.Controllers
             }
         }
 
-        /// <summary>
-        /// Local target that's applied to the left hand spring's zero. 
-        /// The output of the spring is then applied to the left hand marker transform.
-        /// </summary>
-        public bool LeftHandOverrideActive
+        public bool BlockLeftHandSFX
         {
             get
             {
                 return _leftHandAnimator.BlockLeftHandSFX;
+            }
+        }
+
+        public bool IsDoingLeftHandOverride
+        {
+            get
+            {
+                return _leftHandAnimator.IsDoingOverride;
             }
         }
 
