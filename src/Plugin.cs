@@ -16,8 +16,8 @@ namespace StanceOverhaul
     {
         public static StanceController StanceControllerInstance;
 
-        public const string MOD_GUID = "com.fontaine.stanceoverhaul";
-        public const string MOD_NAME = "Fontaine-StanceOverhaul";
+        public const string MOD_GUID = "com.fontaine.spt-stance-overhaul";
+        public const string MOD_NAME = "Fontaine-SPTStanceOverhaul";
         public const string MOD_VERSION = "0.0.2";
 
         void Awake()

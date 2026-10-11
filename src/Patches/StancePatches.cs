@@ -107,7 +107,7 @@ namespace StanceOverhaul.Patches
             Transform torso = __instance.ProceduralWeaponAnimation.HandsContainer.TrackingTransform; // swap for a spine/chest bone if you have one
 
             // Elbow points down, outward (left, for the left arm), slightly forward.
-            Vector3 elbowDir = (torso.up * -0.08f + (-torso.right) * 1f + torso.forward * -0.25f).normalized; // -0.6f + (-torso.right) * 0.5f + torso.forward * 0.25f
+            Vector3 elbowDir = (torso.up * -0.8f + (-torso.right) * 1f + torso.forward * -0.25f).normalized; // -0.6f + (-torso.right) * 0.5f + torso.forward * 0.25f
 
             // Guard against collinearity with the target direction (the degenerate case above)
             if (Mathf.Abs(Vector3.Dot(elbowDir, toTarget)) > 0.1f) // 0.9f
