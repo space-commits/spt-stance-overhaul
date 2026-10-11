@@ -85,7 +85,10 @@ namespace StanceOverhaul.Patches
         [PatchPostfix]
         private static void Postfix(Player __instance)
         {
-            if (!WeaponStateInstance.TreatAsPistol || ReloadStateInstance.IsInReloadOpertation)
+            bool cancelForPistol = WeaponStateInstance.TreatAsPistol && ReloadStateInstance.IsInReloadOpertation;
+            bool cancelForRifle = !WeaponStateInstance.TreatAsPistol && ReloadStateInstance.IsInReloadOpertation;
+
+            if (PlayerStateInstance.IsMounting || PlayerStateInstance.IsUsingStationaryWeapon)
                 return;
 
             LimbIK[] limbs = (LimbIK[])_iKArrayField.GetValue(__instance);
@@ -104,11 +107,11 @@ namespace StanceOverhaul.Patches
             Transform torso = __instance.ProceduralWeaponAnimation.HandsContainer.TrackingTransform; // swap for a spine/chest bone if you have one
 
             // Elbow points down, outward (left, for the left arm), slightly forward.
-            Vector3 elbowDir = (torso.up * -0.6f + (-torso.right) * 0.5f + torso.forward * 0.25f).normalized;
+            Vector3 elbowDir = (torso.up * -0.08f + (-torso.right) * 1f + torso.forward * -0.25f).normalized; // -0.6f + (-torso.right) * 0.5f + torso.forward * 0.25f
 
             // Guard against collinearity with the target direction (the degenerate case above)
-            if (Mathf.Abs(Vector3.Dot(elbowDir, toTarget)) > 0.9f)
-                elbowDir = Vector3.Slerp(elbowDir, torso.forward, 0.5f).normalized;
+            if (Mathf.Abs(Vector3.Dot(elbowDir, toTarget)) > 0.1f) // 0.9f
+                elbowDir = Vector3.Slerp(elbowDir, torso.forward, -0.1f).normalized; //  0.5f
 
             solver.bendGoal.position = shoulderPos + elbowDir; // direction matters, magnitude doesn't
         }

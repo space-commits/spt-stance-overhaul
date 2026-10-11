@@ -110,6 +110,7 @@ namespace StanceOverhaul.SubSystem.Animator
             get
             {
                 return
+                    !WeaponStateInstance.IsShotgun &&
                     (StanceControllerInstance.CurrentReloadType == EStanceReloadType.CheckChamber && _chamberCheckTimer.IsActive) ||
                     (StanceControllerInstance.CurrentReloadType == EStanceReloadType.Rechamber && _rechamberTimer.IsActive) ||
                     (StanceControllerInstance.CurrentReloadType == EStanceReloadType.ClearMalfunction && _rechamberTimer.IsActive);
@@ -292,7 +293,7 @@ namespace StanceOverhaul.SubSystem.Animator
                 var rotationOffset = RotateHighReadyReload ? 20f : RotateHighReadyManip ? 5f : 0f;
                 _targetRotOffest += new Vector3(0f, rotationOffset, 0f);
 
-                var yOffset = RotateHighReadyReload ? -0.05f : RotateHighReadyManip ? -0.025f : 0f;
+                var yOffset = RotateHighReadyReload ? -0.05f : RotateHighReadyManip ? -0.04f : 0f;
                 var zOffset = RotateHighReadyReload ? 0.05f : RotateHighReadyManip ? 0.025f : 0f;
                 _targetPosOffest += new Vector3(0f, yOffset, zOffset);
             }
