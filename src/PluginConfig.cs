@@ -236,6 +236,7 @@ namespace StanceOverhaul
         public static ConfigEntry<bool> BlockFiring { get; set; }
         public static ConfigEntry<bool> RememberStanceFiring { get; set; }
         public static ConfigEntry<bool> RememberStanceItem { get; set; }
+        public static ConfigEntry<bool> LeanLeftTogglesLeftShoulder { get; set; }
         public static ConfigEntry<bool> EnableExtraProcEffects { get; set; }
         public static ConfigEntry<float> StanceBlendSpeed { get; set; }
         public static ConfigEntry<float> GlobalStanceSpeed { get; set; }
@@ -349,6 +350,7 @@ namespace StanceOverhaul
             StanceWheelComboKeyBind = config.Bind(controls, "Keybind To Use With Mouse Wheel", new KeyboardShortcut(KeyCode.LeftAlt), new ConfigDescription("Key Used In Combination With Mouse Wheel If Enabled ", null, new ConfigurationManagerAttributes { Order = 180, Browsable = true }));
             RememberStanceItem = config.Bind<bool>(controls, "Remember Stance After Using Item", true, new ConfigDescription("Remember Stance After Actions (Using Items)", null, new ConfigurationManagerAttributes { Order = 260, Browsable = true }));
             RememberStanceFiring = config.Bind<bool>(controls, "Remember Stance After Firing", true, new ConfigDescription("Remember Stance After Firing If The Player Was Aiming.", null, new ConfigurationManagerAttributes { Order = 260, Browsable = true }));
+            LeanLeftTogglesLeftShoulder = config.Bind<bool>(controls, "Toggle Left Shoulder On Lean", false, new ConfigDescription("Automatically toggles left stance on lean.", null, new ConfigurationManagerAttributes { Order = 240, Browsable = true }));
             BlockFiring = config.Bind<bool>(controls, "Block Shooting While In Stance", true, new ConfigDescription("Blocks Firing While In A Stance, Will Cancel Stance If Attempting To Fire.", null, new ConfigurationManagerAttributes { Order = 250, Browsable = true }));
 
             ActiveAimKeybind = config.Bind(activeAim, "Active Aim Keybind", new KeyboardShortcut(KeyCode.Mouse4), new ConfigDescription("Cants The Weapon Sideways, Improving Hipfire Accuracy.", null, new ConfigurationManagerAttributes { Order = 110, Browsable = true }));
@@ -431,7 +433,7 @@ namespace StanceOverhaul
             LowReadyMagazineReloadSpeedModifier = config.Bind<float>(lowReady, "Low Ready Magazine Reload Speed Modifier", 0.95f, new ConfigDescription("Multiplier applied to magazine reload speed while in Low Ready.", new AcceptableValueRange<float>(0f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 18, IsAdvanced = true, Browsable = true }));
             LowReadyWeaponManipSpeedModifier = config.Bind<float>(lowReady, "Low Ready Chamber Reload Speed Modifier", 0.98f, new ConfigDescription("Multiplier applied to chamber check, rechamber, malf fix speed while in Low Ready.", new AcceptableValueRange<float>(0f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 17, IsAdvanced = true, Browsable = true }));
             LowReadyTubeReloadSpeedModifier = config.Bind<float>(lowReady, "Low Ready Tube Reload Speed Modifier", 0.95f, new ConfigDescription("Multiplier applied to tube reload speed while in Low Ready.", new AcceptableValueRange<float>(0f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 16, IsAdvanced = true, Browsable = true }));
-            LowReadyTopReloadSpeedModifier = config.Bind<float>(lowReady, "Low Ready Top Reload Speed Modifier", 1.05f, new ConfigDescription("Multiplier applied to top reload speed while in Low Ready.", new AcceptableValueRange<float>(0f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 15, IsAdvanced = true, Browsable = true }));
+            LowReadyTopReloadSpeedModifier = config.Bind<float>(lowReady, "Low Ready Top Reload Speed Modifier", 1.08f, new ConfigDescription("Multiplier applied to top reload speed while in Low Ready.", new AcceptableValueRange<float>(0f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 15, IsAdvanced = true, Browsable = true }));
 
             ShortStockKeybind = config.Bind(shortStock, "Short-Stock Keybind", new KeyboardShortcut(KeyCode.J), new ConfigDescription("Tucks The Weapon's Stock Under Player's Arm, Shortening The Overall Length Of The Wweapon To Prevent Muzzle Being Pushed Away From Target.", null, new ConfigurationManagerAttributes { Order = 10, Browsable = true }));
             ShortStockWalkSpeedBonus = config.Bind<float>(shortStock, "Short-Stock Walk Speed Modifier", 0.9f, new ConfigDescription("Multiplier applied to walk speed while Short-Stocking.", new AcceptableValueRange<float>(0.1f, 5f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 9, Browsable = true }));

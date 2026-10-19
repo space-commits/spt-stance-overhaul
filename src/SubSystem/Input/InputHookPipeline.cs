@@ -66,7 +66,7 @@ namespace StanceOverhaul.Controllers.PatchHooks
                 case ECommand.LeftStanceToggle:
                     return true;
                 case ECommand.WeaponMounting:
-                    return PluginConfig.OverrideMounting.Value;
+                    return false; //PluginConfig.OverrideMounting.Value;
                 default:
                     return false;
             }

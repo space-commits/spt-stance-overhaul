@@ -21,7 +21,6 @@ using ReloadClass = EFT.Player.FirearmController.Idling;
 
 namespace StanceOverhaul.Patches
 {
-
     public class HandIKPatch : ModulePatch
     {
         private static FieldInfo _iKArrayField;

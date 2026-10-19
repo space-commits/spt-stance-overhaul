@@ -111,7 +111,7 @@ public class StanceStaminaSystem : ISubSystem
     {
         get
         {
-            return StanceControllerInstance.CurrentStanceType == EStanceType.ActiveAiming && PlayerStateInstance.Player.Pose == EPlayerPose.Duck;
+            return StanceControllerInstance.CurrentStanceType == EStanceType.ActiveAiming && (PlayerStateInstance.Player.Pose == EPlayerPose.Duck);
         }
     }
 

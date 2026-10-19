@@ -10,7 +10,7 @@ using static StanceOverhaul.Plugin;
 
 namespace StanceOverhaul.SubSystem.StanceInput
 {
-    // Yes, the input system is AI-slopified, except it saved me hours of work dealing with persistent bugs, sue me!
+    // Yes, the input system is AI-slopified, except it saved me hours of work dealing with persistent bugs and actually works, sue me!
     //
     //
     // Turns player input and game events into stance changes.
@@ -19,6 +19,8 @@ namespace StanceOverhaul.SubSystem.StanceInput
     //
     //   Intent       _chosen            the stance the player has toggled on (null = none)
     //                _beforeActiveAim   the stance to go back to when active aim is switched off
+    //                _leftShoulderFromLean / _beforeLeanLeftShoulder
+    //                                   left shoulder was put on by a full left lean, and what to go back to when it ends
     //
     //   Suppressors  aiming (plus a short settle delay), a reload that pauses the stance, an item in hand.
     //                While one applies, the stance is put away but the intent is left alone.
@@ -37,13 +39,15 @@ namespace StanceOverhaul.SubSystem.StanceInput
     {
         // After ADS ends, wait this long before bringing the stance back. If the aim state flickers while the
         // ADS transition settles, the stance is never re-requested, so it can't flash on screen.
-        private const float RestoreAfterADSDelay = 0.1f;
+        private const float RestoreAfterADSDelay = 0.05f;
 
         private readonly StanceState _stanceState;
 
         // ---- Intent ----
         private IStance? _chosen;
         private IStance? _beforeActiveAim;
+        private bool _leftShoulderFromLean;
+        private IStance? _beforeLeanLeftShoulder;
 
         // ---- Suppressors ----
         private bool _isAiming;
@@ -95,6 +99,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             StanceInputEvents.OnActiveAimKeyDown += EnterActiveAim;
             StanceInputEvents.OnActiveAimKeyUp += ExitActiveAim;
             InputEvents.ToggleLeftStanceInput += ToggleLeftShoulder;
+            PlayerEvents.OnFullLeftLeanChanged += OnFullLeftLeanChanged;
             StanceEvents.OnStanceReload += OnReloadStarted;
             StanceEvents.OnStanceReloadReset += OnReloadFinished;
             StanceEvents.OnTransformsInit += OnWeaponInit;
@@ -119,6 +124,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             StanceInputEvents.OnActiveAimKeyDown -= EnterActiveAim;
             StanceInputEvents.OnActiveAimKeyUp -= ExitActiveAim;
             InputEvents.ToggleLeftStanceInput -= ToggleLeftShoulder;
+            PlayerEvents.OnFullLeftLeanChanged -= OnFullLeftLeanChanged;
             StanceEvents.OnStanceReload -= OnReloadStarted;
             StanceEvents.OnStanceReloadReset -= OnReloadFinished;
             StanceEvents.OnTransformsInit -= OnWeaponInit;
@@ -186,6 +192,10 @@ namespace StanceOverhaul.SubSystem.StanceInput
         {
             _chosen = stance;
             _beforeActiveAim = null; // only meaningful while active aim is chosen, callers set it afterwards
+
+            // Any other change of intent (a key press, a weapon swap, ...) means the lean no longer owns left shoulder
+            _leftShoulderFromLean = false;
+            _beforeLeanLeftShoulder = null;
         }
 
         // Makes StanceState match what should be showing right now. Idempotent, safe to call from anywhere.
@@ -284,6 +294,58 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
             SetChosen(_beforeActiveAim);
             Reconcile();
+        }
+
+        // ================= Leaning =================
+
+        private void OnFullLeftLeanChanged(bool isFullyLeaningLeft)
+        {
+            if (isFullyLeaningLeft)
+                EnterLeanLeftShoulder();
+            else
+                ExitLeanLeftShoulder();
+        }
+
+        private void EnterLeanLeftShoulder()
+        {
+            var leftShoulder = StanceControllerInstance.LeftShoulder;
+
+            if (!PluginConfig.LeanLeftTogglesLeftShoulder.Value || !CanLeanEnterLeftShoulder(leftShoulder))
+                return;
+
+            // Only a remembered stance is worth going back to
+            var previous = IsRemembered(_chosen) ? _chosen : null;
+
+            SetChosen(leftShoulder);
+            _leftShoulderFromLean = true;
+            _beforeLeanLeftShoulder = previous;
+
+            Reconcile();
+        }
+
+        // Not gated by the config, so a lean that started with it on still cleans up after itself.
+        private void ExitLeanLeftShoulder()
+        {
+            // Cleared by SetChosen if anything (e.g. the left shoulder key) changed the stance during the lean
+            if (!_leftShoulderFromLean)
+                return;
+
+            SetChosen(_beforeLeanLeftShoulder);
+            Reconcile();
+        }
+
+        private bool CanLeanEnterLeftShoulder(IStance leftShoulder)
+        {
+            var isLeft = _chosen?.StanceType == EStanceType.LeftShoulder || _stanceState.ActiveStance?.StanceType == EStanceType.LeftShoulder;
+            var weaponAllowsLeft = !PlayerStateInstance.WeaponIsReady || WeaponStateInstance.IsPistol;
+            var statePreventsLeft = PlayerStateInstance.IsUsingStationaryWeapon || PlayerStateInstance.IsMounting;
+
+            if (isLeft || weaponAllowsLeft || statePreventsLeft)
+                return false;
+
+            // Same rules as the key: no stockless machine pistols, not while an item is in hand or a reload pauses it.
+            // Aiming does not block it, left shoulder survives ADS.
+            return IsAllowedOnCurrentWeapon(leftShoulder) && !IsSuppressed(leftShoulder);
         }
 
         // ================= Aiming =================

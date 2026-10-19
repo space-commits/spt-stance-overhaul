@@ -88,7 +88,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
             if (UnityEngine.Input.GetKey(PluginConfig.StanceWheelComboKeyBind.Value.MainKey) &&
                 PluginConfig.UseMouseWheelPlusKey.Value ||
-                !PluginConfig.UseMouseWheelPlusKey.Value && !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.LeftAlt))
+                !PluginConfig.UseMouseWheelPlusKey.Value && !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.C))
             {
                 float scrollDelta = Input.mouseScrollDelta.y;
 

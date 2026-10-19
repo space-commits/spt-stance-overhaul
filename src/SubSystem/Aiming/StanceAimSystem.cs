@@ -9,6 +9,9 @@ namespace StanceOverhaul.SubSystem.Aiming
 {
     public class StanceAimSystem : ISubSystem
     {
+        private const float AdsInSpeed = 9.5f;
+        private const float AdsOutSpeed = 4.15f;
+
         private BoolGateHandle _canAim;
         private bool _blockerInterruptedAim;
         private static Vector3 _smoothedOffset;
@@ -117,7 +120,7 @@ namespace StanceOverhaul.SubSystem.Aiming
                 correction.y = 0f;
             }
 
-            float speed = (pwa.IsAiming ? 8f : 4f) * StanceControllerInstance.PwaAimSpeed;
+            float speed = (pwa.IsAiming ? AdsInSpeed : AdsOutSpeed) * StanceControllerInstance.PwaAimSpeed;
             float t = 1f - Mathf.Exp(-speed * dt);
             _smoothedOffset = Vector3.Lerp(_smoothedOffset, correction, t);
 
