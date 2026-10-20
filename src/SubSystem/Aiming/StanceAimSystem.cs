@@ -11,13 +11,29 @@ namespace StanceOverhaul.SubSystem.Aiming
     {
         private const float AdsInSpeed = 9.5f;
         private const float AdsOutSpeed = 4.15f;
+        // scaled by PWA aim speed, same as the camera's own aim lerp
+        private const float AltAimBlendSpeed = 4.5f;
+        private const float WeightSnapThreshold = 0.001f;
+        private const float OffsetSnapThresholdSqr = 1e-10f;
+
+        // exponent on left shoulder stance progress: 1 = linear with the stance,
+        // >1 = camera hands over later in the transition, <1 = earlier
+        private const float LeftShoulderBlendTiming = 0.1f;
 
         private BoolGateHandle _canAim;
         private bool _blockerInterruptedAim;
         private static Vector3 _smoothedOffset;
+        private float _gateWeight;
+
+        // 1 = alt aim (gun moves to camera), 0 = vanilla (camera moves to sights)
+        public float AltAimWeight { get; private set; }
 
         public void RunOnAwake()
         {
+            _smoothedOffset = Vector3.zero;
+            AltAimWeight = 0f;
+            _gateWeight = 0f;
+
             RealismCommonLib.Events.PlayerEvents.OnPlayerInit += CheckForAimBlockers;
             RealismCommonLib.Events.PlayerEvents.AimStateChanged += CheckForAimBlockers;
             RealismCommonLib.Events.PlayerEvents.ToggleHeadDevice += CheckForAimBlockers;
@@ -76,23 +92,42 @@ namespace StanceOverhaul.SubSystem.Aiming
 
         public void MoveGunToCamera(ProceduralWeaponAnimation pwa, float dt)
         {
-            if (!PlayerStateInstance.WeaponIsReady
-                  || !StanceControllerInstance.CanMoveGunToCamera
-                  || pwa == null || pwa.HandsContainer == null
+            if (pwa == null || pwa.HandsContainer == null
                   || pwa.HandsContainer.WeaponRootAnim == null
                   || pwa.HandsContainer.CameraTransform == null)
                 return;
 
+            // shared blend between alt aim (gun to camera) and vanilla (camera to sights), also read by CalculateCameraPositionPatch
+            // so both sides hand over together instead of hard switching, e.g. when toggling left shoulder while aiming
+            // config/mount/stationary/weapon gates have no progress of their own, so ease them over time
+            bool altAimAllowed = PlayerStateInstance.WeaponIsReady && StanceControllerInstance.CanMoveGunToCamera;
+            float gateT = 1f - Mathf.Exp(-AltAimBlendSpeed * StanceControllerInstance.PwaAimSpeed * dt);
+            _gateWeight = Mathf.Lerp(_gateWeight, altAimAllowed ? 1f : 0f, gateT);
+            
+            if (Mathf.Abs(_gateWeight - (altAimAllowed ? 1f : 0f)) < WeightSnapThreshold)
+                _gateWeight = altAimAllowed ? 1f : 0f;
+
+            // left shoulder hands over in step with the stance's own progress, so the camera moves with the gun
+            float leftShoulderPose = StanceControllerInstance.LeftShoulderPoseWeight;
+            float stanceWeight = 1f - Mathf.Pow(leftShoulderPose, LeftShoulderBlendTiming);
+
+            AltAimWeight = _gateWeight * stanceWeight;
+
+            // weapon swap: offset belongs to the old weapon, don't carry it over
+            if (!PlayerStateInstance.WeaponIsReady)
+            {
+                _smoothedOffset = Vector3.zero;
+                return;
+            }
+
             Transform root = pwa.HandsContainer.WeaponRootAnim;
             Transform camera = pwa.HandsContainer.CameraTransform;
-            var scope = pwa?.CurrentScope;
-
-            if (scope == null || scope?.Bone == null)
-                return;
+            var scope = pwa.CurrentScope;
 
             var correction = Vector3.zero;
 
-            if (pwa.IsAiming)
+            // when alt aim is inactive the target is zero, so the offset bleeds out instead of vanishing in one frame
+            if (pwa.IsAiming && AltAimWeight > 0f && scope != null && scope.Bone != null)
             {
                 Transform parent = root.parent;
                 Transform sight = scope.Bone;
@@ -118,11 +153,20 @@ namespace StanceOverhaul.SubSystem.Aiming
                 // Z = up/down
                 // Ignore forward/back, let camera handle it
                 correction.y = 0f;
+
+                correction *= AltAimWeight;
             }
 
             float speed = (pwa.IsAiming ? AdsInSpeed : AdsOutSpeed) * StanceControllerInstance.PwaAimSpeed;
             float t = 1f - Mathf.Exp(-speed * dt);
             _smoothedOffset = Vector3.Lerp(_smoothedOffset, correction, t);
+
+            // fully handed back to vanilla, stop touching the weapon root
+            if (AltAimWeight <= 0f && _smoothedOffset.sqrMagnitude < OffsetSnapThresholdSqr)
+            {
+                _smoothedOffset = Vector3.zero;
+                return;
+            }
 
             // float smoothTime = pwa.IsAiming ? PluginConfig.test3.Value : PluginConfig.test4.Value;
             // smoothTime /= Mathf.Max(StanceControllerInstance.PwaAimSpeed, 0.01f);

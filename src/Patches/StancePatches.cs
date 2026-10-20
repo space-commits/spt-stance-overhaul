@@ -584,7 +584,9 @@ namespace StanceOverhaul.Patches
             Player player = (Player)_playerField.GetValue(firearmController);
             if (player != null && player.IsYourPlayer && __instance.HandsContainer.WeaponRootAnim)
             {
-                if (StanceControllerInstance.CanMoveGunToCamera && PlayerStateInstance.WeaponIsReady)
+                // blended with the vanilla (camera to sights) target by the same weight the gun offset uses
+                float altAimWeight = StanceControllerInstance.AltAimWeight;
+                if (altAimWeight > 0f)
                 {
                     Vector3 animatorBlendTarget = Vector3.zero;
                     foreach (ValueTuple<AnimatorPose, float, bool> valueTuple in __instance.ActiveBlends)
@@ -597,8 +599,12 @@ namespace StanceOverhaul.Patches
                     var animatorPoseBlend = (float)_poseBlendField.GetValue(__instance);
                     var cameraByFOVOffset = (Vector3)_cameraByFOVOffsetField.GetValue(__instance);
                     var xyOverride = __instance.HandsContainer.CameraOffset + cameraByFOVOffset + __instance.TurnAway.CameraShift;
-                    xyOverride = ((animatorPoseBlend > 0f) ? (xyOverride + animatorBlendTarget) : xyOverride);
-                    __instance._vCameraTarget = new Vector3(xyOverride.x, xyOverride.y, __instance._vCameraTarget.z);
+                    xyOverride = (animatorPoseBlend > 0f) ? (xyOverride + animatorBlendTarget) : xyOverride;
+                    Vector3 vanillaTarget = __instance._vCameraTarget;
+                    __instance._vCameraTarget = new Vector3(
+                        Mathf.Lerp(vanillaTarget.x, xyOverride.x, altAimWeight),
+                        Mathf.Lerp(vanillaTarget.y, xyOverride.y, altAimWeight),
+                        vanillaTarget.z);
 
                 }
 

@@ -132,7 +132,26 @@ namespace StanceOverhaul.Controllers
         {
             get
             {
-                return PluginConfig.EnableAltAim.Value && _stanceState.ActiveStanceType != EStanceType.LeftShoulder && !PlayerStateInstance.IsMounting && !PlayerStateInstance.IsUsingStationaryWeapon;
+                // left shoulder is not gated here, it's blended by stance progress via LeftShoulderPoseWeight
+                return PluginConfig.EnableAltAim.Value && !PlayerStateInstance.IsMounting && !PlayerStateInstance.IsUsingStationaryWeapon;
+            }
+        }
+
+        // 0 = not in left shoulder, 1 = fully at left shoulder pose, follows the stance's enter/exit progress
+        public float LeftShoulderPoseWeight
+        {
+            get
+            {
+                return _stanceState != null ? _stanceState.GetPoseWeight(EStanceType.LeftShoulder) : 0f;
+            }
+        }
+
+        // eased version of CanMoveGunToCamera, used to blend the camera target with the gun offset
+        public float AltAimWeight
+        {
+            get
+            {
+                return _aimSystem != null ? _aimSystem.AltAimWeight : 0f;
             }
         }
 

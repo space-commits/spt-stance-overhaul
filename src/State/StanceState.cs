@@ -97,6 +97,27 @@ namespace StanceOverhaul.State
 
         public bool IsIdle => ActiveStance == null;
 
+        /// <summary>
+        /// How much of the given stance's pose is currently applied, 0 = none/idle, 1 = fully at pose.
+        /// Follows the stance whether it's primary or incoming, entering or exiting, and mirrors the
+        /// primary/incoming cross-fade weight used in UpdateTransforms.
+        /// </summary>
+        public float GetPoseWeight(EStanceType stanceType)
+        {
+            StanceSlot? incoming = _incomingPaused ? null : _incoming;
+            bool isBlending = PrimarySlot != null && incoming != null;
+            float incomingBlend = isBlending ? incoming!.Progress : 0f;
+            float weight = 0f;
+
+            if (PrimarySlot != null && PrimarySlot.Stance.StanceType == stanceType)
+                weight += PrimarySlot.DistanceToPose * (isBlending ? 1f - incomingBlend : 1f);
+
+            if (incoming != null && incoming.Stance.StanceType == stanceType)
+                weight += incoming.DistanceToPose * (isBlending ? incomingBlend : 1f);
+
+            return Mathf.Clamp01(weight);
+        }
+
         public void RunOnAwake()
         {
         }
