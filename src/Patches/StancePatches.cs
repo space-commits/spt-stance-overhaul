@@ -405,8 +405,8 @@ namespace StanceOverhaul.Patches
             __instance.HipInaccuracy = 1f - Mathf.Clamp01(ergo.Value / 250f - 0.15f);
             player.ProceduralWeaponAnimation.Breath.HipPenalty = __instance.HipInaccuracy;
 
-            __instance.HipInaccuracy *= _deviceBonus * StanceControllerInstance.StanceHipfireBonus * PluginConfig.test1.Value;
-            player.ProceduralWeaponAnimation.Breath.HipPenalty *= _deviceBonus * StanceControllerInstance.StanceHipfireBonus * PluginConfig.test2.Value;
+            __instance.HipInaccuracy *= _deviceBonus * StanceControllerInstance.StanceHipfireBonus;
+            player.ProceduralWeaponAnimation.Breath.HipPenalty *= _deviceBonus * StanceControllerInstance.StanceHipfireBonus;
 
             return false;
         }
@@ -430,7 +430,7 @@ namespace StanceOverhaul.Patches
             FirearmController firearmController = (FirearmController)_fcField.GetValue(__instance);
             if (firearmController == null) return;
             Player player = (Player)_playerField.GetValue(firearmController);
-            if (player == null) return;
+            if (player == null || !player.IsYourPlayer) return;
 
             StanceControllerInstance.PwaOriginalAimSpeed = ____aimingSpeed;
         }

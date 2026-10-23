@@ -45,6 +45,9 @@ namespace StanceOverhaul.Stances
         public abstract AnimationCurve ExitAimSpeedCurve { get; }
         public abstract AnimationCurve EnterAimSpeedCurve { get; }
 
+        public Vector3 AimPositionScale { get; }
+        public Vector3 AimRotationScale { get; }
+
         float BlendIntoThreshold(EStanceType nextStance);
         float TransitionFromModifier(EStanceType? previousStance);
         float TransitionToSpeedModifier(EStanceType? nextStance);

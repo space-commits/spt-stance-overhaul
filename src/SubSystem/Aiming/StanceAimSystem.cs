@@ -18,7 +18,7 @@ namespace StanceOverhaul.SubSystem.Aiming
 
         // exponent on left shoulder stance progress: 1 = linear with the stance,
         // >1 = camera hands over later in the transition, <1 = earlier
-        private const float LeftShoulderBlendTiming = 0.1f;
+        private const float LeftShoulderBlendTiming = 0.75f;
 
         private BoolGateHandle _canAim;
         private bool _blockerInterruptedAim;
@@ -159,6 +159,7 @@ namespace StanceOverhaul.SubSystem.Aiming
 
             float speed = (pwa.IsAiming ? AdsInSpeed : AdsOutSpeed) * StanceControllerInstance.PwaAimSpeed;
             float t = 1f - Mathf.Exp(-speed * dt);
+            
             _smoothedOffset = Vector3.Lerp(_smoothedOffset, correction, t);
 
             // fully handed back to vanilla, stop touching the weapon root

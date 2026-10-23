@@ -68,6 +68,13 @@ namespace StanceOverhaul.Stances
             );
 
         /// <summary>
+        /// Per-axis multiplier on this stance's pose while fully aimed, faded in/out with ADS.
+        /// 1 = axis unchanged, 0 = axis removed while aiming.
+        /// </summary>
+        public virtual Vector3 AimPositionScale => Vector3.one;
+        public virtual Vector3 AimRotationScale => Vector3.one;
+
+        /// <summary>
         /// Blend threshold for this stance when transitioning to another stance.
         /// Value of 0 means it will immediately let the next stance's animation take over, 
         /// while a value of 1 means it will fully play this stance's animation before transitioning.

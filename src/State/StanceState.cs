@@ -35,6 +35,11 @@ namespace StanceOverhaul.State
 
     internal class StanceState : ISubSystem
     {
+        // scaled by PWA aim speed, same as StanceAimSystem's ADS offset
+        private const float AimFadeInSpeed = 8.75f;
+        private const float AimFadeOutSpeed = 4.25f;
+        private const float AimWeightSnapThreshold = 0.001f;
+
         private StanceSlot? _primarySlot;
 
         private StanceSlot? PrimarySlot
@@ -56,6 +61,9 @@ namespace StanceOverhaul.State
 
         private Vector3 _smoothedPosition;
         private Vector3 _smoothedRotation;
+
+        // 0 = not aiming, 1 = fully aimed, eased so each stance's AimPositionScale/AimRotationScale fades with ADS
+        private float _aimWeight;
 
         public Vector3 StancePosition { get; private set; }
         public Vector3 StanceRotation { get; private set; }
@@ -171,8 +179,39 @@ namespace StanceOverhaul.State
             UpdateTransforms(deltaTime);
         }
 
+        private void UpdateAimWeight(float deltaTime)
+        {
+            bool isAiming = AimStateInstance.IsAiming;
+            float target = isAiming ? 1f : 0f;
+            float speed = (isAiming ? AimFadeInSpeed : AimFadeOutSpeed) * StanceControllerInstance.PwaAimSpeed;
+            float t = 1f - Mathf.Exp(-speed * deltaTime);
+            _aimWeight = Mathf.Lerp(_aimWeight, target, t);
+
+            if (Mathf.Abs(_aimWeight - target) < AimWeightSnapThreshold)
+                _aimWeight = target;
+        }
+
+        // scaled per slot, before the cross-fade, so stances with different aim scales blend without popping
+        private Vector3 EvaluatePosition(StanceSlot slot)
+        {
+            return ApplyAimScale(slot.EvaluatePosition(), slot.Stance.AimPositionScale);
+        }
+
+        private Vector3 EvaluateRotation(StanceSlot slot)
+        {
+            return ApplyAimScale(slot.EvaluateRotation(), slot.Stance.AimRotationScale);
+        }
+
+        private Vector3 ApplyAimScale(Vector3 value, Vector3 aimScale)
+        {
+            if (_aimWeight <= 0f) return value;
+            return Vector3.Scale(value, Vector3.Lerp(Vector3.one, aimScale, _aimWeight));
+        }
+
         private void UpdateTransforms(float deltaTime)
         {
+            UpdateAimWeight(deltaTime);
+
             //evaluate output from active slots
             var rawPos = Vector3.zero;
             var rawRot = Vector3.zero;
@@ -180,18 +219,18 @@ namespace StanceOverhaul.State
             if (PrimarySlot != null && _incoming != null && !_incomingPaused)
             {
                 float weight = _incoming.Progress;
-                rawPos = Vector3.Lerp(PrimarySlot.EvaluatePosition(), _incoming.EvaluatePosition(), weight);
-                rawRot = Vector3.Lerp(PrimarySlot.EvaluateRotation(), _incoming.EvaluateRotation(), weight);
+                rawPos = Vector3.Lerp(EvaluatePosition(PrimarySlot), EvaluatePosition(_incoming), weight);
+                rawRot = Vector3.Lerp(EvaluateRotation(PrimarySlot), EvaluateRotation(_incoming), weight);
             }
             else if (PrimarySlot != null)
             {
-                rawPos = PrimarySlot.EvaluatePosition();
-                rawRot = PrimarySlot.EvaluateRotation();
+                rawPos = EvaluatePosition(PrimarySlot);
+                rawRot = EvaluateRotation(PrimarySlot);
             }
             else if (_incoming != null)
             {
-                rawPos = _incoming.EvaluatePosition();
-                rawRot = _incoming.EvaluateRotation();
+                rawPos = EvaluatePosition(_incoming);
+                rawRot = EvaluateRotation(_incoming);
             }
 
             //output smoothing
