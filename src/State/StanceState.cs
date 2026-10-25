@@ -107,8 +107,7 @@ namespace StanceOverhaul.State
 
         /// <summary>
         /// How much of the given stance's pose is currently applied, 0 = none/idle, 1 = fully at pose.
-        /// Follows the stance whether it's primary or incoming, entering or exiting, and mirrors the
-        /// primary/incoming cross-fade weight used in UpdateTransforms.
+        /// Follows the stance whether it's primary or incoming, entering or exiting.
         /// </summary>
         public float GetPoseWeight(EStanceType stanceType)
         {
@@ -179,6 +178,11 @@ namespace StanceOverhaul.State
             UpdateTransforms(deltaTime);
         }
 
+        /// <summary>
+        /// Aproximates how far aiming has progressed. 
+        /// Used to fade stance axes in and out while aiming.
+        /// </summary>
+        /// <param name="deltaTime"></param>
         private void UpdateAimWeight(float deltaTime)
         {
             bool isAiming = AimStateInstance.IsAiming;

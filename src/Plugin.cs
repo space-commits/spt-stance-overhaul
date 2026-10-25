@@ -47,6 +47,8 @@ namespace StanceOverhaul
             new PropSoundPatch().Enable();
             new LerpCameraPatch().Enable();
             new VisualPassPatch().Enable();
+            new PreRecoilPosePatch().Enable();
+            new PostRecoilPosePatch().Enable();
 
             //State & Stats
             //new OperateStationaryWeaponPatch().Enable();

@@ -10,7 +10,10 @@ namespace StanceOverhaul.SubSystem.Aiming
     public class StanceAimSystem : ISubSystem
     {
         private const float AdsInSpeed = 9.5f;
+        private const float AdsInSpeedRecoilModifier = 0.4f;
         private const float AdsOutSpeed = 4.15f;
+        private const float AdsOutSpeedRecoilModifer = 0.5f;
+
         // scaled by PWA aim speed, same as the camera's own aim lerp
         private const float AltAimBlendSpeed = 4.5f;
         private const float WeightSnapThreshold = 0.001f;
@@ -101,9 +104,9 @@ namespace StanceOverhaul.SubSystem.Aiming
             // so both sides hand over together instead of hard switching, e.g. when toggling left shoulder while aiming
             // config/mount/stationary/weapon gates have no progress of their own, so ease them over time
             bool altAimAllowed = PlayerStateInstance.WeaponIsReady && StanceControllerInstance.CanMoveGunToCamera;
-            float gateT = 1f - Mathf.Exp(-AltAimBlendSpeed * StanceControllerInstance.PwaAimSpeed * dt);
-            _gateWeight = Mathf.Lerp(_gateWeight, altAimAllowed ? 1f : 0f, gateT);
-            
+            float gateSpeed = 1f - Mathf.Exp(-AltAimBlendSpeed * StanceControllerInstance.PwaAimSpeed * dt);
+            _gateWeight = Mathf.Lerp(_gateWeight, altAimAllowed ? 1f : 0f, gateSpeed);
+
             if (Mathf.Abs(_gateWeight - (altAimAllowed ? 1f : 0f)) < WeightSnapThreshold)
                 _gateWeight = altAimAllowed ? 1f : 0f;
 
@@ -137,6 +140,9 @@ namespace StanceOverhaul.SubSystem.Aiming
 
                 Vector3 sightInParent = parent.InverseTransformPoint(sight.position);
 
+                // target where the sight would be without recoil, so recoil plays out instead of being pulled back to the camera
+                sightInParent = RecoilPoseCapture.RemoveRecoil(pwa, sightInParent);
+
                 //correct = offset from where the weapon is to where it should be
                 correction = cameraInParent - sightInParent;
 
@@ -157,9 +163,12 @@ namespace StanceOverhaul.SubSystem.Aiming
                 correction *= AltAimWeight;
             }
 
-            float speed = (pwa.IsAiming ? AdsInSpeed : AdsOutSpeed) * StanceControllerInstance.PwaAimSpeed;
+            float recoilModifierIn = FiringStateInstance.IsFiring ? AdsInSpeedRecoilModifier : 1f;
+            float recoilModifierOut = FiringStateInstance.IsFiring ? AdsOutSpeedRecoilModifer : 1f;
+
+            float speed = (pwa.IsAiming ? AdsInSpeed * recoilModifierIn : AdsOutSpeed * recoilModifierOut) * StanceControllerInstance.PwaAimSpeed;
             float t = 1f - Mathf.Exp(-speed * dt);
-            
+
             _smoothedOffset = Vector3.Lerp(_smoothedOffset, correction, t);
 
             // fully handed back to vanilla, stop touching the weapon root

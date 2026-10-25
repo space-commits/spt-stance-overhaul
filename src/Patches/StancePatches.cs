@@ -7,6 +7,7 @@ using HarmonyLib;
 using SPT.Reflection.Patching;
 using StanceOverhaul.Events;
 using StanceOverhaul.Enums;
+using StanceOverhaul.SubSystem.Aiming;
 using System;
 using System.Reflection;
 using System.Collections.Generic;
@@ -609,6 +610,38 @@ namespace StanceOverhaul.Patches
                 }
 
             }
+        }
+    }
+
+    // weapon pose just before EFT's rotation recoil, DeferredRotateWithCustomOrder runs right before it in ApplyComplexRotation
+    public class PreRecoilPosePatch : ModulePatch
+    {
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(ProceduralWeaponAnimation), nameof(ProceduralWeaponAnimation.DeferredRotateWithCustomOrder));
+        }
+
+        [PatchPostfix]
+        private static void PatchPostfix(ProceduralWeaponAnimation __instance, Vector3 ____temporaryPosition, Quaternion ____temporaryRotation)
+        {
+            if (PlayerStateInstance?.PWA != __instance) return;
+            RecoilPoseCapture.CapturePreRecoil(__instance.HandsContainer.WeaponRootAnim.parent, ____temporaryPosition, ____temporaryRotation);
+        }
+    }
+
+    // weapon pose just after EFT's rotation recoil, ApplyAimingAlignment runs right after it in ApplyComplexRotation
+    public class PostRecoilPosePatch : ModulePatch
+    {
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(ProceduralWeaponAnimation), nameof(ProceduralWeaponAnimation.ApplyAimingAlignment));
+        }
+
+        [PatchPrefix]
+        private static void PatchPrefix(ProceduralWeaponAnimation __instance, Vector3 ____temporaryPosition, Quaternion ____temporaryRotation)
+        {
+            if (PlayerStateInstance?.PWA != __instance) return;
+            RecoilPoseCapture.CapturePostRecoil(__instance.HandsContainer.WeaponRootAnim.parent, ____temporaryPosition, ____temporaryRotation);
         }
     }
 
