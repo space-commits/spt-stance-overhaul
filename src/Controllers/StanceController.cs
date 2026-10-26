@@ -264,7 +264,8 @@ namespace StanceOverhaul.Controllers
         public StatsSystem StatsHandlerInstance => _statsSystem;
         public bool IsDoingTacSprint => _tacSprintSystem.IsDoingTacSprint;
 
-        public float StanceHipfireBonus => _stanceState.ActiveStance?.HipfireBonus ?? 1f;
+        // never while aiming, for any stance, so a hipfire bonus can't leak into ADS
+        public float StanceHipfireBonus => AimStateInstance.IsAiming ? 1f : _stanceState.ActiveStance?.HipfireBonus ?? 1f;
 
         void Awake()
         {
@@ -428,16 +429,25 @@ namespace StanceOverhaul.Controllers
         private void SubscribeToStanceEvents()
         {
             StanceEvents.OnPrimaryStanceChanged += UpdatePlayerStateOnStanceChange;
+            PlayerEvents.AimStateChanged += UpdateHipInaccuracyOnAimChange;
         }
 
         private void UnsubscribeFromStanceEvents()
         {
             StanceEvents.OnPrimaryStanceChanged -= UpdatePlayerStateOnStanceChange;
+            PlayerEvents.AimStateChanged -= UpdateHipInaccuracyOnAimChange;
         }
 
         private void UpdatePlayerStateOnStanceChange()
         {
             PlayerStateInstance.ResetProceduralState();
+        }
+
+        // hip inaccuracy is a snapshot taken by UpdateHipInaccuracy, re-take it so StanceHipfireBonus follows the aim state
+        // (and a refresh during ADS, e.g. a scope change, doesn't leave the bonus off after aiming)
+        private void UpdateHipInaccuracyOnAimChange()
+        {
+            PlayerStateInstance.FirearmController?.UpdateHipInaccuracy();
         }
 
         private void SubscribeToInputEvents()

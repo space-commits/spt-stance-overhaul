@@ -78,6 +78,14 @@ public class StatsSystem : ISubSystem
     /// </summary>
     public float EffectiveWeaponWeight { get; private set; }
 
+    public float StrengthWeightModifier
+    {
+        get
+        {
+            return SkillStateInstance.StrengthLevel * 0.0075f;
+        }
+    }
+
     public void RunOnAwake()
     {
         WeaponStateInstance.OnWeaponStateChangedFc += UpdateStats;
@@ -181,4 +189,14 @@ public class StatsSystem : ISubSystem
         var modifier = WeaponStateInstance.TreatAsPistol ? -0.4f : -0.45f;
         return Mathf.Clamp(weightFactor * modifier, -5f, -0.5f);
     }
+
+    public float GetStrengthWeightValue(float baseValue)
+    {
+        return Mathf.Min(baseValue * (1f + StrengthWeightModifier), 6.9f);
+    }
+    public float GetStrengthErgoValue(float baseValue)
+    {
+        return Mathf.Max(baseValue * StrengthWeightModifier, 12f);
+    }
+    
 }

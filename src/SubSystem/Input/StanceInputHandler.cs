@@ -22,7 +22,8 @@ namespace StanceOverhaul.SubSystem.StanceInput
     //                _leftShoulderFromLean / _beforeLeanLeftShoulder
     //                                   left shoulder was put on by a full left lean, and what to go back to when it ends
     //
-    //   Suppressors  aiming (plus a short settle delay), a reload that pauses the stance, an item in hand.
+    //   Suppressors  aiming (plus a short settle delay, only for stances without IStance.DoesNotCancelOnAds),
+    //                a reload that pauses the stance, an item in hand.
     //                While one applies, the stance is put away but the intent is left alone.
     //
     // Every event edits intent and/or a suppressor and then calls Reconcile(), the only method that talks to
@@ -147,14 +148,9 @@ namespace StanceOverhaul.SubSystem.StanceInput
             if (_itemInHand || _reloadPausesStance)
                 return true;
 
-            return IsAimSuppressing && !SurvivesADS(stance);
-        }
-
-        // Left shoulder is compatible with ADS: aiming leaves it alone.
-        // (Could become a flag on IStance if more stances need this.)
-        private static bool SurvivesADS(IStance stance)
-        {
-            return stance.StanceType == EStanceType.LeftShoulder;
+            // Stances compatible with ADS (left shoulder, active aim) are left alone by aiming,
+            // StanceState fades out the parts of their pose they flag with AimPositionScale/AimRotationScale
+            return IsAimSuppressing && !stance.DoesNotCancelOnADS;
         }
 
         // Stances that come back after aiming (and after item use, if RememberStanceItem is on).
@@ -371,10 +367,10 @@ namespace StanceOverhaul.SubSystem.StanceInput
             _aimSettleTimer = 0f;
 
             // Only remembered stances (and ones that are compatible with ADS) outlive aiming
-            if (_chosen != null && !SurvivesADS(_chosen) && !IsRemembered(_chosen))
+            if (_chosen != null && !_chosen.DoesNotCancelOnADS && !IsRemembered(_chosen))
                 SetChosen(null);
 
-            // High Ready -> Active Aim -> ADS: forget High Ready, ADS ends back in Active Aim
+            // High Ready -> Active Aim -> ADS: forget High Ready, active aim stays through ADS and is still on after it
             _beforeActiveAim = null;
 
             Reconcile();

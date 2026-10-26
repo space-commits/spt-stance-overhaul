@@ -31,6 +31,18 @@ namespace StanceOverhaul.Stances
 
         public virtual bool BlocksFiring => true;
 
+        /// <summary>
+        /// The stance stays active while aiming instead of being put away. Use AimPositionScale/AimRotationScale
+        /// to fade out the parts of the pose that get in the way of the sights.
+        /// </summary>
+        public virtual bool DoesNotCancelOnADS => false;
+
+        /// <summary>
+        /// While aiming, this stance's stamina, movement and reload effects are suspended (see StanceUtils.GetBonusStance).
+        /// Only matters for stances that stay up through ADS.
+        /// </summary>
+        public virtual bool SuspendsBonusesWhileAiming => false;
+
         public virtual EStanceReloadType[] ReloadTypesThatPauseStance => [];
 
         public abstract Vector3Curve EnterPositionCurve { get; }

@@ -27,6 +27,8 @@ namespace StanceOverhaul.Stances
         public float PumpBoltSpeedModifier { get; }
 
         public bool BlocksFiring { get; }
+        public bool DoesNotCancelOnADS { get; }
+        public bool SuspendsBonusesWhileAiming { get; }
 
         public EStanceReloadType[] ReloadTypesThatPauseStance { get; }
 

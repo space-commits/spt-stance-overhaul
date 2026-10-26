@@ -22,6 +22,7 @@ public class LeftShoulder : StanceBase
     public override float HipfireBonus => PluginConfig.LeftShoulderHipfireBonus.Value;
 
     public override bool BlocksFiring => false;
+    public override bool DoesNotCancelOnADS => true;
 
     public override AnimationCurve ExitAimSpeedCurve => CurveDrawer.GetCurve("left_exit_aim_speed", CurveAxis.X)!;
 

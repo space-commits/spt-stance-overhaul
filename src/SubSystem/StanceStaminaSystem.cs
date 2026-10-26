@@ -148,6 +148,7 @@ public class StanceStaminaSystem : ISubSystem
         StanceEvents.OnStanceExited += OnStateChanged;
         WeaponStateInstance.OnWeaponStateChanged += OnStateChanged;
         RealismCommonLib.Events.PlayerEvents.OnAnyItemEquipped += OnStateChanged;
+        RealismCommonLib.Events.PlayerEvents.AimStateChanged += OnStateChanged;
     }
 
     public void RunOnDestroy()
@@ -156,6 +157,7 @@ public class StanceStaminaSystem : ISubSystem
         StanceEvents.OnStanceExited -= OnStateChanged;
         WeaponStateInstance.OnWeaponStateChanged -= OnStateChanged;
         RealismCommonLib.Events.PlayerEvents.OnAnyItemEquipped -= OnStateChanged;
+        RealismCommonLib.Events.PlayerEvents.AimStateChanged -= OnStateChanged;
     }
 
     public void RunOnUpdate(float deltaTime)
@@ -193,6 +195,8 @@ public class StanceStaminaSystem : ISubSystem
 
     private void CheckState(IStance? stance)
     {
+        stance = StanceUtils.GetBonusStance(stance);
+
         switch (stance?.StaminaMode)
         {
             case EStanceStaminaType.Regen:

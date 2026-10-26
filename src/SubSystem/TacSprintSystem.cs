@@ -10,8 +10,8 @@ namespace StanceOverhaul.SubSystem
 {
     public class TacSprintSystem : ISubSystem
     {
-        public const float TAC_SPRINT_WEIGHT_LIMIT = 5.1f;
-        public const float TAC_SPRINT_WEIGHT_BULLPUP = 5.75f;
+        public const float TAC_SPRINT_WEIGHT_LIMIT = 5f;
+        public const float TAC_SPRINT_WEIGHT_BULLPUP = 5.85f;
         public const int TAC_SPRINT_LENGTH_LIMIT = 6;
         public const float TAC_SPRINT_ERGO_LIMIT = 35f;
         public const float TAC_SPRINT_RADIATION_LIMIT = 50f;
@@ -60,14 +60,22 @@ namespace StanceOverhaul.SubSystem
                      && !HealthConditionPreventsTacSprint;
         }
 
+        private float WeightLimit =>
+            WeaponStateInstance.IsBullpup ?
+            StanceControllerInstance.StatsHandlerInstance.GetStrengthWeightValue(TAC_SPRINT_WEIGHT_LIMIT) :
+            StanceControllerInstance.StatsHandlerInstance.GetStrengthWeightValue(TAC_SPRINT_WEIGHT_BULLPUP);
+
+        private float ErgoLimit => StanceControllerInstance.StatsHandlerInstance.GetStrengthWeightValue(TAC_SPRINT_ERGO_LIMIT);
+
         private bool WeaponMeetsCriteria
         {
             get
             {
-                return WeaponStateInstance.TotalWeaponWeight <= (WeaponStateInstance.IsBullpup ? TAC_SPRINT_WEIGHT_BULLPUP : TAC_SPRINT_WEIGHT_LIMIT)
-                    && WeaponStateInstance.WeaponLength <= TAC_SPRINT_LENGTH_LIMIT && !PlayerStateInstance.IsScav
+                return WeaponStateInstance.TotalWeaponWeight <= WeightLimit
+                    && WeaponStateInstance.WeaponLength <= TAC_SPRINT_LENGTH_LIMIT
+                    && !PlayerStateInstance.IsScav
                     && !HealthConditionPreventsTacSprint
-                    && WeaponStateInstance.TotalErgo > TAC_SPRINT_ERGO_LIMIT;
+                    && WeaponStateInstance.TotalErgo > ErgoLimit;
             }
         }
 

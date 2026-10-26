@@ -28,10 +28,16 @@ public class ActiveAim : StanceBase
     public override float WeaponManipSpeedModifier => PluginConfig.ActiveAimWeaponManipSpeedModifier.Value;
 
     public override bool BlocksFiring => false;
+    public override bool DoesNotCancelOnADS => true;
+    public override bool SuspendsBonusesWhileAiming => true;
 
     public override AnimationCurve ExitAimSpeedCurve => CurveDrawer.GetCurve("active_exit_aim_speed", CurveAxis.X)!;
 
     public override AnimationCurve EnterAimSpeedCurve => CurveDrawer.GetCurve("active_enter_aim_speed", CurveAxis.X)!;
+
+    // while aiming: drop all rotation so the sights line up, and the forward/back (Y) pull, which alt aim leaves to the camera
+    public override Vector3 AimPositionScale => new Vector3(1f, 0f, 1f);
+    public override Vector3 AimRotationScale => Vector3.zero;
 
     public override EStanceReloadType[] ReloadTypesThatPauseStance => new EStanceReloadType[]
     {
