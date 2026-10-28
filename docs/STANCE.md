@@ -195,6 +195,13 @@ bool armsInjured   = HealthStateInstance.ArmsAreIncapacitated;
 float toxicity     = HazardsStateInstance.TotalToxicity;
 ```
 
+### Data Provided to Other Modules
+`Plugin.Awake` registers `Integration/StanceInfoProvider` as the common lib's `IStanceInfo` (`ModuleServices.Stance`). Read by FOV-Fix's `LerpCameraPatch`.
+- `CanMoveGunToCamera` → `StanceController.CanMoveGunToCamera` (alt aim toggle && !mounting && !stationary weapon)
+- `IsLeftShoulder` → `StanceController.CurrentStanceType == EStanceType.LeftShoulder`
+
+The provider returns `false` when `StanceControllerInstance` is destroyed (Unity null check) or hasn't finished `Awake`.
+
 ### Modifiers Applied
 - `StatModifiers.MaxWalkSpeedModifier` — walk speed per stance
 - `StatModifiers.MaxSprintSpeedModifier`, `SprintAccelModifier`, `PreSprintAccelModifier` — sprint per stance

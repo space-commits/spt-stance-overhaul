@@ -358,7 +358,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             if (aiming)
                 OnADSStarted();
             else
-                _aimSettleTimer = _stanceState.IsTransitioning ? RestoreAfterADSDelay : 0.001f; // restored from RunOnUpdate, so a flicker can't flash the stance
+                _aimSettleTimer = _stanceState.IsTransitioningBetweenStances ? RestoreAfterADSDelay : 0.001f; // restored from RunOnUpdate, so a flicker can't flash the stance
         }
 
         private void OnADSStarted()

@@ -36,8 +36,8 @@ namespace StanceOverhaul.State
     internal class StanceState : ISubSystem
     {
         // scaled by PWA aim speed, same as StanceAimSystem's ADS offset
-        private const float AimFadeInSpeed = 8.75f;
-        private const float AimFadeOutSpeed = 4.25f;
+        private const float AimFadeInSpeed = 8.65f;
+        private const float AimFadeOutSpeed = 6.9f;
         private const float AimWeightSnapThreshold = 0.001f;
 
         private StanceSlot? _primarySlot;
@@ -100,6 +100,14 @@ namespace StanceOverhaul.State
             get
             {
                 return (_incoming != null && !_incomingPaused) || (PrimarySlot != null && !PrimarySlot.IsAtIdle);
+            }
+        }
+
+        public bool IsTransitioningBetweenStances
+        {
+            get
+            {
+                return _incoming != null && !_incomingPaused && PrimarySlot != null && !PrimarySlot.IsAtIdle;
             }
         }
 

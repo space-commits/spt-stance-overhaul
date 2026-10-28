@@ -11,7 +11,7 @@ namespace StanceOverhaul.SubSystem
     public class TacSprintSystem : ISubSystem
     {
         public const float TAC_SPRINT_WEIGHT_LIMIT = 5f;
-        public const float TAC_SPRINT_WEIGHT_BULLPUP = 5.85f;
+        public const float TAC_SPRINT_WEIGHT_BULLPUP = 6f;
         public const int TAC_SPRINT_LENGTH_LIMIT = 6;
         public const float TAC_SPRINT_ERGO_LIMIT = 35f;
         public const float TAC_SPRINT_RADIATION_LIMIT = 50f;

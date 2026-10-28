@@ -35,9 +35,9 @@ public class ActiveAim : StanceBase
 
     public override AnimationCurve EnterAimSpeedCurve => CurveDrawer.GetCurve("active_enter_aim_speed", CurveAxis.X)!;
 
-    // while aiming: drop all rotation so the sights line up, and the forward/back (Y) pull, which alt aim leaves to the camera
-    public override Vector3 AimPositionScale => new Vector3(1f, 0f, 1f);
-    public override Vector3 AimRotationScale => Vector3.zero;
+
+    public override Vector3 AimPositionScale => Vector3.one;
+    public override Vector3 AimRotationScale => new Vector3(1f, 0f, 1f);
 
     public override EStanceReloadType[] ReloadTypesThatPauseStance => new EStanceReloadType[]
     {

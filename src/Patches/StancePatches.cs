@@ -1645,37 +1645,6 @@ namespace StanceOverhaul.Patches
         }
     }
 
-    public class LerpCameraPatch : ModulePatch
-    {
-        private static FieldInfo _playerField;
-        private static FieldInfo _fcField;
-
-        protected override MethodBase GetTargetMethod()
-        {
-            _playerField = AccessTools.Field(typeof(FirearmController), "_player");
-            _fcField = AccessTools.Field(typeof(ProceduralWeaponAnimation), "_firearmController");
-            return typeof(EFT.Animations.ProceduralWeaponAnimation).GetMethod("LerpCamera", BindingFlags.Instance | BindingFlags.Public);
-        }
-
-        [PatchPostfix]
-        private static void Postfix(EFT.Animations.ProceduralWeaponAnimation __instance, float dt, float ____overweightAimingMultiplier,
-            float ____aimingSpeed, float ____aimSwayStrength, Player.ValueBlender
-            ____aimSwayBlender, Vector3 ____aimSwayDirection, Vector3 ____headRotationVec,
-            Vector3 ____vCameraTarget, Player.ValueBlenderDelay ____tacticalReload,
-            Quaternion ____cameraIdenity, Quaternion ____rotationOffset, Vector2 ____cameraShiftToLineOfSight,
-            float ____lineOfSightDeltaAngle, Vector3 ____shotDirection, bool ____adjustCollimatorsToTrajectory,
-            Transform ____bone0, Transform ____bone1)
-        {
-            FirearmController firearmController = (FirearmController)_fcField.GetValue(__instance);
-            if (firearmController == null) return;
-            Player player = (Player)_playerField.GetValue(firearmController);
-            if (player != null && player.IsYourPlayer && firearmController.Weapon != null)
-            {
-
-            }
-        }
-    }
-
     //TODO: move to common lib
     //entry point for pose changes
     //move to common lib + use event

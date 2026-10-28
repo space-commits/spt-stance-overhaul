@@ -7,6 +7,8 @@ using UnityEngine;
 using static RealismCommonLib.Plugin;
 using RootMotion.FinalIK;
 using StanceOverhaul.Events;
+using StanceOverhaul.Integration;
+using RealismCommonLib.Integration;
 
 namespace StanceOverhaul
 {
@@ -23,6 +25,8 @@ namespace StanceOverhaul
         void Awake()
         {
             PluginConfig.InitConfigBindings(Config);
+
+            ModuleServices.Register<IStanceInfo>(new StanceInfoProvider());
 
             SubscribeToEvents();
 
@@ -45,7 +49,6 @@ namespace StanceOverhaul
             new HandIKPatch().Enable();
             new ElbowIKPatch().Enable();
             new PropSoundPatch().Enable();
-            new LerpCameraPatch().Enable();
             new VisualPassPatch().Enable();
             new PreRecoilPosePatch().Enable();
             new PostRecoilPosePatch().Enable();

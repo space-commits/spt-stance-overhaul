@@ -192,11 +192,11 @@ public class StatsSystem : ISubSystem
 
     public float GetStrengthWeightValue(float baseValue)
     {
-        return Mathf.Min(baseValue * (1f + StrengthWeightModifier), 6.9f);
+        return Mathf.Min(baseValue * (1f + StrengthWeightModifier), 7.5f);
     }
     public float GetStrengthErgoValue(float baseValue)
     {
-        return Mathf.Max(baseValue * StrengthWeightModifier, 12f);
+        return Mathf.Max(baseValue * StrengthWeightModifier, 10f);
     }
     
 }
