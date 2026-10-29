@@ -44,8 +44,7 @@ namespace StanceOverhaul.Stances
         public abstract Vector3Curve? PistolExitRotationCurve { get; }
         public abstract Vector3Curve? PistolExitPositionCurve { get; }
 
-        public abstract AnimationCurve ExitAimSpeedCurve { get; }
-        public abstract AnimationCurve EnterAimSpeedCurve { get; }
+        public abstract AnimationCurve AimSpeedCurve { get; }
 
         public Vector3 AimPositionScale { get; }
         public Vector3 AimRotationScale { get; }

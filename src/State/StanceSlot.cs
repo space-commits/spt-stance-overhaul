@@ -71,6 +71,13 @@ internal class StanceSlot
     public float DistanceToPose =>
         1f - IdleProximity;
 
+    /// <summary>
+    /// How far through its current movement the slot is, 0 = just started, 1 = reached idle or pose.
+    /// Same as Progress unless the slot was reversed.
+    /// </summary>
+    public float MovementProgress =>
+        IsHeadingToIdle ? IdleProximity : DistanceToPose;
+
     public Vector3 EvaluatePosition()
     {
         return ActiveCurveType == ECurveType.Exit
@@ -85,13 +92,10 @@ internal class StanceSlot
             : _enterRotCurve.Evaluate(Progress);
     }
 
+    // 1 at idle or pose (MovementProgress = 1), so a holding slot never slows aiming
     public float EvaluateAimSpeed()
     {
-        return ActiveCurveType == ECurveType.Exit
-            ? Stance.ExitAimSpeedCurve.Evaluate(Progress)
-            : ActiveCurveType == ECurveType.Enter ?
-            Stance.EnterAimSpeedCurve.Evaluate(Progress)
-            : 1f;
+        return Stance.AimSpeedCurve.Evaluate(MovementProgress);
     }
 
     public void StanceSlotUpdate(float deltaTime)

@@ -24,9 +24,7 @@ public class LeftShoulder : StanceBase
     public override bool BlocksFiring => false;
     public override bool DoesNotCancelOnADS => true;
 
-    public override AnimationCurve ExitAimSpeedCurve => CurveDrawer.GetCurve("left_exit_aim_speed", CurveAxis.X)!;
-
-    public override AnimationCurve EnterAimSpeedCurve => CurveDrawer.GetCurve("left_enter_aim_speed", CurveAxis.X)!;
+    public override AnimationCurve AimSpeedCurve => CurveDrawer.GetCurve("left_aim_speed", CurveAxis.X)!;
 
     // drop the leftward yaw while aiming so the sights line up with the camera, keep the rest of the pose
     public override Vector3 AimRotationScale => new Vector3(1f, 0f, 1f);

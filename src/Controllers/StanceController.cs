@@ -25,6 +25,7 @@ namespace StanceOverhaul.Controllers
         public const float HIGH_READY_RADIATION_LIMIT = 80f;
         public const float HIGH_READY_TOXICITY_LIMIT = 80f;
         public const float LEFT_SHOULDER_SWAY_MULTI = 1.3f;
+        public const float BASE_OFFSET_SPRING_FACTOR = 2f;
 
         private EStanceType _targetStance = EStanceType.None;
 
@@ -194,6 +195,30 @@ namespace StanceOverhaul.Controllers
             get
             {
                 return _weaponOffsetAnimator.BaseWeaponOffsetPosition;
+            }
+        }
+
+        /// <summary>
+        /// The base offset as added to HandsPosition.Get(), applied directly instead of through a spring.
+        /// It used to go through StancePositionSpring, which settles at Get() = 2 x Zero, so the factor keeps its on-screen size.
+        /// </summary>
+        public Vector3 AppliedBaseOffsetPosition
+        {
+            get
+            {
+                ModLogger.LogWarning($"Base: {BASE_OFFSET_SPRING_FACTOR * _weaponOffsetAnimator.EasedBaseWeaponOffsetPosition}");
+                return BASE_OFFSET_SPRING_FACTOR * _weaponOffsetAnimator.EasedBaseWeaponOffsetPosition;
+            }
+        }
+
+        /// <summary>
+        /// Everything SpringGetPatch adds to HandsPosition.Get() apart from the base offset, in weapon root parent space.
+        /// </summary>
+        public Vector3 StanceAndOffsetPosition
+        {
+            get
+            {
+                return StancePositionSpring.Get() + OffsetPositionSpring.Get();
             }
         }
 

@@ -118,7 +118,7 @@ Tracks a single stance's animation progress:
 `IStance` defines what a stance provides:
 - `EnterPositionCurve`, `EnterRotationCurve` — `Vector3Curve` played when entering
 - `ExitPositionCurve`, `ExitRotationCurve` — `Vector3Curve` played when exiting
-- `EnterAimSpeedCurve`, `ExitAimSpeedCurve` — `AnimationCurve` controlling ADS speed multiplier during transition
+- `AimSpeedCurve` — `AnimationCurve` multiplier on EFT's aim speed (`_aimingSpeed`) while aiming during a transition, evaluated at `StanceSlot.MovementProgress` (0 = start of the current movement, 1 = idle or pose). Eases vanilla camera-to-sights only; alt aim uses `PwaOriginalAimSpeed`
 - `BlendIntoThreshold(EStanceType nextStance)` — idle proximity at which incoming is unpaused (default 0.5)
 - `TransitionFromModifier(EStanceType? previousStance)` — speed modifier based on what stance we came from
 - `TransitionToSpeedModifier(EStanceType? nextStance)` — speed modifier based on where we are going

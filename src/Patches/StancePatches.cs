@@ -505,7 +505,8 @@ namespace StanceOverhaul.Patches
 
             if (__instance == PlayerStateInstance.PWA.HandsContainer.HandsPosition)
             {
-                __result += StanceControllerInstance.StancePositionSpring.Get() + StanceControllerInstance.OffsetPositionSpring.Get(); // StanceControllerInstance.BaseWeaponOffsetPosition
+                // base offset is applied directly (no spring), stances and detail offsets through their springs
+                __result += StanceControllerInstance.AppliedBaseOffsetPosition + StanceControllerInstance.StanceAndOffsetPosition;
             }
 
             if (__instance == PlayerStateInstance.PWA.HandsContainer.HandsRotation)
@@ -529,7 +530,8 @@ namespace StanceOverhaul.Patches
 
             if (__instance == PlayerStateInstance.PWA.HandsContainer.HandsPosition)
             {
-                __result += StanceControllerInstance.StancePositionSpring.GetRelative() + StanceControllerInstance.OffsetPositionSpring.GetRelative(); //  + StanceControllerInstance.BaseWeaponOffsetPosition unsure if stance or base offset it should be applied here, used for camera positioning 
+                // read by LerpCamera to scale the camera's z lerp while aiming. Includes the base as it did when the base was in the stance spring
+                __result += StanceControllerInstance.StancePositionSpring.GetRelative() + StanceControllerInstance.OffsetPositionSpring.GetRelative();
             }
 
             if (__instance == PlayerStateInstance.PWA.HandsContainer.HandsRotation)
@@ -553,7 +555,8 @@ namespace StanceOverhaul.Patches
         {
             if (PlayerStateInstance.PWA == __instance)
             {
-                StanceControllerInstance.StancePositionSpring.Zero = StanceControllerInstance.StancePosition + StanceControllerInstance.BaseWeaponOffsetPosition; //  not sure if should be applied to stance zero or not
+                // base offset is not in the spring, SpringGetPatch adds it directly
+                StanceControllerInstance.StancePositionSpring.Zero = StanceControllerInstance.StancePosition;
                 StanceControllerInstance.StanceRotationSpring.Zero = StanceControllerInstance.StanceRotation;
                 StanceControllerInstance.OffsetPositionSpring.Zero = StanceControllerInstance.DetailsOffsetPosition;
                 StanceControllerInstance.OffsetRotationSpring.Zero = StanceControllerInstance.DetailsOffsetRotation;

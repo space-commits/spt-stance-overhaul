@@ -35,7 +35,7 @@ namespace StanceOverhaul.State
 
     internal class StanceState : ISubSystem
     {
-        // scaled by PWA aim speed, same as StanceAimSystem's ADS offset
+        // scaled by the weapon's original aim speed, same as StanceAimSystem's ADS offset
         private const float AimFadeInSpeed = 8.65f;
         private const float AimFadeOutSpeed = 6.9f;
         private const float AimWeightSnapThreshold = 0.001f;
@@ -195,7 +195,7 @@ namespace StanceOverhaul.State
         {
             bool isAiming = AimStateInstance.IsAiming;
             float target = isAiming ? 1f : 0f;
-            float speed = (isAiming ? AimFadeInSpeed : AimFadeOutSpeed) * StanceControllerInstance.PwaAimSpeed;
+            float speed = (isAiming ? AimFadeInSpeed : AimFadeOutSpeed) * StanceControllerInstance.PwaOriginalAimSpeed * PluginConfig.test1.Value;
             float t = 1f - Mathf.Exp(-speed * deltaTime);
             _aimWeight = Mathf.Lerp(_aimWeight, target, t);
 
@@ -255,17 +255,12 @@ namespace StanceOverhaul.State
         }
 
         //Move to StanceAimHandler
+        //eases EFT's aim speed (camera to sights) while aiming during a stance transition, so the camera doesn't follow the stance animation too closely.
+        //only while aiming: out of ADS the camera doesn't track the gun. Alt aim uses PwaOriginalAimSpeed and isn't affected
         private void UpdateAimSpeed()
         {
-            float aimSpeedModifier = 1f;
-
-            if (AimStateInstance.IsAiming)
-            {
-                if (_incoming != null && _incomingPaused == false)
-                    aimSpeedModifier = _incoming.EvaluateAimSpeed();
-                else if (PrimarySlot != null)
-                    aimSpeedModifier = PrimarySlot.EvaluateAimSpeed();
-            }
+            StanceSlot? slot = _incoming != null && _incomingPaused == false ? _incoming : PrimarySlot;
+            float aimSpeedModifier = AimStateInstance.IsAiming && slot != null ? slot.EvaluateAimSpeed() : 1f;
 
             StanceControllerInstance.PwaAimSpeed = StanceControllerInstance.PwaOriginalAimSpeed * aimSpeedModifier;
         }

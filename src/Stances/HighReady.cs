@@ -34,9 +34,7 @@ public class HighReady : StanceBase
         EStanceReloadType.PumpBolt,
     };
 
-    public override AnimationCurve ExitAimSpeedCurve => CurveDrawer.GetCurve("high_ready_exit_aim_speed", CurveAxis.X)!;
-
-    public override AnimationCurve EnterAimSpeedCurve => CurveDrawer.GetCurve("high_ready_enter_aim_speed", CurveAxis.X)!;
+    public override AnimationCurve AimSpeedCurve => CurveDrawer.GetCurve("high_ready_aim_speed", CurveAxis.X)!;
 
     public override float BlendIntoThreshold(EStanceType nextStance)
     {

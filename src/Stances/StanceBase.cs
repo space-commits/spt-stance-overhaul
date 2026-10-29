@@ -55,19 +55,12 @@ namespace StanceOverhaul.Stances
         public virtual Vector3Curve? PistolExitPositionCurve { get; }
         public virtual Vector3Curve? PistolExitRotationCurve { get; }
 
-        public virtual AnimationCurve ExitAimSpeedCurve { get; }
-            = new AnimationCurve
-            (
-                new Keyframe { time = 0f, value = 0f },
-                new Keyframe { time = 0.25f, value = 0f },
-                new Keyframe { time = 0.5f, value = 0.1f },
-                new Keyframe { time = 0.7f, value = 0.25f },
-                new Keyframe { time = 0.85f, value = 0.5f },
-                new Keyframe { time = 0.95f, value = 0.8f },
-                new Keyframe { time = 1f, value = 1f }
-            );
-
-        public virtual AnimationCurve EnterAimSpeedCurve { get; }
+        /// <summary>
+        /// Multiplier on EFT's aim speed while aiming during this stance's transition, so the camera doesn't follow
+        /// the stance animation too closely. Time is how far the gun is through its current movement (0 = start, 1 = end).
+        /// Doesn't affect alt aim.
+        /// </summary>
+        public virtual AnimationCurve AimSpeedCurve { get; }
             = new AnimationCurve
             (
                 new Keyframe { time = 0f, value = 0f },

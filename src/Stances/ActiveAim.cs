@@ -31,13 +31,11 @@ public class ActiveAim : StanceBase
     public override bool DoesNotCancelOnADS => true;
     public override bool SuspendsBonusesWhileAiming => true;
 
-    public override AnimationCurve ExitAimSpeedCurve => CurveDrawer.GetCurve("active_exit_aim_speed", CurveAxis.X)!;
-
-    public override AnimationCurve EnterAimSpeedCurve => CurveDrawer.GetCurve("active_enter_aim_speed", CurveAxis.X)!;
+    public override AnimationCurve AimSpeedCurve => CurveDrawer.GetCurve("active_aim_speed", CurveAxis.X)!;
 
 
-    public override Vector3 AimPositionScale => Vector3.one;
     public override Vector3 AimRotationScale => new Vector3(1f, 0f, 1f);
+    public override Vector3 AimPositionScale => new Vector3(0f, 0f, 0f);
 
     public override EStanceReloadType[] ReloadTypesThatPauseStance => new EStanceReloadType[]
     {

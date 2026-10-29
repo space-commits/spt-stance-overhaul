@@ -14,7 +14,7 @@ namespace StanceOverhaul.SubSystem.Aiming
         private const float AdsOutSpeed = 4.15f;
         private const float AdsOutSpeedRecoilModifer = 0.5f;
 
-        // scaled by PWA aim speed, same as the camera's own aim lerp
+        // alt aim speeds are all scaled by the weapon's original aim speed, not the stance-eased PwaAimSpeed
         private const float AltAimBlendSpeed = 4.5f;
         private const float WeightSnapThreshold = 0.001f;
         private const float OffsetSnapThresholdSqr = 1e-10f;
@@ -104,7 +104,7 @@ namespace StanceOverhaul.SubSystem.Aiming
             // so both sides hand over together instead of hard switching, e.g. when toggling left shoulder while aiming
             // config/mount/stationary/weapon gates have no progress of their own, so ease them over time
             bool altAimAllowed = PlayerStateInstance.WeaponIsReady && StanceControllerInstance.CanMoveGunToCamera;
-            float gateSpeed = 1f - Mathf.Exp(-AltAimBlendSpeed * StanceControllerInstance.PwaAimSpeed * dt);
+            float gateSpeed = 1f - Mathf.Exp(-AltAimBlendSpeed * StanceControllerInstance.PwaOriginalAimSpeed * dt);
             _gateWeight = Mathf.Lerp(_gateWeight, altAimAllowed ? 1f : 0f, gateSpeed);
 
             if (Mathf.Abs(_gateWeight - (altAimAllowed ? 1f : 0f)) < WeightSnapThreshold)
@@ -143,6 +143,11 @@ namespace StanceOverhaul.SubSystem.Aiming
                 // target where the sight would be without recoil, so recoil plays out instead of being pulled back to the camera
                 sightInParent = RecoilPoseCapture.RemoveRecoil(pwa, sightInParent);
 
+                // target where the sight would be without stance and detail offset positions, so they play out as authored and only the base is brought to the camera.
+                // they go straight into WeaponRootAnim.localPosition (same space), and later steps rotate about weapon-attached points, so subtracting is exact.
+                // their rotation's positional side effect is still corrected
+                sightInParent -= StanceControllerInstance.StanceAndOffsetPosition;
+
                 //correct = offset from where the weapon is to where it should be
                 correction = cameraInParent - sightInParent;
 
@@ -166,7 +171,7 @@ namespace StanceOverhaul.SubSystem.Aiming
             float recoilModifierIn = FiringStateInstance.IsFiring ? AdsInSpeedRecoilModifier : 1f;
             float recoilModifierOut = FiringStateInstance.IsFiring ? AdsOutSpeedRecoilModifer : 1f;
 
-            float speed = (pwa.IsAiming ? AdsInSpeed * recoilModifierIn : AdsOutSpeed * recoilModifierOut) * StanceControllerInstance.PwaAimSpeed;
+            float speed = (pwa.IsAiming ? AdsInSpeed * recoilModifierIn * PluginConfig.test3.Value : AdsOutSpeed * recoilModifierOut  * PluginConfig.test2.Value) * StanceControllerInstance.PwaOriginalAimSpeed;
             float t = 1f - Mathf.Exp(-speed * dt);
 
             _smoothedOffset = Vector3.Lerp(_smoothedOffset, correction, t);
@@ -179,7 +184,7 @@ namespace StanceOverhaul.SubSystem.Aiming
             }
 
             // float smoothTime = pwa.IsAiming ? PluginConfig.test3.Value : PluginConfig.test4.Value;
-            // smoothTime /= Mathf.Max(StanceControllerInstance.PwaAimSpeed, 0.01f);
+            // smoothTime /= Mathf.Max(StanceControllerInstance.PwaOriginalAimSpeed, 0.01f);
             // _smoothedOffset = Vector3.SmoothDamp(_smoothedOffset, correction, ref _offsetVelocity, smoothTime, Mathf.Infinity, dt);
 
             Vector3 basePosition = root.localPosition;
