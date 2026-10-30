@@ -7,7 +7,7 @@ Implements procedural stance system for SPT — adds animated weapon position/ro
 - **Multiple stance types**: High ready, low ready, active aim (canting), left shoulder, short stock, patrol
 - **Curve-driven animation**: Each stance defines Enter/Exit `Vector3Curve` for position and rotation; a `StanceSlot` drives progress 0→1 along the curve
 - **Dual-slot blend system**: `StanceState` manages a `_primary` and `_incoming` slot, blending smoothly when transitioning between stances
-- **Spring injection**: Clones the game's `HandsPosition`/`HandsRotation` `Spring` objects, patches `Spring.Get`, `Spring.GetRelative`, `Spring.FixedUpdate`, and `Spring.Reset` to inject stance offsets
+- **Spring injection**: Clones the game's `HandsPosition`/`HandsRotation` `Spring` objects, wraps them in `InterpolatedSpring`, and patches `Spring.Get`, `Spring.FixedUpdate`, and `Spring.Reset` to inject stance offsets
 - **Gameplay benefits**: Per-stance walk speed, sprint accel, ADS speed, and reload speed modifiers applied via `StatModifiers`
 - **ADS gating**: `StanceAimHandler` registers a `BoolGateHandle` on `BoolHandlers.CanAim` to optionally block ADS
 - **Input pipeline integration**: `InputHookPipeline` registers with `Pipelines.InputVetoPipeline` and `Pipelines.InputOverridePipeline` to intercept EFT input commands
@@ -43,6 +43,7 @@ Stance-Overhaul/
 │   ├── StanceStaminaHandler.cs      # Stamina cost/recovery per stance (in-progress)
 │   └── TacSprintHandler.cs          # Tactical sprint handling
 ├── Patches/
+│   ├── CameraDeltaTimePatch.cs  # Gives LerpCamera a frame-rate-independent delta time
 │   └── StancePatches.cs         # Spring patches (SpringUpdatePatch, SpringGetPatch, SpringGetRelativePatch, SpringResetPatch, UpdateWeaponVariablesPatch, ZeroAdjustmentsPatch, SetFireModePatch, OperateStationaryWeaponPatch)
 ├── PatchHooks/                      # (empty — future patch hook implementations)
 ├── SpringAnimators/
@@ -131,11 +132,11 @@ Tracks a single stance's animation progress:
 ### Spring Injection System
 Stance offsets are applied by piggybacking on the game's `Spring` system:
 
-1. `InitSprings()`: `StancePositionSpring = Cloner.ShallowClone(PWA.HandsContainer.HandsPosition)` — shallow clone preserves spring settings but is a separate instance
+1. `InitSprings()`: `StancePositionSpring = new InterpolatedSpring(Cloner.ShallowClone(PWA.HandsContainer.HandsPosition))` — shallow clone preserves spring settings but is a separate instance. The wrapper interpolates reads between the last two tick states, so its output changes every frame above 60 fps
 2. **`SpringUpdatePatch`** (prefix on `Spring.FixedUpdate`): When the game updates `HandsPosition` or `HandsRotation`, also calls `FixedUpdate` on the cloned spring
 3. **`SpringResetPatch`** (postfix on `Spring.Reset`): Resets the cloned spring when the game resets
 4. **`SpringGetPatch`** (postfix on `Spring.Get`): Adds the cloned spring's value to the result → position/rotation offset applied
-5. **`SpringGetRelativePatch`**: Same for `Spring.GetRelative`
+5. **`SpringGetRelativePatch`**: Same for `Spring.GetRelative`. Currently not registered in `Plugin.cs`
 6. **`UpdateWeaponVariablesPatch`** (postfix on `PWA.UpdateWeaponVariables`): Captures `_aimingSpeed` into `PwaOriginalAimSpeed` each frame
 
 `StanceState.UpdateAimSpeed()` applies the aim speed multiplier from the active slot's curve to `StanceController.PwaAimSpeed` each frame.
@@ -208,12 +209,16 @@ The provider returns `false` when `StanceControllerInstance` is destroyed (Unity
 - `StatModifiers.MagReloadSpeed`, `QuickMagReloadSpeed`, `CheckAmmoSpeed`, etc. — registered in `StanceController.AssignReloadHandlers()`
 - `BoolHandlers.CanAim` — gate handle managed by `StanceAimHandler`
 
-### Patches (in StancePatches.cs)
+### Patches
+In `CameraDeltaTimePatch.cs`:
+- `CameraDeltaTimePatch`: Replaces the `dt` passed to `LerpCamera` so the camera moves evenly and ADS speed matches vanilla at 60 fps, at any frame rate
+
+In `StancePatches.cs`:
 - `UpdateWeaponVariablesPatch`: Captures `_aimingSpeed` from PWA on each frame
 - `SpringUpdatePatch`: Drives cloned springs in `FixedUpdate`
 - `SpringResetPatch`: Resets cloned springs
 - `SpringGetPatch`: Adds stance offset to `Spring.Get()` result
-- `SpringGetRelativePatch`: Adds stance offset to `Spring.GetRelative()` result
+- `SpringGetRelativePatch`: Adds stance offset to `Spring.GetRelative()` result (not registered in `Plugin.cs`)
 - `ZeroAdjustmentsPatch`: Zero adjustment handling
 - `SetFireModePatch`, `OperateStationaryWeaponPatch`: Stance interaction with fire mode and stationary weapons
 

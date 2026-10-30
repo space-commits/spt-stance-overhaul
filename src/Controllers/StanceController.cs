@@ -446,8 +446,6 @@ namespace StanceOverhaul.Controllers
 
         public void RunAfterEFTTransformsSet(ProceduralWeaponAnimation pwa, float dt)
         {
-            Patches.FrameTimingLog.OnFrameEnd(pwa); // TEMP: frame timing logging
-
             _aimSystem.MoveGunToCamera(pwa, dt);
         }
 

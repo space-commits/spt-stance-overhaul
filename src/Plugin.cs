@@ -61,7 +61,6 @@ namespace StanceOverhaul
             new CalculateCameraPositionPatch().Enable();
             new OperateStationaryWeaponPatch().Enable();
             new CameraDeltaTimePatch().Enable();
-            new ProcessEffectorsTimingPatch().Enable(); // TEMP: frame timing logging
 
                         //new TacticalReloadPatch().Enable();
             /*            new SprintPatch().Enable();

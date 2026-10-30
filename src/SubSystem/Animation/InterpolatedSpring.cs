@@ -41,13 +41,7 @@ namespace StanceOverhaul.SubSystem.Animator
         /// <summary>
         /// Current, interpolated to the render frame.
         /// </summary>
-        public Vector3 Current =>
-            PluginConfig.InterpolateStanceSprings.Value ? Vector3.Lerp(_previousCurrent, _spring.Current, TickAlpha) : _spring.Current;
-
-        /// <summary>
-        /// Current as of the latest tick, without interpolation.
-        /// </summary>
-        public Vector3 RawCurrent => _spring.Current;
+        public Vector3 Current => Vector3.Lerp(_previousCurrent, _spring.Current, TickAlpha);
 
         // Unity calls Player.FixedUpdate (EFT's tick count) in its physics loop, so Time.fixedTime is the latest tick's time
         // and this is how far the render frame is into the next tick
