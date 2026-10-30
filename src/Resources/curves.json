@@ -2517,37 +2517,7 @@
         "keys": [
           {
             "time": 0.0,
-            "value": 0.0,
-            "inTangent": 0.0,
-            "outTangent": 0.0
-          },
-          {
-            "time": 0.25,
-            "value": 0.0,
-            "inTangent": 0.0,
-            "outTangent": 0.0
-          },
-          {
-            "time": 0.5,
-            "value": 0.1,
-            "inTangent": 0.0,
-            "outTangent": 0.0
-          },
-          {
-            "time": 0.7,
-            "value": 0.25,
-            "inTangent": 0.0,
-            "outTangent": 0.0
-          },
-          {
-            "time": 0.85,
-            "value": 0.5,
-            "inTangent": 0.0,
-            "outTangent": 0.0
-          },
-          {
-            "time": 0.95,
-            "value": 0.8,
+            "value": 1.0,
             "inTangent": 0.0,
             "outTangent": 0.0
           },

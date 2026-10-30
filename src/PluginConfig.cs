@@ -30,6 +30,10 @@ namespace StanceOverhaul
         public static ConfigEntry<float> test18 { get; set; }
         public static ConfigEntry<float> test19 { get; set; }
         public static ConfigEntry<float> test20 { get; set; }
+        public static ConfigEntry<bool> LogFrameTiming { get; set; } // TEMP: frame timing logging
+        public static ConfigEntry<bool> CameraUsesRenderDeltaTime { get; set; }
+        public static ConfigEntry<bool> CameraLerpFrameRateIndependent { get; set; }
+        public static ConfigEntry<bool> InterpolateStanceSprings { get; set; }
 
         // Movement Speed Bonuses and Stamina Rates
         public static ConfigEntry<float> ActiveAimWalkSpeedBonus { get; set; }
@@ -300,6 +304,12 @@ namespace StanceOverhaul
             test18 = config.Bind<float>(dev, "test 18", 1f, new ConfigDescription("", new AcceptableValueRange<float>(-5000f, 5000f), new ConfigurationManagerAttributes { Order = 0, IsAdvanced = true, Browsable = true }));
             test19 = config.Bind<float>(dev, "test 19", 1f, new ConfigDescription("", new AcceptableValueRange<float>(-5000f, 5000f), new ConfigurationManagerAttributes { Order = -10, IsAdvanced = true, Browsable = true }));
             test20 = config.Bind<float>(dev, "test 20", 1f, new ConfigDescription("", new AcceptableValueRange<float>(-5000f, 5000f), new ConfigurationManagerAttributes { Order = -10, IsAdvanced = true, Browsable = true }));
+            // TEMP: frame timing logging
+            LogFrameTiming = config.Bind<bool>(dev, "Log Frame Timing", false, new ConfigDescription("Writes physics ticks, camera delta time, stance spring and camera position every frame while aiming, plus a once a second summary, to BepInEx/FrameTiming.log. Use for short tests only.", null, new ConfigurationManagerAttributes { Order = -20, IsAdvanced = true, Browsable = true }));
+            LogFrameTiming.SettingChanged += (_, _) => Patches.FrameTimingLog.OnToggleChanged();
+            CameraUsesRenderDeltaTime = config.Bind<bool>(dev, "Camera Uses Render Delta Time", false, new ConfigDescription("Test: EFT's camera lerp gets the frame's delta time instead of the summed physics tick time. Changes vanilla aiming camera speed.", null, new ConfigurationManagerAttributes { Order = -30, IsAdvanced = true, Browsable = true }));
+            InterpolateStanceSprings = config.Bind<bool>(dev, "Interpolate Stance Springs", true, new ConfigDescription("Stance and offset springs are stepped per physics tick (60 Hz). Interpolates them so they move every frame above 60 fps. Off = old behaviour, for comparison.", null, new ConfigurationManagerAttributes { Order = -50, IsAdvanced = true, Browsable = true }));
+            CameraLerpFrameRateIndependent = config.Bind<bool>(dev, "Camera Lerp Frame Rate Independent", false, new ConfigDescription("Test, needs Camera Uses Render Delta Time: scales the camera lerp's delta time so aiming camera speed matches vanilla at 60 fps at any frame rate.", null, new ConfigurationManagerAttributes { Order = -40, IsAdvanced = true, Browsable = true }));
 
             EnableAnimationFixes = config.Bind<bool>(general, "NOT IMPLEMENTED YET. De-Jank EFT Animations", true, new ConfigDescription("Attempts To Make EFT Certain Animations Less Janky, Like Inventory And Door Animations.", null, new ConfigurationManagerAttributes { Order = 430, Browsable = true }));
             OverrideCollision = config.Bind<bool>(general, "NOT IMPLEMENTED YET. Override Collision", true, new ConfigDescription("If FOV Fix is installed, will override BSG's collision system completely to make it work well with stances and alt weapon positions. If not installed, will modify BSG collision system.", null, new ConfigurationManagerAttributes { Order = 410, Browsable = true }));

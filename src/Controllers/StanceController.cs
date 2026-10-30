@@ -133,7 +133,6 @@ namespace StanceOverhaul.Controllers
         {
             get
             {
-                // left shoulder is not gated here, it's blended by stance progress via LeftShoulderPoseWeight
                 return PluginConfig.EnableAltAim.Value && !PlayerStateInstance.IsMounting && !PlayerStateInstance.IsUsingStationaryWeapon;
             }
         }
@@ -206,7 +205,6 @@ namespace StanceOverhaul.Controllers
         {
             get
             {
-                ModLogger.LogWarning($"Base: {BASE_OFFSET_SPRING_FACTOR * _weaponOffsetAnimator.EasedBaseWeaponOffsetPosition}");
                 return BASE_OFFSET_SPRING_FACTOR * _weaponOffsetAnimator.EasedBaseWeaponOffsetPosition;
             }
         }
@@ -269,10 +267,10 @@ namespace StanceOverhaul.Controllers
         private WeaponOffsetAnimator _weaponOffsetAnimator;
         private LeftHandAnimaor _leftHandAnimator;
 
-        public Spring StancePositionSpring { get; private set; }
-        public Spring StanceRotationSpring { get; private set; }
-        public Spring OffsetPositionSpring { get; private set; }
-        public Spring OffsetRotationSpring { get; private set; }
+        public InterpolatedSpring StancePositionSpring { get; private set; }
+        public InterpolatedSpring StanceRotationSpring { get; private set; }
+        public InterpolatedSpring OffsetPositionSpring { get; private set; }
+        public InterpolatedSpring OffsetRotationSpring { get; private set; }
 
         private List<StanceBase> _stances = new List<StanceBase>();
         public PatrolStance PatrolStance { get; private set; }
@@ -356,11 +354,11 @@ namespace StanceOverhaul.Controllers
 
         private void InitSprings()
         {
-            StancePositionSpring = Cloner.ShallowClone(PlayerStateInstance.PWA.HandsContainer.HandsPosition);
-            StanceRotationSpring = Cloner.ShallowClone(PlayerStateInstance.PWA.HandsContainer.HandsRotation);
+            StancePositionSpring = new InterpolatedSpring(Cloner.ShallowClone(PlayerStateInstance.PWA.HandsContainer.HandsPosition));
+            StanceRotationSpring = new InterpolatedSpring(Cloner.ShallowClone(PlayerStateInstance.PWA.HandsContainer.HandsRotation));
 
-            OffsetPositionSpring = Cloner.ShallowClone(PlayerStateInstance.PWA.HandsContainer.HandsPosition);
-            OffsetRotationSpring = Cloner.ShallowClone(PlayerStateInstance.PWA.HandsContainer.HandsRotation);
+            OffsetPositionSpring = new InterpolatedSpring(Cloner.ShallowClone(PlayerStateInstance.PWA.HandsContainer.HandsPosition));
+            OffsetRotationSpring = new InterpolatedSpring(Cloner.ShallowClone(PlayerStateInstance.PWA.HandsContainer.HandsRotation));
         }
 
         private void InitStateControllers()
@@ -448,6 +446,8 @@ namespace StanceOverhaul.Controllers
 
         public void RunAfterEFTTransformsSet(ProceduralWeaponAnimation pwa, float dt)
         {
+            Patches.FrameTimingLog.OnFrameEnd(pwa); // TEMP: frame timing logging
+
             _aimSystem.MoveGunToCamera(pwa, dt);
         }
 
