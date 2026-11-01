@@ -35,6 +35,7 @@ public class HighReady : StanceBase
     };
 
     public override AnimationCurve AimSpeedCurve => CurveDrawer.GetCurve("high_ready_aim_speed", CurveAxis.X)!;
+    public override AnimationCurve AltAimSpeedCurve => CurveDrawer.GetCurve("high_ready_alt_aim_speed", CurveAxis.X)!;
 
     public override float BlendIntoThreshold(EStanceType nextStance)
     {

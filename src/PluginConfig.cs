@@ -225,6 +225,10 @@ namespace StanceOverhaul
         public static ConfigEntry<bool> EnableMountUI { get; set; }
         public static ConfigEntry<bool> ToggleActiveAim { get; set; }
         public static ConfigEntry<bool> EnableAltAim { get; set; }
+        public static ConfigEntry<float> AdsInSpeed { get; set; }
+        public static ConfigEntry<float> AdsOutSpeed { get; set; }
+        public static ConfigEntry<float> PistolAdsInSpeed { get; set; }
+        public static ConfigEntry<float> PistolAdsOutSpeed { get; set; }
         public static ConfigEntry<bool> EnableIdleStamDrain { get; set; }
         public static ConfigEntry<float> IdleStamDrainModi { get; set; }
         public static ConfigEntry<bool> EnableStanceStamChanges { get; set; }
@@ -306,6 +310,10 @@ namespace StanceOverhaul
             OverrideMounting = config.Bind<bool>(general, "NOT IMPLEMENTED YET. Use Realism Mounting System", true, new ConfigDescription("Overrides BSG's Mounting System WIth Realism's (That Was Implemented First). Recoil, Stance and Sway Mechanics Are All Built Around Realism's Mounting And Won't Function Correctly With BSG's.", null, new ConfigurationManagerAttributes { Order = 300, Browsable = true }));
             EnableExtraProcEffects = config.Bind<bool>(general, "Enable Extra Weapon Position/Rotation Effects", true, new ConfigDescription("Weapon Has A Slight Cant To It based On Ergo. ADS With Gasmask/Faceshield Is Canted. Weapon Cant Increases When Crouching, And Moves Closer To You. Other Sublte Effects.", null, new ConfigurationManagerAttributes { Order = 280, Browsable = true }));
             EnableAltAim = config.Bind<bool>(general, "Enable Alternative Aiming System", true, new ConfigDescription("Sights move to camera, instead of camera to sights. This makes ADS much smoother, especially with stances.", null, new ConfigurationManagerAttributes { Order = 229, Browsable = true }));
+            AdsInSpeed = config.Bind<float>(general, "ADS In Speed", 9.5f, new ConfigDescription("How quickly sights move to the camera when entering ADS with the Alternative Aiming System. Pistols use Pistol ADS In Speed.", new AcceptableValueRange<float>(0.1f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 228, IsAdvanced = true, Browsable = true }));
+            AdsOutSpeed = config.Bind<float>(general, "ADS Out Speed", 4.15f, new ConfigDescription("How quickly the weapon returns from the camera when exiting ADS with the Alternative Aiming System. Pistols use Pistol ADS Out Speed.", new AcceptableValueRange<float>(0.1f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 227, IsAdvanced = true, Browsable = true }));
+            PistolAdsInSpeed = config.Bind<float>(general, "Pistol ADS In Speed", 9.5f, new ConfigDescription("How quickly sights move to the camera when entering ADS with the Alternative Aiming System, for pistols.", new AcceptableValueRange<float>(0.1f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 226, IsAdvanced = true, Browsable = true }));
+            PistolAdsOutSpeed = config.Bind<float>(general, "Pistol ADS Out Speed", 4.15f, new ConfigDescription("How quickly the weapon returns from the camera when exiting ADS with the Alternative Aiming System, for pistols.", new AcceptableValueRange<float>(0.1f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 225, IsAdvanced = true, Browsable = true }));
             EnableMountUI = config.Bind<bool>(general, "NOT IMPLEMENTED YET. Enable Mounting UI", true, new ConfigDescription("If Enabled, An Icon On Screen Will Indicate If Player Is Bracing, Mounting And What Side Of Cover They Are On.", null, new ConfigurationManagerAttributes { Order = 179, Browsable = true }));
             EnableFSAimBlock = config.Bind<bool>(general, "Enable Faceshield Aim Block", true, new ConfigDescription("Faceshields Block ADS Unless The Specfic Stock/Weapon/Faceshield Allows It.", null, new ConfigurationManagerAttributes { Order = 4, Browsable = true }));
             EnableNVGAimBlock = config.Bind<bool>(general, "Enable NVG Aim Block", true, new ConfigDescription("Magnified Optics Block ADS When Using NVGs.", null, new ConfigurationManagerAttributes { Order = 5, Browsable = true }));

@@ -27,6 +27,7 @@ public class LowReady : StanceBase
     public override float WeaponManipSpeedModifier => PluginConfig.LowReadyWeaponManipSpeedModifier.Value;
 
     public override AnimationCurve AimSpeedCurve => CurveDrawer.GetCurve("low_ready_aim_speed", CurveAxis.X)!;
+    public override AnimationCurve AltAimSpeedCurve => CurveDrawer.GetCurve("low_ready_alt_aim_speed", CurveAxis.X)!;
 
     public override EStanceReloadType[] ReloadTypesThatPauseStance => new EStanceReloadType[]
     {

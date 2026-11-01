@@ -9,12 +9,10 @@ namespace StanceOverhaul.SubSystem.Aiming
 {
     public class StanceAimSystem : ISubSystem
     {
-        private const float AdsInSpeed = 9.5f;
         private const float AdsInSpeedRecoilModifier = 0.4f;
-        private const float AdsOutSpeed = 4.15f;
         private const float AdsOutSpeedRecoilModifer = 0.5f;
 
-        // alt aim speeds are all scaled by the weapon's original aim speed, not the stance-eased PwaAimSpeed
+        // alt aim speeds are all scaled by the weapon's original aim speed, not the stance-eased PwaAimSpeed. The offset speed is eased by AltAimSpeedModifier instead
         private const float AltAimBlendSpeed = 4.5f;
         private const float WeightSnapThreshold = 0.001f;
         private const float OffsetSnapThresholdSqr = 1e-10f;
@@ -171,7 +169,11 @@ namespace StanceOverhaul.SubSystem.Aiming
             float recoilModifierIn = FiringStateInstance.IsFiring ? AdsInSpeedRecoilModifier : 1f;
             float recoilModifierOut = FiringStateInstance.IsFiring ? AdsOutSpeedRecoilModifer : 1f;
 
-            float speed = (pwa.IsAiming ? AdsInSpeed * recoilModifierIn * PluginConfig.test3.Value : AdsOutSpeed * recoilModifierOut  * PluginConfig.test2.Value) * StanceControllerInstance.PwaOriginalAimSpeed;
+            bool treatAsPistol = WeaponStateInstance.TreatAsPistol;
+            float adsInSpeed = treatAsPistol ? PluginConfig.PistolAdsInSpeed.Value : PluginConfig.AdsInSpeed.Value;
+            float adsOutSpeed = treatAsPistol ? PluginConfig.PistolAdsOutSpeed.Value : PluginConfig.AdsOutSpeed.Value;
+
+            float speed = (pwa.IsAiming ? adsInSpeed * recoilModifierIn : adsOutSpeed * recoilModifierOut) * StanceControllerInstance.PwaOriginalAimSpeed * StanceControllerInstance.AltAimSpeedModifier;
             float t = 1f - Mathf.Exp(-speed * dt);
 
             _smoothedOffset = Vector3.Lerp(_smoothedOffset, correction, t);

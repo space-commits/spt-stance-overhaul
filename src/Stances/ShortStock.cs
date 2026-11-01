@@ -42,6 +42,7 @@ public class ShortStock : StanceBase
     };
 
     public override AnimationCurve AimSpeedCurve => CurveDrawer.GetCurve("short_aim_speed", CurveAxis.X)!;
+    public override AnimationCurve AltAimSpeedCurve => CurveDrawer.GetCurve("short_alt_aim_speed", CurveAxis.X)!;
 
     public override float BlendIntoThreshold(EStanceType nextStance)
     {

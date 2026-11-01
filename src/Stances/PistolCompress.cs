@@ -29,6 +29,8 @@ public class PistolCompress : StanceBase
     public override bool BlocksFiring => false;
 
     public override AnimationCurve AimSpeedCurve => CurveDrawer.GetCurve("pistol_compress_aim_speed", CurveAxis.X)!;
+    public override AnimationCurve AltAimSpeedCurve => CurveDrawer.GetCurve("pistol_compress_alt_aim_speed", CurveAxis.X)!;
+    public override AnimationCurve AltAimReturnSpeedCurve => CurveDrawer.GetCurve("pistol_compress_alt_aim_return_speed")!.XCurve;
 
     public override float BlendIntoThreshold(EStanceType nextStance)
     {

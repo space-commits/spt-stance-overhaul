@@ -58,7 +58,7 @@ namespace StanceOverhaul.Stances
         /// <summary>
         /// Multiplier on EFT's aim speed while aiming during this stance's transition, so the camera doesn't follow
         /// the stance animation too closely. Time is how far the gun is through its current movement (0 = start, 1 = end).
-        /// Doesn't affect alt aim.
+        /// Doesn't affect alt aim, see <see cref="AltAimSpeedCurve"/>.
         /// </summary>
         public virtual AnimationCurve AimSpeedCurve { get; }
             = new AnimationCurve
@@ -71,6 +71,30 @@ namespace StanceOverhaul.Stances
                 new Keyframe { time = 0.95f, value = 0.8f },
                 new Keyframe { time = 1f, value = 1f }
             );
+
+        /// <summary>
+        /// Multiplier on alt aim speed (gun to camera) while aiming during this stance's transition.
+        /// Time is how far the gun is through its current movement (0 = start, 1 = end).
+        /// </summary>
+        public virtual AnimationCurve AltAimSpeedCurve { get; }
+            = new AnimationCurve
+            (
+                new Keyframe { time = 0f, value = 0f },
+                new Keyframe { time = 0.25f, value = 0f },
+                new Keyframe { time = 0.5f, value = 0.1f },
+                new Keyframe { time = 0.7f, value = 0.25f },
+                new Keyframe { time = 0.85f, value = 0.5f },
+                new Keyframe { time = 0.95f, value = 0.8f },
+                new Keyframe { time = 1f, value = 1f }
+            );
+
+        /// <summary>
+        /// Multiplier on alt aim speed (gun back to rest) out of ADS, shared by all stances unless overridden.
+        /// Time is how far the gun is through its current movement (0 = start, 1 = end). Keep the end value above 0,
+        /// a stance held through ADS uses it for the whole return.
+        /// Runs every frame in any stance, so reads the curve directly to avoid the copy GetCurve(name, axis) makes.
+        /// </summary>
+        public virtual AnimationCurve AltAimReturnSpeedCurve => CurveDrawer.GetCurve("alt_aim_return_speed")!.XCurve;
 
         /// <summary>
         /// Per-axis multiplier on this stance's pose while fully aimed, faded in/out with ADS.

@@ -38,8 +38,8 @@ namespace StanceOverhaul.SubSystem.StanceInput
     // This handler is assumed to be the only thing requesting stances from StanceState.
     internal class StanceInputHandler : ISubSystem
     {
-        // After ADS ends, wait this long before bringing the stance back. If the aim state flickers while the
-        // ADS transition settles, the stance is never re-requested, so it can't flash on screen.
+        // If ADS ends during a stance cross-fade, wait this long before bringing the stance back. If the aim state
+        // flickers while the ADS transition settles, the stance is never re-requested, so it can't flash on screen.
         private const float RestoreAfterADSDelay = 0.05f;
 
         private readonly StanceState _stanceState;
@@ -203,12 +203,11 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
             if (wanted == null)
             {
-                if (active != null)
-                    _stanceState.CancelAll();
+                // Not gated on the active stance: it doesn't report a paused incoming stance, which still has to go.
+                _stanceState.CancelAll();
             }
             else if (active?.StanceType != wanted.StanceType)
             {
-                // Never request what is already active: RequestStance toggles.
                 _stanceState.RequestStance(wanted);
             }
         }
@@ -357,8 +356,10 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
             if (aiming)
                 OnADSStarted();
+            else if (_stanceState.IsTransitioningBetweenStances)
+                _aimSettleTimer = RestoreAfterADSDelay; // restored from RunOnUpdate
             else
-                _aimSettleTimer = _stanceState.IsTransitioningBetweenStances ? RestoreAfterADSDelay : 0.001f; // restored from RunOnUpdate, so a flicker can't flash the stance
+                Reconcile(); // right away, so the alt aim return never runs without the stance's slot
         }
 
         private void OnADSStarted()

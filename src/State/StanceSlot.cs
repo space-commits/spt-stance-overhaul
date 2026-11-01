@@ -62,8 +62,7 @@ internal class StanceSlot
     /// Is at the terminal state of the stance, or heading towards it, and not heading away from it.
     /// </summary>
     public bool IsAtOrHeadingToActivePose =>
-        (ActiveCurveType == ECurveType.Enter && (Direction == +1 || Progress >= 1f)) ||
-        (ActiveCurveType == ECurveType.Exit && Direction == -1);
+        Direction == 0 || IsHeadingToPose;
 
     public float IdleProximity =>
         ActiveCurveType == ECurveType.Exit ? Progress : 1f - Progress;
@@ -96,6 +95,16 @@ internal class StanceSlot
     public float EvaluateAimSpeed()
     {
         return Stance.AimSpeedCurve.Evaluate(MovementProgress);
+    }
+
+    public float EvaluateAltAimSpeed()
+    {
+        return Stance.AltAimSpeedCurve.Evaluate(MovementProgress);
+    }
+
+    public float EvaluateAltAimReturnSpeed()
+    {
+        return Stance.AltAimReturnSpeedCurve.Evaluate(MovementProgress);
     }
 
     public void StanceSlotUpdate(float deltaTime)

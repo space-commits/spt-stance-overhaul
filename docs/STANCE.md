@@ -32,7 +32,7 @@ Stance-Overhaul/
 │   │   └── AimPIDHandler.cs         # TODO/stub
 │   ├── Input/
 │   │   ├── StanceInputEvents.cs     # Stance-specific input events (ToggleHighReady, ToggleLowReady, etc.)
-│   │   ├── StanceInputHandler.cs    # Subscribes to events, manages _storedStance, ADS restore logic, calls StanceState.RequestStance
+│   │   ├── StanceInputHandler.cs    # Subscribes to events, manages _chosen, ADS restore logic, calls StanceState.RequestStance
 │   │   ├── StanceInputListener.cs   # Reads raw Unity Input each frame, raises StanceInputEvents
 │   │   └── InputHookPipeline.cs     # Registers with RealismCommonLib Pipelines for input veto/override
 │   ├── CollisionHandler.cs          # Collision detection for bracing (in-progress)
@@ -112,14 +112,16 @@ Tracks a single stance's animation progress:
 - `ActiveCurve` (`ECurveType.Enter` or `ECurveType.Exit`): Which curve to evaluate
 - `IsAtIdle`, `IsAtPose`, `IsHeadingToIdle`, `IsHeadingToPose`, `IsAtOrHeadingToPose`
 - `IdleProximity`: How close to idle (0 = at pose, 1 = at idle)
-- `EvaluatePosition()` / `EvaluateRotation()` / `EvaluateAimSpeed()`: Sample the active curve at `Progress`
+- `EvaluatePosition()` / `EvaluateRotation()` / `EvaluateAimSpeed()` / `EvaluateAltAimSpeed()` / `EvaluateAltAimReturnSpeed()`: Sample the active curve at `Progress` (position and rotation) or `MovementProgress` (speed curves)
 - `SlotUpdate(deltaTime)`: Advances `Progress` using `TransitionFromModifier` × `TransitionToSpeedModifier` × `PluginConfig.test20.Value`
 
 ### IStance / StanceBase (Stance Definition)
 `IStance` defines what a stance provides:
 - `EnterPositionCurve`, `EnterRotationCurve` — `Vector3Curve` played when entering
 - `ExitPositionCurve`, `ExitRotationCurve` — `Vector3Curve` played when exiting
-- `AimSpeedCurve` — `AnimationCurve` multiplier on EFT's aim speed (`_aimingSpeed`) while aiming during a transition, evaluated at `StanceSlot.MovementProgress` (0 = start of the current movement, 1 = idle or pose). Eases vanilla camera-to-sights only; alt aim uses `PwaOriginalAimSpeed`
+- `AimSpeedCurve` — `AnimationCurve` multiplier on EFT's aim speed (`_aimingSpeed`) while aiming during a transition, evaluated at `StanceSlot.MovementProgress` (0 = start of the current movement, 1 = idle or pose). Eases vanilla camera-to-sights only
+- `AltAimSpeedCurve` — `AnimationCurve` multiplier on alt aim (gun-to-camera) speed, same timing and conditions as `AimSpeedCurve`. Named `<stance>_alt_aim_speed` in `curves.json`
+- `AltAimReturnSpeedCurve` — `AnimationCurve` multiplier on alt aim speed out of ADS, at the same `MovementProgress`. `StanceBase` uses `alt_aim_return_speed` for all stances, `PistolCompress` overrides it with `pistol_compress_alt_aim_return_speed`. With no active slot the multiplier is 1. Keep the end value above 0, since a stance held through ADS uses it for the whole return
 - `BlendIntoThreshold(EStanceType nextStance)` — idle proximity at which incoming is unpaused (default 0.5)
 - `TransitionFromModifier(EStanceType? previousStance)` — speed modifier based on what stance we came from
 - `TransitionToSpeedModifier(EStanceType? nextStance)` — speed modifier based on where we are going
@@ -141,12 +143,42 @@ Stance offsets are applied by piggybacking on the game's `Spring` system:
 
 `StanceState.UpdateAimSpeed()` applies the aim speed multiplier from the active slot's curve to `StanceController.PwaAimSpeed` each frame.
 
+### Alt Aim Speed
+`StanceAimSystem.MoveGunToCamera` eases the gun offset toward its target at:
+
+```
+speed = ADS speed × firing modifier × PwaOriginalAimSpeed × AltAimSpeedModifier
+```
+
+- **ADS speed**: chosen by direction and `WeaponStateInstance.TreatAsPistol`.
+
+| | Entering ADS | Leaving ADS |
+|---|---|---|
+| Pistol | `PistolAdsInSpeed` | `PistolAdsOutSpeed` |
+| Everything else | `AdsInSpeed` | `AdsOutSpeed` |
+
+- **Firing modifier**: `AdsInSpeedRecoilModifier` or `AdsOutSpeedRecoilModifer` while firing, otherwise 1.
+- **`AltAimSpeedModifier`**: the active slot's `AltAimSpeedCurve` while aiming, or its `AltAimReturnSpeedCurve` when not aiming. It's 1 with no slot, so a plain ADS exit with no stance to restore isn't affected.
+
+Two things keep the curve applied from the first frame after ADS ends:
+- `AltAimSpeedModifier` is evaluated when `MoveGunToCamera` reads it, in the `IkProcess` prefix. It isn't cached in `Update`, because `IsAiming` can change between the two.
+- `StanceInputHandler.OnAimStateChanged` restores the stance right away, so its slot already exists. The exception is ADS ending during a stance cross-fade, which waits `RestoreAfterADSDelay` (0.05 s). Slots exist during that wait, so the modifier doesn't fall back to 1.
+
+Reversing a stance that's still exiting (a short ADS) also happens right away, so `MovementProgress` is correct from the first frame.
+
+**When tuning curves:**
+- A very low stance speed doesn't freeze the stance. `StanceSlot.StanceSlotUpdate` clamps the result to at least 1, so a transition never takes longer than about 1 second, and curve time T is then about T seconds.
+- Short ADS taps read the curve partway along, because the exit is reversed rather than restarted. Hold ADS until the stance has fully exited to see a curve from its start.
+- Slot progress can still jump mid-return: a paused incoming stance starting, or a slot finishing, which takes the modifier back to 1. Flat curves hide this.
+
+Because the restore runs immediately, a same-frame `IsAiming` flicker, or a forced ADS exit followed by a reload that pauses the stance, starts and cancels the stance at progress 0. That shouldn't show on screen, but `OnEnter`/`OnExit` still fire, and pistol Patrol's left-hand change reacts to them.
+
 ### Input System
 **Two-layer input architecture**:
 
 1. **`StanceInputListener`** (reads raw input): Polls `UnityEngine.Input` every frame. Raises `StanceInputEvents` (e.g., `StanceInputEvents.RaiseToggleHighReady()`). Also handles scroll-wheel stance cycling. Blocks input when `AimStateInstance.IsAiming || PlayerStateInstance.IsSprinting || PlayerStateInstance.IsInventoryOpen`.
 
-2. **`StanceInputHandler`** (responds to events): Subscribes to `StanceInputEvents` and `PlayerEvents`/`InputEvents`. Manages `_storedStance` (the stance to restore after ADS), `_wasInterruptedByADS`, `_aimedFromActiveAim`. Calls `_stanceState.RequestStance()` or `_stanceState.CancelAll()`.
+2. **`StanceInputHandler`** (responds to events): Subscribes to `StanceInputEvents` and `PlayerEvents`/`InputEvents`. Holds the player's intent in `_chosen` (plus the default stance, Pistol Compress for pistols) and what's suppressing it (`_isAiming`, `_reloadPausesStance`, `_itemInHand`). `Reconcile()` makes `StanceState` match that, through `RequestStance()` or `CancelAll()`. ADS start and normal ADS end both reconcile immediately; see [Alt Aim Speed](#alt-aim-speed) for why.
 
 3. **`InputHookPipeline`** (intercepts EFT input): Registers with `Pipelines.InputVetoPipeline` to suppress EFT's default fire/scroll commands when appropriate. Registers with `Pipelines.InputOverridePipeline` to override `ECommand.LeftStanceToggle` (routing it through `StanceInputEvents` instead of EFT's default) and optionally `ECommand.WeaponMounting`.
 
@@ -161,7 +193,7 @@ All handlers implement `IControllerHelper` and are owned by `StanceController`:
 |---------|---------|
 | `StanceMovementHandler` | Registers `FloatMultiplierHandle`s on `StatModifiers.MaxWalkSpeedModifier` and sprint modifiers; updates multipliers each frame based on `CurrentStanceType` |
 | `StanceAimHandler` | Registers a `BoolGateHandle` on `BoolHandlers.CanAim`; blocks ADS via NVG/thermal/collision/health conditions |
-| `StanceInputHandler` | Manages stored stance, ADS interrupt/restore, firing cancellation logic |
+| `StanceInputHandler` | Manages the chosen stance, ADS interrupt/restore, firing cancellation logic |
 | `StanceInputListener` | Raw input polling and scroll-wheel stance cycle |
 | `InputHookPipeline` | Input veto/override registration with RealismCommonLib pipelines |
 | `StanceHealthHandler` | (In-progress) Health interaction |

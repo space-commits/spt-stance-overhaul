@@ -32,6 +32,7 @@ public class ActiveAim : StanceBase
     public override bool SuspendsBonusesWhileAiming => true;
 
     public override AnimationCurve AimSpeedCurve => CurveDrawer.GetCurve("active_aim_speed", CurveAxis.X)!;
+    public override AnimationCurve AltAimSpeedCurve => CurveDrawer.GetCurve("active_alt_aim_speed", CurveAxis.X)!;
 
 
     public override Vector3 AimRotationScale => new Vector3(1f, 0f, 1f);

@@ -48,6 +48,14 @@ namespace StanceOverhaul.Controllers
 
         public float PwaOriginalAimSpeed { get; set; }
 
+        public float AltAimSpeedModifier
+        {
+            get
+            {
+                return _stanceState != null ? _stanceState.AltAimSpeedModifier : 1f;
+            }
+        }
+
         public bool IsBlindFiring
         {
             get

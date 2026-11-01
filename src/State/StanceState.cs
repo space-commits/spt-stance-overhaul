@@ -256,13 +256,27 @@ namespace StanceOverhaul.State
 
         //Move to StanceAimHandler
         //eases EFT's aim speed (camera to sights) while aiming during a stance transition, so the camera doesn't follow the stance animation too closely.
-        //only while aiming: out of ADS the camera doesn't track the gun. Alt aim uses PwaOriginalAimSpeed and isn't affected
+        //only while aiming: out of ADS the camera doesn't track the gun. Alt aim (gun to camera) is eased separately by its own curve, and by a return curve out of ADS
         private void UpdateAimSpeed()
         {
-            StanceSlot? slot = _incoming != null && _incomingPaused == false ? _incoming : PrimarySlot;
+            StanceSlot? slot = AimSpeedSlot;
             float aimSpeedModifier = AimStateInstance.IsAiming && slot != null ? slot.EvaluateAimSpeed() : 1f;
 
             StanceControllerInstance.PwaAimSpeed = StanceControllerInstance.PwaOriginalAimSpeed * aimSpeedModifier;
+        }
+
+        private StanceSlot? AimSpeedSlot => _incoming != null && _incomingPaused == false ? _incoming : PrimarySlot;
+
+        // read when the offset is applied, not cached in Update: aiming can change between the two, and using the old value skips the curve for a frame
+        public float AltAimSpeedModifier
+        {
+            get
+            {
+                StanceSlot? slot = AimSpeedSlot;
+                if (slot == null) return 1f;
+
+                return AimStateInstance.IsAiming ? slot.EvaluateAltAimSpeed() : slot.EvaluateAltAimReturnSpeed();
+            }
         }
 
         public void RequestStance(IStance stance)
@@ -277,48 +291,22 @@ namespace StanceOverhaul.State
                 return;
             }
 
-            // same stance as primary: toggle exit or reverse
+            // same stance as primary: never toggles, only an exit needs turning around
             if (PrimarySlot?.Stance == stance && _incoming == null)
             {
-                //holding -> switch to exit curve
-                if (PrimarySlot.Direction == 0)
-                {
-                    PrimarySlot.Transition = new StanceTransitionContext(stance.StanceType, EStanceType.None); ;
-
-                    PrimarySlot.ActiveCurveType = ECurveType.Exit;
-                    PrimarySlot.Progress = 0f;
-                    PrimarySlot.Direction = +1;
-                    stance.OnExit();
-                }
-                else if (PrimarySlot.IsHeadingToIdle) // heading to idle -> reverse toward pose
+                if (PrimarySlot.IsHeadingToIdle) // heading to idle -> reverse toward pose
                 {
                     PrimarySlot.Transition = new StanceTransitionContext(EStanceType.None, stance.StanceType);
 
                     PrimarySlot.Direction *= -1;
                     stance.OnEnter();
                 }
-                else // heading to pose -> reverse toward idle
-                {
-                    PrimarySlot.Transition = new StanceTransitionContext(stance.StanceType, EStanceType.None);
-
-                    PrimarySlot.Direction *= -1;
-                    stance.OnExit();
-                }
                 return;
             }
 
-            //same stance is incoming, discard current stance and promote incoming to primary, start its exit
+            //same stance is incoming: already on its way in
             if (_incoming?.Stance == stance)
-            {
-                PrimarySlot = _incoming;
-                _incoming = null;
-                _incomingPaused = false;
-
-                var transition = new StanceTransitionContext(PrimarySlot.Stance.StanceType, EStanceType.None);
-                BeginExit(PrimarySlot, transition);
-
                 return;
-            }
 
             //third stance during blend. A = Null, B = Primary, C = Incoming. B -> C.
             if (_incoming != null)
