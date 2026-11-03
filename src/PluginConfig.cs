@@ -238,6 +238,7 @@ namespace StanceOverhaul
         public static ConfigEntry<float> TacSprintAccelBonus { get; set; }
         public static ConfigEntry<float> TacSprintDrainRate { get; set; }
         public static ConfigEntry<bool> BlockFiring { get; set; }
+        public static ConfigEntry<float> FireQueueReleaseWeight { get; set; }
         public static ConfigEntry<bool> RememberStanceFiring { get; set; }
         public static ConfigEntry<bool> RememberStanceItem { get; set; }
         public static ConfigEntry<bool> LeanLeftTogglesLeftShoulder { get; set; }
@@ -271,18 +272,20 @@ namespace StanceOverhaul
         {
             string dev = "0. Dev";
             string general = "1. General";
-            string stamina = "2. Stamina";
-            string movement = "3. Movement";
-            string weapAimAndPos = "4. Offsets";
-            string deviceBonuses = "5. Device Bonuses";
-            string controls = "6. Controls";
-            string activeAim = "7. Active Aim";
-            string highReady = "8. High Ready";
-            string lowReady = "9. Low Ready";
-            string shortStock = "10. Short-Stocking";
-            string patrol = "11. Patrol Stance";
-            string leftShoulder = "12. Left Shoulder";
-            string pistol = "13. Pistol Stance";
+            string aiming = "2. Aiming";
+            string stanceSpeed = "3. Stance Speed";
+            string stamina = "4. Stamina";
+            string movement = "5. Movement";
+            string weapAimAndPos = "6. Offsets";
+            string deviceBonuses = "7. Device Bonuses";
+            string controls = "8. Controls";
+            string activeAim = "9. Active Aim";
+            string highReady = "10. High Ready";
+            string lowReady = "11. Low Ready";
+            string shortStock = "12. Short-Stocking";
+            string patrol = "13. Patrol Stance";
+            string leftShoulder = "14. Left Shoulder";
+            string pistol = "15. Pistol Stance";
 
             test1 = config.Bind<float>(dev, "test 1", 1f, new ConfigDescription("", new AcceptableValueRange<float>(-5000f, 5000f), new ConfigurationManagerAttributes { Order = 170, IsAdvanced = true, Browsable = true }));
             test2 = config.Bind<float>(dev, "test 2", 1f, new ConfigDescription("", new AcceptableValueRange<float>(-5000f, 5000f), new ConfigurationManagerAttributes { Order = 160, IsAdvanced = true, Browsable = true }));
@@ -309,23 +312,25 @@ namespace StanceOverhaul
             OverrideCollision = config.Bind<bool>(general, "NOT IMPLEMENTED YET. Override Collision", true, new ConfigDescription("If FOV Fix is installed, will override BSG's collision system completely to make it work well with stances and alt weapon positions. If not installed, will modify BSG collision system.", null, new ConfigurationManagerAttributes { Order = 410, Browsable = true }));
             OverrideMounting = config.Bind<bool>(general, "NOT IMPLEMENTED YET. Use Realism Mounting System", true, new ConfigDescription("Overrides BSG's Mounting System WIth Realism's (That Was Implemented First). Recoil, Stance and Sway Mechanics Are All Built Around Realism's Mounting And Won't Function Correctly With BSG's.", null, new ConfigurationManagerAttributes { Order = 300, Browsable = true }));
             EnableExtraProcEffects = config.Bind<bool>(general, "Enable Extra Weapon Position/Rotation Effects", true, new ConfigDescription("Weapon Has A Slight Cant To It based On Ergo. ADS With Gasmask/Faceshield Is Canted. Weapon Cant Increases When Crouching, And Moves Closer To You. Other Sublte Effects.", null, new ConfigurationManagerAttributes { Order = 280, Browsable = true }));
-            EnableAltAim = config.Bind<bool>(general, "Enable Alternative Aiming System", true, new ConfigDescription("Sights move to camera, instead of camera to sights. This makes ADS much smoother, especially with stances.", null, new ConfigurationManagerAttributes { Order = 229, Browsable = true }));
-            AdsInSpeed = config.Bind<float>(general, "ADS In Speed", 9.5f, new ConfigDescription("How quickly sights move to the camera when entering ADS with the Alternative Aiming System. Pistols use Pistol ADS In Speed.", new AcceptableValueRange<float>(0.1f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 228, IsAdvanced = true, Browsable = true }));
-            AdsOutSpeed = config.Bind<float>(general, "ADS Out Speed", 4.15f, new ConfigDescription("How quickly the weapon returns from the camera when exiting ADS with the Alternative Aiming System. Pistols use Pistol ADS Out Speed.", new AcceptableValueRange<float>(0.1f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 227, IsAdvanced = true, Browsable = true }));
-            PistolAdsInSpeed = config.Bind<float>(general, "Pistol ADS In Speed", 9.5f, new ConfigDescription("How quickly sights move to the camera when entering ADS with the Alternative Aiming System, for pistols.", new AcceptableValueRange<float>(0.1f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 226, IsAdvanced = true, Browsable = true }));
-            PistolAdsOutSpeed = config.Bind<float>(general, "Pistol ADS Out Speed", 4.15f, new ConfigDescription("How quickly the weapon returns from the camera when exiting ADS with the Alternative Aiming System, for pistols.", new AcceptableValueRange<float>(0.1f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 225, IsAdvanced = true, Browsable = true }));
             EnableMountUI = config.Bind<bool>(general, "NOT IMPLEMENTED YET. Enable Mounting UI", true, new ConfigDescription("If Enabled, An Icon On Screen Will Indicate If Player Is Bracing, Mounting And What Side Of Cover They Are On.", null, new ConfigurationManagerAttributes { Order = 179, Browsable = true }));
             EnableFSAimBlock = config.Bind<bool>(general, "Enable Faceshield Aim Block", true, new ConfigDescription("Faceshields Block ADS Unless The Specfic Stock/Weapon/Faceshield Allows It.", null, new ConfigurationManagerAttributes { Order = 4, Browsable = true }));
             EnableNVGAimBlock = config.Bind<bool>(general, "Enable NVG Aim Block", true, new ConfigDescription("Magnified Optics Block ADS When Using NVGs.", null, new ConfigurationManagerAttributes { Order = 5, Browsable = true }));
             EnableThermalAimBlock = config.Bind<bool>(general, "Enable Thermal Aim Block", true, new ConfigDescription("Can't Aim With Sights When Using Thermal Goggles.", null, new ConfigurationManagerAttributes { Order = 5, Browsable = true }));
             StanceSfxModifier = config.Bind<float>(general, "Stance Sfx Volume Modifier", 1f, new ConfigDescription("Gear rattle volume modifer when doing stance related things", new AcceptableValueRange<float>(0f, 1f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 153, Browsable = true }));
             StanceBlendSpeed = config.Bind<float>(general, "Stance Blend Speed", 18f, new ConfigDescription("Speed of stance blending transitions", new AcceptableValueRange<float>(0.1f, 100f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 151, IsAdvanced = true, Browsable = true }));
-            GlobalStanceSpeed = config.Bind<float>(general, "Global Stance Speed", 1.85f, new ConfigDescription("Global multiplier for all stance speeds", new AcceptableValueRange<float>(0f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 150, IsAdvanced = true, Browsable = true }));
-            StanceRifleDampingModifier = config.Bind<float>(general, "Stance Rifle Damping Modifier", 1f, new ConfigDescription("Global multiplier for all stance damping. Defines reactivness to motion, or wiggle.", new AcceptableValueRange<float>(0f, 2f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 150, IsAdvanced = true, Browsable = true }));
-            StanceRifleReturnSpeedModifier = config.Bind<float>(general, "Stance Rifle Return Speed Modifier", 1f, new ConfigDescription("Global multiplier for all stance return speeds. Defines responsivenss and tightness of movement.", new AcceptableValueRange<float>(0f, 2f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 150, IsAdvanced = true, Browsable = true }));
-            StancePistolDampingModifier = config.Bind<float>(general, "Stance Pistol Damping Modifier", 0.95f, new ConfigDescription("Global multiplier for all stance damping. Defines reactivness to motion, or wiggle.", new AcceptableValueRange<float>(0f, 2f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 150, IsAdvanced = true, Browsable = true }));
-            StancePistolReturnSpeedModifier = config.Bind<float>(general, "Stance Pistol Return Speed Modifier", 0.75f, new ConfigDescription("Global multiplier for all stance return speeds. Defines responsivenss and tightness of movement.", new AcceptableValueRange<float>(0f, 2f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 150, IsAdvanced = true, Browsable = true }));
             EnableReloadSpeedChanges = config.Bind<bool>(general, "Enable Reload Speed Changes", true, new ConfigDescription("Reload Speed Is Affected By Stance And Mounting. Recommend to disable if using Fika to avoid desync.", null, new ConfigurationManagerAttributes { Order = 180, Browsable = true }));
+
+            EnableAltAim = config.Bind<bool>(aiming, "Enable Alternative Aiming System", true, new ConfigDescription("Sights move to camera, instead of camera to sights. This makes ADS much smoother, especially with stances.", null, new ConfigurationManagerAttributes { Order = 229, Browsable = true }));
+            AdsInSpeed = config.Bind<float>(aiming, "ADS In Speed", 9.5f, new ConfigDescription("How quickly sights move to the camera when entering ADS with the Alternative Aiming System. Pistols use Pistol ADS In Speed.", new AcceptableValueRange<float>(0.1f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 228, IsAdvanced = true, Browsable = true }));
+            AdsOutSpeed = config.Bind<float>(aiming, "ADS Out Speed", 4.15f, new ConfigDescription("How quickly the weapon returns from the camera when exiting ADS with the Alternative Aiming System. Pistols use Pistol ADS Out Speed.", new AcceptableValueRange<float>(0.1f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 227, IsAdvanced = true, Browsable = true }));
+            PistolAdsInSpeed = config.Bind<float>(aiming, "Pistol ADS In Speed", 9.5f, new ConfigDescription("How quickly sights move to the camera when entering ADS with the Alternative Aiming System, for pistols.", new AcceptableValueRange<float>(0.1f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 226, IsAdvanced = true, Browsable = true }));
+            PistolAdsOutSpeed = config.Bind<float>(aiming, "Pistol ADS Out Speed", 4.15f, new ConfigDescription("How quickly the weapon returns from the camera when exiting ADS with the Alternative Aiming System, for pistols.", new AcceptableValueRange<float>(0.1f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 225, IsAdvanced = true, Browsable = true }));
+
+            GlobalStanceSpeed = config.Bind<float>(stanceSpeed, "Global Stance Speed", 1.85f, new ConfigDescription("Global multiplier for all stance speeds", new AcceptableValueRange<float>(0f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 150, IsAdvanced = true, Browsable = true }));
+            StanceRifleDampingModifier = config.Bind<float>(stanceSpeed, "Stance Rifle Damping Modifier", 1f, new ConfigDescription("Global multiplier for all stance damping. Defines reactivness to motion, or wiggle.", new AcceptableValueRange<float>(0f, 2f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 150, IsAdvanced = true, Browsable = true }));
+            StanceRifleReturnSpeedModifier = config.Bind<float>(stanceSpeed, "Stance Rifle Return Speed Modifier", 1f, new ConfigDescription("Global multiplier for all stance return speeds. Defines responsivenss and tightness of movement.", new AcceptableValueRange<float>(0f, 2f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 150, IsAdvanced = true, Browsable = true }));
+            StancePistolDampingModifier = config.Bind<float>(stanceSpeed, "Stance Pistol Damping Modifier", 0.95f, new ConfigDescription("Global multiplier for all stance damping. Defines reactivness to motion, or wiggle.", new AcceptableValueRange<float>(0f, 2f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 150, IsAdvanced = true, Browsable = true }));
+            StancePistolReturnSpeedModifier = config.Bind<float>(stanceSpeed, "Stance Pistol Return Speed Modifier", 0.75f, new ConfigDescription("Global multiplier for all stance return speeds. Defines responsivenss and tightness of movement.", new AcceptableValueRange<float>(0f, 2f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 150, IsAdvanced = true, Browsable = true }));
 
             EnableIdleStamDrain = config.Bind<bool>(stamina, "Enable Idle Arm Stamina Drain", true, new ConfigDescription("Arm Stamina Will Drain When Not In A Stance (High And Low Ready, Short-Stocking).", null, new ConfigurationManagerAttributes { Order = 210, Browsable = true }));
             IdleStamDrainModi = config.Bind<float>(stamina, "Idle Stam Drain Modifer", 1f, new ConfigDescription("Modifier for stamina drain rate, including stances that drain stamina (Active Aim, Left Shoulder)", new AcceptableValueRange<float>(0.0f, 5f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 200, Browsable = true }));
@@ -360,6 +365,7 @@ namespace StanceOverhaul
             RememberStanceFiring = config.Bind<bool>(controls, "Remember Stance After Firing", true, new ConfigDescription("Remember Stance After Firing If The Player Was Aiming.", null, new ConfigurationManagerAttributes { Order = 260, Browsable = true }));
             LeanLeftTogglesLeftShoulder = config.Bind<bool>(controls, "Toggle Left Shoulder On Lean", false, new ConfigDescription("Automatically toggles left stance on lean.", null, new ConfigurationManagerAttributes { Order = 240, Browsable = true }));
             BlockFiring = config.Bind<bool>(controls, "Block Shooting While In Stance", true, new ConfigDescription("Blocks Firing While In A Stance, Will Cancel Stance If Attempting To Fire.", null, new ConfigurationManagerAttributes { Order = 250, Browsable = true }));
+            FireQueueReleaseWeight = config.Bind<float>(controls, "Queued Shot Release Timing", 0.025f, new ConfigDescription("When Shooting Is Blocked By A Stance, The Queued Shot Fires Once The Stance's Animation Has Faded Below This Fraction. Lower = Later (0 = Fully Out Of The Stance, 1 = Immediately).", new AcceptableValueRange<float>(0f, 1f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 245, Browsable = true }));
 
             ActiveAimKeybind = config.Bind(activeAim, "Active Aim Keybind", new KeyboardShortcut(KeyCode.Mouse4), new ConfigDescription("Cants The Weapon Sideways, Improving Hipfire Accuracy.", null, new ConfigurationManagerAttributes { Order = 110, Browsable = true }));
             ToggleActiveAim = config.Bind<bool>(activeAim, "Use Toggle For Active Aim", false, new ConfigDescription("", null, new ConfigurationManagerAttributes { Order = 109, Browsable = true }));

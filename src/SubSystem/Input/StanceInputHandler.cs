@@ -1,10 +1,14 @@
 using System;
 using System.Linq;
+using EFT;
+using EFT.InputSystem;
+using UnityEngine;
 using RealismCommonLib.Events;
 using StanceOverhaul.Events;
 using StanceOverhaul.Enums;
 using StanceOverhaul.Stances;
 using StanceOverhaul.State;
+using RealismCommonLib.Utils;
 using static RealismCommonLib.Plugin;
 using static StanceOverhaul.Plugin;
 
@@ -49,12 +53,16 @@ namespace StanceOverhaul.SubSystem.StanceInput
         private IStance? _beforeActiveAim;
         private bool _leftShoulderFromLean;
         private IStance? _beforeLeanLeftShoulder;
+        private EStanceType _stanceFromFireAttempt;
 
         // ---- Suppressors ----
         private bool _isAiming;
         private float _aimSettleTimer;
         private bool _reloadPausesStance;
         private bool _itemInHand;
+
+        private DelayTimer _fireQueueTimer = new DelayTimer(1f);
+        private bool _queueShot;
 
         public StanceInputHandler(StanceState stanceState)
         {
@@ -75,6 +83,8 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
         public void RunOnUpdate(float deltaTime)
         {
+            FireQueueUpdate();
+
             if (_aimSettleTimer <= 0f)
                 return;
 
@@ -168,9 +178,9 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
         // A stance that blocks firing is dropped when the player tries to shoot, so the shot can go through.
         // (Flip this if you want the opposite: "firing cancels stances that do NOT block it".)
-        private static bool FiringDropsStance(IStance stance)
+        private static bool FiringDropsStance(IStance? stance)
         {
-            return stance.BlocksFiring;
+            return stance != null && stance.BlocksFiring;
         }
 
         // What the player may toggle on the current weapon: pistols only get patrol (plus their default,
@@ -382,6 +392,8 @@ namespace StanceOverhaul.SubSystem.StanceInput
         // Both "a shot was fired" and "tried to fire from a stance" end up here.
         private void OnFireAttempt()
         {
+            QueueShotFromFireAttempt();
+
             if (_chosen == null || !FiringDropsStance(_chosen))
                 return;
 
@@ -392,6 +404,53 @@ namespace StanceOverhaul.SubSystem.StanceInput
             // The default stance is the baseline and is never dropped, Reconcile puts it back if needed
             SetChosen(null);
             Reconcile();
+        }
+
+        private void QueueShotFromFireAttempt()
+        {
+
+            if (FiringDropsStance(_stanceState.ActiveStance) && PluginConfig.BlockFiring.Value && !FiringStateInstance.IsFiring)
+            {
+                _queueShot = true;
+                _fireQueueTimer.Start();
+                _stanceFromFireAttempt = _stanceState.ActiveStance.StanceType;
+            }
+            else
+                _queueShot = false;
+        }
+
+        private void FireQueueUpdate()
+        {
+            if (!_queueShot)
+                return;
+
+            bool holdingKey = StanceControllerInstance.InputListenerInstance.IsHoldingFireKey;
+            bool cantFire = !PlayerStateInstance.WeaponIsReady || PlayerStateInstance.IsInventoryOpen || Cursor.visible;
+
+            if (_fireQueueTimer.Update() || !holdingKey || cantFire || FiringStateInstance.IsFiring)
+            {
+                ClearFireQueue();
+                return;
+            }
+
+            if (_stanceState.GetPoseWeight(_stanceFromFireAttempt) > PluginConfig.FireQueueReleaseWeight.Value)
+                return;
+
+            var translator = PlayerStateInstance.Player?.GetComponent<PlayerOwner>()?.HandsInputTranslator as FirearmHandsInputTranslator;
+
+            // ToggleShooting is a toggle, so only send it while the trigger is up
+            if (translator == null || translator._firearmTriggerPressed)
+                return;
+
+            translator.TranslateCommand(ECommand.ToggleShooting);
+
+            ClearFireQueue();
+        }
+
+        private void ClearFireQueue()
+        {
+            _queueShot = false;
+            _fireQueueTimer.Stop();
         }
 
         // ================= Reload =================

@@ -14,16 +14,19 @@ using EFT.UI.Screens;
 
 namespace StanceOverhaul.SubSystem.StanceInput
 {
-    internal class StanceInputListener : ISubSystem
+    public class StanceInputListener : ISubSystem
     {
+        private const string ScrollAxisName = "Mouse Scroll";
+
         private bool _activeAimHoldInProgress;
         private bool _meleeIsToggleable = true;
         private float _meleeTimer = 0f;
 
-        private const string ScrollAxisName = "Mouse Scroll";
+        private bool _speedIsWheelOnly;
 
         private List<KeyCode[]> _aimControls = new List<KeyCode[]>();
         private List<KeyCode[]> _scrollBlockingControls = new List<KeyCode[]>();
+        private List<KeyCode[]> _fireControl = new List<KeyCode[]>();
 
         private List<EGameKey> _scrollBlockingActions = new List<EGameKey>()
         {
@@ -37,6 +40,14 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
 
         private Action _unbindKeybinds;
+
+        public bool IsHoldingFireKey
+        {
+            get
+            {
+                return AnyControlHeld(_fireControl);
+            }
+        }
 
         private bool StanceInputBlocked
         {
@@ -73,18 +84,28 @@ namespace StanceOverhaul.SubSystem.StanceInput
         {
             _aimControls.Clear();
             _scrollBlockingControls.Clear();
+            _fireControl.Clear();
+            _speedIsWheelOnly = false;
 
             foreach (KeyGroup group in keyBindings)
             {
                 foreach (InputSource variant in group.variants)
                 {
-                    // Empty padding variants and bare-axis bindings have no keys to hold
-                    if (variant.keyCode.Count == 0) continue;
+                    // No keys to hold, so AnyControlHeld can't detect this binding
+                    if (variant.keyCode.Count == 0)
+                    {
+                        if (variant.axisName == ScrollAxisName && (group.keyName == EGameKey.Next || group.keyName == EGameKey.Previous))
+                            _speedIsWheelOnly = true;
+
+                        continue;
+                    }
 
                     if (_scrollBlockingActions.Contains(group.keyName))
                         _scrollBlockingControls.Add(variant.keyCode.ToArray());
                     else if (group.keyName == EGameKey.Aim)
                         _aimControls.Add(variant.keyCode.ToArray());
+                    else if (group.keyName == EGameKey.Shoot)
+                        _fireControl.Add(variant.keyCode.ToArray());
                 }
             }
         }
@@ -140,9 +161,10 @@ namespace StanceOverhaul.SubSystem.StanceInput
         {
             if (!PluginConfig.UseMouseWheelStance.Value) return;
 
-            if (UnityEngine.Input.GetKey(PluginConfig.StanceWheelComboKeyBind.Value.MainKey) &&
-                PluginConfig.UseMouseWheelPlusKey.Value ||
-                !PluginConfig.UseMouseWheelPlusKey.Value && !AnyControlHeld(_scrollBlockingControls))
+            bool canDoMouseWheelOnly = !PluginConfig.UseMouseWheelPlusKey.Value && !_speedIsWheelOnly && !AnyControlHeld(_scrollBlockingControls);
+            bool canDoMouseWheelPlusKey = Input.GetKey(PluginConfig.StanceWheelComboKeyBind.Value.MainKey) && PluginConfig.UseMouseWheelPlusKey.Value;
+
+            if (canDoMouseWheelPlusKey || canDoMouseWheelOnly)
             {
                 float scrollDelta = Input.mouseScrollDelta.y;
 

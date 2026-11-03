@@ -27,8 +27,6 @@ namespace StanceOverhaul.Controllers
         public const float LEFT_SHOULDER_SWAY_MULTI = 1.3f;
         public const float BASE_OFFSET_SPRING_FACTOR = 2f;
 
-        private EStanceType _targetStance = EStanceType.None;
-
         private static FieldInfo _pwaAimField = AccessTools.Field(typeof(ProceduralWeaponAnimation), "_aimingSpeed");
 
         public bool AwakeRan { get; private set; } = false;
@@ -293,6 +291,7 @@ namespace StanceOverhaul.Controllers
         public EStanceType CurrentStanceType => _stanceState.ActiveStanceType;
         public IStance? CurrentStance => _stanceState.ActiveStance;
         public StatsSystem StatsHandlerInstance => _statsSystem;
+        public StanceInputListener InputListenerInstance => _inputListener;
         public bool IsDoingTacSprint => _tacSprintSystem.IsDoingTacSprint;
 
         // never while aiming, for any stance, so a hipfire bonus can't leak into ADS

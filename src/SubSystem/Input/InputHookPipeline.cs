@@ -50,9 +50,9 @@ namespace StanceOverhaul.Controllers.PatchHooks
             {
                 case ECommand.ToggleShooting:
                     return ShouldVetoFiring();
-                // case ECommand.ScrollNext:
-                // case ECommand.ScrollPrevious:
-                //     return ShouldVetoScrollInput();
+                case ECommand.ScrollNext:
+                case ECommand.ScrollPrevious:
+                    return ShouldVetoScrollInput();
                 default:
                     return false;
             }
