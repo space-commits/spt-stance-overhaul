@@ -36,8 +36,8 @@ namespace StanceOverhaul.State
     internal class StanceState : ISubSystem
     {
         // scaled by the weapon's original aim speed, same as StanceAimSystem's ADS offset
-        private const float AimFadeInSpeed = 8.65f;
-        private const float AimFadeOutSpeed = 6.9f;
+        private const float AimFadeInSpeed = 8.4f;
+        private const float AimFadeOutSpeed = 6.5f;
         private const float AimWeightSnapThreshold = 0.001f;
 
         private StanceSlot? _primarySlot;
@@ -195,7 +195,7 @@ namespace StanceOverhaul.State
         {
             bool isAiming = AimStateInstance.IsAiming;
             float target = isAiming ? 1f : 0f;
-            float speed = (isAiming ? AimFadeInSpeed : AimFadeOutSpeed) * StanceControllerInstance.PwaOriginalAimSpeed * PluginConfig.test1.Value;
+            float speed = (isAiming ? AimFadeInSpeed : AimFadeOutSpeed) * _primarySlot?.CalStanceSpeed(PluginConfig.GlobalStanceSpeed.Value) ?? StanceControllerInstance.PwaOriginalAimSpeed;
             float t = 1f - Mathf.Exp(-speed * deltaTime);
             _aimWeight = Mathf.Lerp(_aimWeight, target, t);
 

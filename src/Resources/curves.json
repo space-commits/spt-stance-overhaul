@@ -2094,6 +2094,12 @@
             "outTangent": 0.0
           },
           {
+            "time": 0.9,
+            "value": -8.4,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
             "time": 1.0,
             "value": -8.0,
             "inTangent": 0.0,
@@ -2144,6 +2150,12 @@
             "outTangent": 0.0
           },
           {
+            "time": 0.8,
+            "value": -0.01,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
             "time": 1.0,
             "value": 0.0,
             "inTangent": 0.0,
@@ -2190,6 +2202,12 @@
           {
             "time": 0.0,
             "value": -8.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.85,
+            "value": 1.5,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
@@ -2636,20 +2654,20 @@
             "outTangent": 0.0
           },
           {
-            "time": 0.7,
-            "value": 0.0,
-            "inTangent": 0.0,
-            "outTangent": 0.0
-          },
-          {
-            "time": 0.85,
+            "time": 0.4,
             "value": 0.1,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
           {
-            "time": 0.95,
-            "value": 0.25,
+            "time": 0.6,
+            "value": 0.2,
+            "inTangent": 0.0,
+            "outTangent": 0.0
+          },
+          {
+            "time": 0.75,
+            "value": 0.75,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
@@ -2786,36 +2804,6 @@
             "outTangent": 0.0
           },
           {
-            "time": 0.25,
-            "value": 0.0,
-            "inTangent": 0.0,
-            "outTangent": 0.0
-          },
-          {
-            "time": 0.5,
-            "value": 0.1,
-            "inTangent": 0.0,
-            "outTangent": 0.0
-          },
-          {
-            "time": 0.7,
-            "value": 0.25,
-            "inTangent": 0.0,
-            "outTangent": 0.0
-          },
-          {
-            "time": 0.85,
-            "value": 0.5,
-            "inTangent": 0.0,
-            "outTangent": 0.0
-          },
-          {
-            "time": 0.95,
-            "value": 0.8,
-            "inTangent": 0.0,
-            "outTangent": 0.0
-          },
-          {
             "time": 1.0,
             "value": 1.0,
             "inTangent": 0.0,
@@ -2864,12 +2852,6 @@
             "outTangent": 0.0
           },
           {
-            "time": 0.9,
-            "value": 0.0,
-            "inTangent": 0.0,
-            "outTangent": 0.0
-          },
-          {
             "time": 1.0,
             "value": 1.0,
             "inTangent": 0.0,
@@ -2889,7 +2871,7 @@
         "keys": [
           {
             "time": 0.0,
-            "value": 1.0,
+            "value": 0.5,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
