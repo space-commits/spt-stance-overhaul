@@ -173,8 +173,9 @@ namespace StanceOverhaul.SubSystem.Aiming
             float adsInSpeed = treatAsPistol ? PluginConfig.PistolAdsInSpeed.Value : PluginConfig.AdsInSpeed.Value;
             float adsOutSpeed = treatAsPistol ? PluginConfig.PistolAdsOutSpeed.Value : PluginConfig.AdsOutSpeed.Value;
 
-            float speed = (pwa.IsAiming ? adsInSpeed * recoilModifierIn : adsOutSpeed * recoilModifierOut) * StanceControllerInstance.PwaOriginalAimSpeed * StanceControllerInstance.AltAimSpeedModifier;
-            float t = 1f - Mathf.Exp(-speed * dt);
+            float baseSpeed = (pwa.IsAiming ? adsInSpeed * recoilModifierIn : adsOutSpeed * recoilModifierOut) * StanceControllerInstance.AltAimSpeedModifier;
+            float finalSpeed = StanceControllerInstance.StatsHandlerInstance.GetAltAimSpeedModifier(baseSpeed);
+            float t = 1f - Mathf.Exp(-finalSpeed * dt);
 
             _smoothedOffset = Vector3.Lerp(_smoothedOffset, correction, t);
 

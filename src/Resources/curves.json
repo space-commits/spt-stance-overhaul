@@ -1827,7 +1827,7 @@
           },
           {
             "time": 1.0,
-            "value": -0.06,
+            "value": -0.05,
             "inTangent": 0.0,
             "outTangent": 0.0
           }
@@ -1843,13 +1843,13 @@
           },
           {
             "time": 0.1,
-            "value": -0.01,
+            "value": -0.005,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
           {
             "time": 1.0,
-            "value": 0.03,
+            "value": 0.05,
             "inTangent": 0.0,
             "outTangent": 0.0
           }
@@ -1939,7 +1939,7 @@
         "keys": [
           {
             "time": 0.0,
-            "value": -0.06,
+            "value": -0.05,
             "inTangent": 0.0,
             "outTangent": 0.0
           },
@@ -1955,7 +1955,7 @@
         "keys": [
           {
             "time": 0.0,
-            "value": 0.03,
+            "value": 0.05,
             "inTangent": 0.0,
             "outTangent": 0.0
           },

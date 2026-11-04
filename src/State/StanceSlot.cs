@@ -107,11 +107,6 @@ internal class StanceSlot
         return Stance.AltAimReturnSpeedCurve.Evaluate(MovementProgress);
     }
 
-    public float CalStanceSpeed(float speed)
-    {
-        return Mathf.Clamp(StanceControllerInstance.StatsHandlerInstance.GetStanceSpeedModifier(speed), 1f, speed);
-    }
-
     public void StanceSlotUpdate(float deltaTime)
     {
         if (Direction == 0) return; // holding
@@ -120,7 +115,7 @@ internal class StanceSlot
                     Stance.TransitionToSpeedModifier(Transition.To) *
                     PluginConfig.GlobalStanceSpeed.Value;
 
-        speed = CalStanceSpeed(speed);
+        speed = Mathf.Clamp(StanceControllerInstance.StatsHandlerInstance.GetStanceSpeedModifier(speed), 1f, speed);
 
         PreviousProgress = Progress;
 

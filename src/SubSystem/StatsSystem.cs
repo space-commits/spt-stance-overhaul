@@ -32,11 +32,13 @@ public class StatsSystem : ISubSystem
     private const float ErgoExponent = 2.15f;
     private const float StaminaWeightExponentRifle = 1.35f;
     private const float StaminaWeightExponentPistol = 2f;
-    private const float SpeedWeightExponentRifle = 1.25f;
+    private const float SpeedWeightExponentRifle = 1.27f;
     private const float SpeedWeightExponentPistol = 3f;
+    private const float AimWeightExponentRifle = 1.5f;
+    private const float AimWeightExponentPistol = 3f;
 
-    private const float OffsetWeightExponentRifle = 1.25f;
-    private const float OffsetWeightExponentPistol = 3f;
+    private const float OffsetWeightExponentRifle = 1.5f;
+    private const float OffsetWeightExponentPistol = 5f;
 
     private const float DampingWeightExponentRifle = 6f;
     private const float DampingWeightExponentPistol = 6f;
@@ -182,9 +184,17 @@ public class StatsSystem : ISubSystem
         return baseStanceSpeed / (1 + weightFactor * modifier);
     }
 
+    public float GetAltAimSpeedModifier(float baseStanceSpeed)
+    {
+        var weightExp = WeaponStateInstance.TreatAsPistol ? AimWeightExponentPistol : AimWeightExponentRifle;
+        var weightFactor = Mathf.Pow(EffectiveWeaponWeight, weightExp);
+        var modifier = WeaponStateInstance.TreatAsPistol ? 0.28f : 0.25f;
+        return baseStanceSpeed / (1 + weightFactor * modifier);
+    }
+
     public float GetWeaponOffset()
     {
-        var weightExp = WeaponStateInstance.TreatAsPistol ? 5f : 1.5f;
+        var weightExp = WeaponStateInstance.TreatAsPistol ? OffsetWeightExponentPistol : OffsetWeightExponentRifle;
         var weightFactor = Mathf.Pow(EffectiveWeaponWeight, weightExp);
         var modifier = WeaponStateInstance.TreatAsPistol ? -0.4f : -0.45f;
         return Mathf.Clamp(weightFactor * modifier, -5f, -0.5f);
@@ -198,5 +208,5 @@ public class StatsSystem : ISubSystem
     {
         return Mathf.Max(baseValue * StrengthWeightModifier, 10f);
     }
-    
+
 }

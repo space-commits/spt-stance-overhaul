@@ -36,8 +36,8 @@ namespace StanceOverhaul.State
     internal class StanceState : ISubSystem
     {
         // scaled by the weapon's original aim speed, same as StanceAimSystem's ADS offset
-        private const float AimFadeInSpeed = 8.4f;
-        private const float AimFadeOutSpeed = 6.5f;
+        private const float AimFadeInSpeed = 14f;
+        private const float AimFadeOutSpeed = 15f;
         private const float AimWeightSnapThreshold = 0.001f;
 
         private StanceSlot? _primarySlot;
@@ -195,8 +195,9 @@ namespace StanceOverhaul.State
         {
             bool isAiming = AimStateInstance.IsAiming;
             float target = isAiming ? 1f : 0f;
-            float speed = (isAiming ? AimFadeInSpeed : AimFadeOutSpeed) * _primarySlot?.CalStanceSpeed(PluginConfig.GlobalStanceSpeed.Value) ?? StanceControllerInstance.PwaOriginalAimSpeed;
-            float t = 1f - Mathf.Exp(-speed * deltaTime);
+            float baseSpeed = isAiming ? AimFadeInSpeed : AimFadeOutSpeed;
+            float finalSpeed = StanceControllerInstance.StatsHandlerInstance.GetAltAimSpeedModifier(baseSpeed);
+            float t = 1f - Mathf.Exp(-finalSpeed * deltaTime);
             _aimWeight = Mathf.Lerp(_aimWeight, target, t);
 
             if (Mathf.Abs(_aimWeight - target) < AimWeightSnapThreshold)
@@ -343,6 +344,16 @@ namespace StanceOverhaul.State
 
         public void BeginExit(StanceSlot slot, StanceTransitionContext transition)
         {
+            // already heading to idle: a stance queued behind it may slow it to the stance-to-stance speed,
+            // but cancelling must not speed it back up to the to-idle speed mid-move
+            if (slot.IsHeadingToIdle)
+            {
+                if (transition.To != EStanceType.None)
+                    slot.Transition = transition;
+
+                return;
+            }
+
             slot.Transition = transition;
 
             if (slot.Direction == 0) //holding -> switch to exit curve
@@ -350,10 +361,6 @@ namespace StanceOverhaul.State
                 slot.ActiveCurveType = ECurveType.Exit;
                 slot.Progress = 0f;
                 slot.Direction = +1;
-            }
-            else if (slot.IsHeadingToIdle) // already heading to idle: no change needed
-            {
-                return;
             }
             else // heading to pose -> change direction to idle, stay on the same curve, just reverse
             {
