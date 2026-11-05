@@ -152,6 +152,15 @@ namespace StanceOverhaul.Controllers
             }
         }
 
+        // a canted sight is selected and alt aim handles its roll (see StanceAimSystem.IsCantedSightSelected)
+        public bool IsCantedSightSelected
+        {
+            get
+            {
+                return _aimSystem != null && _aimSystem.IsCantedSightSelected;
+            }
+        }
+
         // eased version of CanMoveGunToCamera, used to blend the camera target with the gun offset
         public float AltAimWeight
         {
@@ -192,6 +201,15 @@ namespace StanceOverhaul.Controllers
             get
             {
                 return _stanceState.StancePosition;
+            }
+        }
+
+        // stance position alt aim treats as part of the aimed pose (see IStance.AltAimCorrectedPositionAxes)
+        public Vector3 AltAimHeldPosition
+        {
+            get
+            {
+                return _stanceState.AltAimHeldPosition;
             }
         }
 

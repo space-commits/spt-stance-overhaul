@@ -114,7 +114,8 @@ namespace StanceOverhaul.SubSystem.StanceInput
             StanceEvents.OnStanceReload += OnReloadStarted;
             StanceEvents.OnStanceReloadReset += OnReloadFinished;
             StanceEvents.OnTransformsInit += OnWeaponInit;
-            StanceEvents.OnStationaryWeaponOperated += _stanceState.CancelAll;
+            StanceEvents.OnStationaryWeaponOperated += OnStationaryWeaponOperated;
+            PlayerEvents.OnMountedStateChanged += OnMountedStateChanged;
             // TODO: StanceInputEvents.ToggleMelee
             // TODO: StanceInputEvents.ToggleMounting, decide if it will override BSG mounting
         }
@@ -139,7 +140,8 @@ namespace StanceOverhaul.SubSystem.StanceInput
             StanceEvents.OnStanceReload -= OnReloadStarted;
             StanceEvents.OnStanceReloadReset -= OnReloadFinished;
             StanceEvents.OnTransformsInit -= OnWeaponInit;
-            StanceEvents.OnStationaryWeaponOperated -= _stanceState.CancelAll;
+            StanceEvents.OnStationaryWeaponOperated -= OnStationaryWeaponOperated;
+            PlayerEvents.OnMountedStateChanged -= OnMountedStateChanged;
         }
 
         // ================= Rules and policy =================
@@ -155,7 +157,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
         private bool IsSuppressed(IStance stance)
         {
-            if (_itemInHand || _reloadPausesStance)
+            if (_itemInHand || _reloadPausesStance || PlayerStateInstance.IsMounting || PlayerStateInstance.IsUsingStationaryWeapon)
                 return true;
 
             // Stances compatible with ADS (left shoulder, active aim) are left alone by aiming,
@@ -470,6 +472,24 @@ namespace StanceOverhaul.SubSystem.StanceInput
         {
             _reloadPausesStance = false;
             Reconcile();
+        }
+
+        // ================= Mounting and stationary weapons =================
+
+        // Both drop the chosen stance outright. IsSuppressed keeps every stance (default included) off and
+        // ignores stance keys until the player leaves them.
+        private void OnStationaryWeaponOperated()
+        {
+            SetChosen(null);
+            Reconcile();
+        }
+
+        private void OnMountedStateChanged(bool isMounted)
+        {
+            if (isMounted)
+                SetChosen(null);
+
+            Reconcile(); // on unmount, brings the default stance back
         }
 
         // ================= Items and weapons =================

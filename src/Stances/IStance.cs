@@ -50,6 +50,7 @@ namespace StanceOverhaul.Stances
 
         public Vector3 AimPositionScale { get; }
         public Vector3 AimRotationScale { get; }
+        public Vector3 AltAimCorrectedPositionAxes { get; }
 
         float BlendIntoThreshold(EStanceType nextStance);
         float TransitionFromModifier(EStanceType? previousStance);

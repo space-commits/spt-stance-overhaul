@@ -61,12 +61,19 @@ namespace StanceOverhaul.State
 
         private Vector3 _smoothedPosition;
         private Vector3 _smoothedRotation;
+        private Vector3 _smoothedAltAimHeld;
 
         // 0 = not aiming, 1 = fully aimed, eased so each stance's AimPositionScale/AimRotationScale fades with ADS
         private float _aimWeight;
 
         public Vector3 StancePosition { get; private set; }
         public Vector3 StanceRotation { get; private set; }
+
+        /// <summary>
+        /// The part of StancePosition on axes a stance marks with AltAimCorrectedPositionAxes, smoothed the same way.
+        /// Alt aim treats it as part of the aimed pose instead of excluding it like other stance motion.
+        /// </summary>
+        public Vector3 AltAimHeldPosition { get; private set; }
 
         public EStanceType ActiveStanceType
         {
@@ -121,7 +128,7 @@ namespace StanceOverhaul.State
         {
             StanceSlot? incoming = _incomingPaused ? null : _incoming;
             bool isBlending = PrimarySlot != null && incoming != null;
-            float incomingBlend = isBlending ? incoming!.Progress : 0f;
+            float incomingBlend = isBlending ? incoming!.DistanceToPose : 0f;
             float weight = 0f;
 
             if (PrimarySlot != null && PrimarySlot.Stance.StanceType == stanceType)
@@ -165,12 +172,16 @@ namespace StanceOverhaul.State
             if (_incoming != null && !_incomingPaused)
                 _incoming.StanceSlotUpdate(deltaTime);
 
-            //cleanup completed slots: discard slots that reached idle
-            if (PrimarySlot?.IsAtIdle == true) //&& _incoming == null
-                PrimarySlot = null;
-
+            //cleanup completed slots: discard slots that reached idle.
+            //incoming first, so a faded-out incoming and an idle primary can both go in the same frame
             if (_incoming != null && !_incomingPaused && _incoming.IsAtIdle)
                 _incoming = null;
+
+            //an idle primary still holds (1 - w) of the cross-fade: keep it until the incoming reaches its pose or fades out,
+            //otherwise the incoming is promoted mid-blend and drawn at full weight in one frame
+            bool incomingIsBlending = _incoming != null && !_incomingPaused && !_incoming.IsAtPose;
+            if (PrimarySlot?.IsAtIdle == true && !incomingIsBlending)
+                PrimarySlot = null;
 
             //promote incoming if primary is gone
             if (PrimarySlot == null && _incoming != null)
@@ -215,6 +226,12 @@ namespace StanceOverhaul.State
             return ApplyAimScale(slot.EvaluateRotation(), slot.Stance.AimRotationScale);
         }
 
+        // already aim-scaled, masked to the axes alt aim treats as part of the aimed pose
+        private Vector3 EvaluateAltAimHeld(StanceSlot slot)
+        {
+            return Vector3.Scale(EvaluatePosition(slot), slot.Stance.AltAimCorrectedPositionAxes);
+        }
+
         private Vector3 ApplyAimScale(Vector3 value, Vector3 aimScale)
         {
             if (_aimWeight <= 0f) return value;
@@ -228,31 +245,38 @@ namespace StanceOverhaul.State
             //evaluate output from active slots
             var rawPos = Vector3.zero;
             var rawRot = Vector3.zero;
+            var rawHeld = Vector3.zero;
 
             if (PrimarySlot != null && _incoming != null && !_incomingPaused)
             {
-                float weight = _incoming.Progress;
+                // DistanceToPose, not Progress: a cancelled incoming can be on its exit curve, where Progress runs the other way
+                float weight = _incoming.DistanceToPose;
                 rawPos = Vector3.Lerp(EvaluatePosition(PrimarySlot), EvaluatePosition(_incoming), weight);
                 rawRot = Vector3.Lerp(EvaluateRotation(PrimarySlot), EvaluateRotation(_incoming), weight);
+                rawHeld = Vector3.Lerp(EvaluateAltAimHeld(PrimarySlot), EvaluateAltAimHeld(_incoming), weight);
             }
             else if (PrimarySlot != null)
             {
                 rawPos = EvaluatePosition(PrimarySlot);
                 rawRot = EvaluateRotation(PrimarySlot);
+                rawHeld = EvaluateAltAimHeld(PrimarySlot);
             }
             else if (_incoming != null)
             {
                 rawPos = EvaluatePosition(_incoming);
                 rawRot = EvaluateRotation(_incoming);
+                rawHeld = EvaluateAltAimHeld(_incoming);
             }
 
             //output smoothing
             float smoothFactor = Mathf.Clamp01(deltaTime * PluginConfig.StanceBlendSpeed.Value);
             _smoothedPosition = Vector3.Lerp(_smoothedPosition, rawPos, smoothFactor);
             _smoothedRotation = Vector3.Lerp(_smoothedRotation, rawRot, smoothFactor);
+            _smoothedAltAimHeld = Vector3.Lerp(_smoothedAltAimHeld, rawHeld, smoothFactor);
 
             StancePosition = _smoothedPosition;
             StanceRotation = _smoothedRotation;
+            AltAimHeldPosition = _smoothedAltAimHeld;
         }
 
         //Move to StanceAimHandler
@@ -292,8 +316,9 @@ namespace StanceOverhaul.State
                 return;
             }
 
-            // same stance as primary: never toggles, only an exit needs turning around
-            if (PrimarySlot?.Stance == stance && _incoming == null)
+            // same stance as primary: never toggles, only an exit needs turning around.
+            // An incoming that is fading out after a cancel is left to finish fading, the primary takes over again
+            if (PrimarySlot?.Stance == stance && (_incoming == null || _incoming.IsHeadingToIdle))
             {
                 if (PrimarySlot.IsHeadingToIdle) // heading to idle -> reverse toward pose
                 {
@@ -305,9 +330,17 @@ namespace StanceOverhaul.State
                 return;
             }
 
-            //same stance is incoming: already on its way in
+            //same stance is incoming: already on its way in, or fading out after a cancel -> turn it back around
             if (_incoming?.Stance == stance)
+            {
+                if (_incoming.IsHeadingToIdle)
+                {
+                    _incoming.Transition = new StanceTransitionContext(PrimarySlot?.Stance.StanceType ?? EStanceType.None, stance.StanceType);
+                    _incoming.Direction *= -1;
+                    stance.OnEnter();
+                }
                 return;
+            }
 
             //third stance during blend. A = Null, B = Primary, C = Incoming. B -> C.
             if (_incoming != null)
@@ -399,13 +432,19 @@ namespace StanceOverhaul.State
                 BeginExit(PrimarySlot, transition);
             }
 
-            // Never reverse an incoming slot: mid cross-fade it drives the blend weight backwards and
-            // pops to full weight on promotion. The primary is already exiting, so let it finish alone.
-            if (_incoming != null)
+            if (_incoming == null)
+                return;
+
+            if (_incomingPaused) // never drawn yet, nothing to fade
             {
                 _incoming.Stance.OnExit();   // OnEnter ran when it was requested, keep the pair balanced
                 _incoming = null;
                 _incomingPaused = false;
+            }
+            else // already blending: fade it out from where it is instead of dropping its weight in one frame.
+                 // Cleanup keeps an idle primary until the incoming is gone, so it is never promoted at full weight.
+            {
+                BeginExit(_incoming, new StanceTransitionContext(_incoming.Stance.StanceType, EStanceType.None)); // calls OnExit
             }
         }
     }

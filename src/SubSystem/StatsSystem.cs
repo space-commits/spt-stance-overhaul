@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using EFT;
 using static RealismCommonLib.Plugin;
 
@@ -34,7 +35,7 @@ public class StatsSystem : ISubSystem
     private const float StaminaWeightExponentPistol = 2f;
     private const float SpeedWeightExponentRifle = 1.27f;
     private const float SpeedWeightExponentPistol = 3f;
-    private const float AimWeightExponentRifle = 1.5f;
+    private const float AimWeightExponentRifle = 1.35f;
     private const float AimWeightExponentPistol = 3f;
 
     private const float OffsetWeightExponentRifle = 1.5f;
@@ -88,14 +89,23 @@ public class StatsSystem : ISubSystem
         }
     }
 
+    // Returned by BindableEvent.Subscribe; invoking it unsubscribes.
+    private Action? _unsubscribeStrengthLevelChanged;
+
     public void RunOnAwake()
     {
         WeaponStateInstance.OnWeaponStateChangedFc += UpdateStats;
+
+        // Fires on skill level-ups and when stim buffs are applied/removed
+        _unsubscribeStrengthLevelChanged = PlayerStateInstance.Player.Skills.Strength.OnLevelUp.Subscribe(CalculateEffectiveWeight);
     }
 
     public void RunOnDestroy()
     {
         WeaponStateInstance.OnWeaponStateChangedFc -= UpdateStats;
+
+        _unsubscribeStrengthLevelChanged?.Invoke();
+        _unsubscribeStrengthLevelChanged = null;
     }
 
     public void RunOnUpdate(float deltaTime)
@@ -107,11 +117,16 @@ public class StatsSystem : ISubSystem
         CalculateEffectiveWeight();
     }
 
+    private float ReduceWeightByStrength()
+    {
+        return Mathf.Clamp(Mathf.Pow(1f - StrengthWeightModifier, 0.4f), 0.75f, 1f);
+    }
+
     public void CalculateEffectiveWeight()
     {
         var ergonomics = WeaponStateInstance.TotalErgo;
-        var weight = WeaponStateInstance.TotalWeaponWeight;
-        var minWeight = weight * MinimumWeaponWeghtPerc;
+        var weight = WeaponStateInstance.TotalWeaponWeight * ReduceWeightByStrength();
+        var minWeight = WeaponStateInstance.TotalWeaponWeight * MinimumWeaponWeghtPerc;
 
         float ergoNormalized = Mathf.Clamp(ergonomics / 100f, 0f, 1f);
 
@@ -200,11 +215,11 @@ public class StatsSystem : ISubSystem
         return Mathf.Clamp(weightFactor * modifier, -5f, -0.5f);
     }
 
-    public float GetStrengthWeightValue(float baseValue)
+    public float GetTacSprintStrengthWeightValue(float baseValue)
     {
         return Mathf.Min(baseValue * (1f + StrengthWeightModifier), 7.5f);
     }
-    public float GetStrengthErgoValue(float baseValue)
+    public float GetTacSprintStrengthErgoValue(float baseValue)
     {
         return Mathf.Max(baseValue * StrengthWeightModifier, 10f);
     }

@@ -62,10 +62,10 @@ namespace StanceOverhaul.SubSystem
 
         private float WeightLimit =>
             WeaponStateInstance.IsBullpup ?
-            StanceControllerInstance.StatsHandlerInstance.GetStrengthWeightValue(TAC_SPRINT_WEIGHT_LIMIT) :
-            StanceControllerInstance.StatsHandlerInstance.GetStrengthWeightValue(TAC_SPRINT_WEIGHT_BULLPUP);
+            StanceControllerInstance.StatsHandlerInstance.GetTacSprintStrengthWeightValue(TAC_SPRINT_WEIGHT_LIMIT) :
+            StanceControllerInstance.StatsHandlerInstance.GetTacSprintStrengthWeightValue(TAC_SPRINT_WEIGHT_BULLPUP);
 
-        private float ErgoLimit => StanceControllerInstance.StatsHandlerInstance.GetStrengthWeightValue(TAC_SPRINT_ERGO_LIMIT);
+        private float ErgoLimit => StanceControllerInstance.StatsHandlerInstance.GetTacSprintStrengthWeightValue(TAC_SPRINT_ERGO_LIMIT);
 
         private bool WeaponMeetsCriteria
         {

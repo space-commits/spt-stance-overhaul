@@ -104,6 +104,12 @@ namespace StanceOverhaul.Stances
         public virtual Vector3 AimRotationScale => Vector3.one;
 
         /// <summary>
+        /// Position axes the stance keeps while aiming (AimPositionScale 1) that alt aim should treat as part of the aimed pose,
+        /// bringing the sight to the camera from there. Default none: stance positions play out as authored, alt aim only corrects the base pose.
+        /// </summary>
+        public virtual Vector3 AltAimCorrectedPositionAxes => Vector3.zero;
+
+        /// <summary>
         /// Blend threshold for this stance when transitioning to another stance.
         /// Value of 0 means it will immediately let the next stance's animation take over, 
         /// while a value of 1 means it will fully play this stance's animation before transitioning.

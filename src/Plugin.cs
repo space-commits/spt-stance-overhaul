@@ -20,7 +20,7 @@ namespace StanceOverhaul
 
         public const string MOD_GUID = "com.fontaine.spt-stance-overhaul";
         public const string MOD_NAME = "Fontaine-SPTStanceOverhaul";
-        public const string MOD_VERSION = "0.0.2";
+        public const string MOD_VERSION = "0.1.0";
 
         void Awake()
         {
@@ -52,6 +52,7 @@ namespace StanceOverhaul
             new VisualPassPatch().Enable();
             new PreRecoilPosePatch().Enable();
             new PostRecoilPosePatch().Enable();
+            new UpdateCurrentScopeRotationPatch().Enable();
 
             //State & Stats
             //new OperateStationaryWeaponPatch().Enable();
@@ -61,6 +62,7 @@ namespace StanceOverhaul
             new CalculateCameraPositionPatch().Enable();
             new OperateStationaryWeaponPatch().Enable();
             new CameraDeltaTimePatch().Enable();
+            new PatrolLootSpeedPatch().Enable();
 
                         //new TacticalReloadPatch().Enable();
             /*            new SprintPatch().Enable();
