@@ -73,7 +73,7 @@ namespace StanceOverhaul.SubSystem.Animator
         //TODO: get from JSON data that users can edit/version
         private Dictionary<string, Vector3> _baseWeaponOffsets = new Dictionary<string, Vector3>
         {
-            {"5aafa857e5b5b00018480968", new Vector3(0f, 0f, 0f)}, //m1a
+            {"5aafa857e5b5b00018480968", new Vector3(0f, 0.05f, -0.01f)}, //m1a
             { "5b0bbe4e5acfc40dc528a72d", new Vector3(0f, 0f, 0f)}, //sa58
             { "676176d362e0497044079f4c", new Vector3(0f, -0.01f, -0.01f)}, //x17
             { "6183afd850224f204c1da514", new Vector3(0f, -0.01f, -0.01f)}, //mk17
