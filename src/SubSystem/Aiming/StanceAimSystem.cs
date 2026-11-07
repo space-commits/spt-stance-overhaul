@@ -245,10 +245,6 @@ namespace StanceOverhaul.SubSystem.Aiming
                 return;
             }
 
-            // float smoothTime = pwa.IsAiming ? PluginConfig.test3.Value : PluginConfig.test4.Value;
-            // smoothTime /= Mathf.Max(StanceControllerInstance.PwaOriginalAimSpeed, 0.01f);
-            // _smoothedOffset = Vector3.SmoothDamp(_smoothedOffset, correction, ref _offsetVelocity, smoothTime, Mathf.Infinity, dt);
-
             Vector3 basePosition = root.localPosition;
             root.localPosition = basePosition + _smoothedOffset + _smoothedRecoilFollow;
         }
