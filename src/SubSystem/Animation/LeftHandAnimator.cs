@@ -17,6 +17,11 @@ namespace StanceOverhaul.SubSystem.Animator
         private bool _blockSoundEffect = false;
         private bool _updateOverride = false;
 
+        // Left hand released for a world interaction, re-engaged once the hands are free again
+        private const float RESUME_MIN_DELAY = 0.3f;
+        private bool _suspended = false;
+        private float _suspendTime;
+
         private GameObject _leftHandMarkerGO;
         private GripPose _leftHandMarkerGrip;
 
@@ -76,6 +81,7 @@ namespace StanceOverhaul.SubSystem.Animator
             PlayerEvents.OnSwappedFromItemToGun += ResetLeftHand;
             PlayerEvents.OnSwappedFromGunToItem += ResetLeftHand;
             StanceEvents.OnTransformsInit += ResetLeftHand;
+            StanceEvents.OnHandsInteraction += SuspendForInteraction;
         }
 
         public void RunOnDestroy()
@@ -86,6 +92,7 @@ namespace StanceOverhaul.SubSystem.Animator
             PlayerEvents.OnSwappedFromItemToGun -= ResetLeftHand;
             PlayerEvents.OnSwappedFromGunToItem -= ResetLeftHand;
             StanceEvents.OnTransformsInit -= ResetLeftHand;
+            StanceEvents.OnHandsInteraction -= SuspendForInteraction;
         }
 
         public void RunOnUpdate(float deltaTime)
@@ -93,6 +100,7 @@ namespace StanceOverhaul.SubSystem.Animator
             if (_leftHandMarkerGO == null)
                 return;
 
+            TryResumeAfterInteraction();
             UpdateLeftHandTargets();
             UpdateTransforms();
         }
@@ -114,16 +122,64 @@ namespace StanceOverhaul.SubSystem.Animator
         {
             if (stance.StanceType == EStanceType.PatrolStance && WeaponStateInstance.TreatAsPistol)
             {
-                PlayerStateInstance.Player.LeftHandInteractionTarget = _leftHandMarkerGrip;
-                _leftHandTimer.Start();
-                _propSoundBlockTimer.Start();
-                _overrideLeftHand = true;
-                _updateOverride = false;
+                EngageLeftHand();
+            }
+        }
+
+        private void EngageLeftHand()
+        {
+            PlayerStateInstance.Player.LeftHandInteractionTarget = _leftHandMarkerGrip;
+            _leftHandTimer.Start();
+            _propSoundBlockTimer.Start();
+            _overrideLeftHand = true;
+            _updateOverride = false;
+            _suspended = false;
+        }
+
+        // The door/key CanInteract check runs in this same frame and refuses while UseLeftHand is set, so that flag is
+        // cleared immediately (ShowCompass(false) does not clear it). The IK weight isn't part of that check, so it fades.
+        private void SuspendForInteraction()
+        {
+            if (!_overrideLeftHand)
+                return;
+
+            var player = PlayerStateInstance.Player;
+            _leftHandTimer.Stop(); // otherwise it can fire ShowCompass(true) after the release
+            player.HandsAnimator.ShowCompass(false);
+            AnimationControllerParametersTable.SetUseLeftHand(player.HandsAnimator.Animator, false);
+            player.LeftHandInteractionTarget = null;
+            player.ThirdIkWeight.Value = 0f; 
+            _updateOverride = false;
+            _suspended = true;
+            _suspendTime = Time.time;
+        }
+
+        // Patrol is still on (ResetLeftHand clears _suspended on exit/swap), so take the hand back once EFT is done with it.
+        // DoorInteraction/BreachDoor own LeftHandInteractionTarget until they exit, so wait for those too.
+        private void TryResumeAfterInteraction()
+        {
+            if (!_suspended || Time.time - _suspendTime < RESUME_MIN_DELAY)
+                return;
+
+            var player = PlayerStateInstance.Player;
+            var mc = player.MovementContext;
+            bool busy =
+                player.HandsController.IsInInteraction() ||
+                mc.GetHandProgress() > 0f ||
+                mc.IsAnimatorInteractionOn ||
+                player.CurrentStateName == EPlayerState.DoorInteraction ||
+                player.CurrentStateName == EPlayerState.BreachDoor;
+
+            if (!busy)
+            {
+                EngageLeftHand();
             }
         }
 
         private void ResetLeftHand()
         {
+            _suspended = false;
+
             if (_overrideLeftHand == true)
             {
                 PlayerStateInstance.Player.HandsAnimator.ShowCompass(false);

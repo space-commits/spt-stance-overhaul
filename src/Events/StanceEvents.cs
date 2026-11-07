@@ -32,6 +32,13 @@ public static class StanceEvents
     public static event Action<Player.FirearmController>? OnTransformsInitFC;
     public static event Action? OnPrimaryStanceChanged;
     public static event Action? OnStationaryWeaponOperated;
+    public static event Action? OnHandsInteraction;
+
+    // The local player is about to use their hands for a world interaction (door, key, container, pickup, gesture...)
+    internal static void RaiseOnHandsInteraction()
+    {
+        BaseEventHandler.RaiseEvent(OnHandsInteraction);
+    }
 
     internal static void RaiseOnStationaryWeaponOperated()
     {
