@@ -49,10 +49,6 @@
       <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
@@ -79,10 +75,6 @@
     </Reference>
     <Reference Include="BepInEx">
       <HintPath>F:\SP EFT\SPT-41X\BepInEx\core\BepInEx.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="AnimationSystem.Types">
-      <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\AnimationSystem.Types.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
