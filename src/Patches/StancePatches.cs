@@ -47,6 +47,69 @@ namespace StanceOverhaul.Patches
         }
     }
 
+    // Vanilla calls this right before Door.Interact / UnlockOperation (doors, keys, keycards) to put away the compass.
+    // The pistol patrol stance's left hand sets the same animator flag as the compass (UseLeftHand), which makes
+    // MovementContext.CanInteract refuse with "Busy now". Raising here lets the left hand be released before that check.
+    // See docs/Assembly/World-Interaction-And-Left-Hand.md.
+    public class ResetCanUsePropStatePatch : ModulePatch
+    {
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(MovementContext), nameof(MovementContext.ResetCanUsePropState));
+        }
+
+        [PatchPrefix]
+        private static void PatchPrefix(MovementContext __instance)
+        {
+            if (PlayerStateInstance?.Player == null || __instance != PlayerStateInstance.Player.MovementContext) return;
+            StanceEvents.RaiseOnHandsInteraction();
+        }
+    }
+
+    // Single entry for every hands interaction animation (containers, switches, pickups, gestures, toggles...).
+    // These don't go through CanInteract, but the left hand IK override would keep the hand pinned during them.
+    public class SetInteractInHandsPatch : ModulePatch
+    {
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(MovementContext), nameof(MovementContext.SetInteractInHands));
+        }
+
+        [PatchPrefix]
+        private static void PatchPrefix(MovementContext __instance, EInteraction interaction)
+        {
+            if (interaction == EInteraction.None) return;
+            if (PlayerStateInstance?.Player == null || __instance != PlayerStateInstance.Player.MovementContext) return;
+            StanceEvents.RaiseOnHandsInteraction();
+        }
+    }
+
+    public class WeaponOverlappingPatch: ModulePatch
+    {
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(FirearmController), nameof(FirearmController.WeaponOverlapping));
+        }
+
+        [PatchPrefix]
+        private static bool PatchPrefix(FirearmController __instance)
+        {
+            if (StanceControllerInstance == null || !StanceControllerInstance.AwakeRan) return true;
+            if (StanceControllerInstance.CurrentStanceType != EStanceType.PatrolStance) return true;
+
+            Player? player = PlayerStateInstance?.Player;
+            if (player == null || !ReferenceEquals(player.HandsController, __instance)) return true;
+
+            __instance.SetWeaponOverlapValue(0f);
+            __instance.AimingInterruptedByOverlap = false; // don't auto re-ADS later from an interruption before patrol
+            ProceduralWeaponAnimation pwa = player.ProceduralWeaponAnimation;
+            pwa.TurnAway.OverlapDepth = 0f;
+            pwa.TurnAway.OverlapsWithPlayer = false;
+            pwa.OverlappingAllowsBlindfire = true;
+            return false;
+        }
+    }
+
     // EFT passes LerpCamera the summed physics tick time on frames with ticks, otherwise _armsTime. Above the tick rate
     // the camera's per-frame movement alternates, which shows as the weapon juddering on screen, and it gets more time than
     // really passed, so ADS speed scales with fps. This replaces that time with one based on the frame's own delta time.
@@ -1663,64 +1726,64 @@ namespace StanceOverhaul.Patches
         }
     }
 
-    // Modify weapon length used for collision based on stance
-    // Do NOT do this, it has unintended consequences, weapon length determines origin of bullet. 
-    // Need to modify how collision code uses it factored by stance
-    public class WeaponOverlappingPatch : ModulePatch
-    {
-        private static FieldInfo playerField;
-        private static FieldInfo weaponLnField;
+    // // Modify weapon length used for collision based on stance
+    // // Do NOT do this, it has unintended consequences, weapon length determines origin of bullet. 
+    // // Need to modify how collision code uses it factored by stance
+    // public class WeaponOverlappingPatch : ModulePatch
+    // {
+    //     private static FieldInfo playerField;
+    //     private static FieldInfo weaponLnField;
 
-        protected override MethodBase GetTargetMethod()
-        {
-            playerField = AccessTools.Field(typeof(EFT.Player.FirearmController), "_player");
-            weaponLnField = AccessTools.Field(typeof(EFT.Player.FirearmController), "WeaponLn");
-            return typeof(Player.FirearmController).GetMethod("WeaponOverlapping", BindingFlags.Instance | BindingFlags.Public);
-        }
+    //     protected override MethodBase GetTargetMethod()
+    //     {
+    //         playerField = AccessTools.Field(typeof(EFT.Player.FirearmController), "_player");
+    //         weaponLnField = AccessTools.Field(typeof(EFT.Player.FirearmController), "WeaponLn");
+    //         return typeof(Player.FirearmController).GetMethod("WeaponOverlapping", BindingFlags.Instance | BindingFlags.Public);
+    //     }
 
-        [PatchPrefix]
-        private static void Prefix(Player.FirearmController __instance)
-        {
-            Player player = (Player)playerField.GetValue(__instance);
-            if (player.IsYourPlayer)
-            {
-                // if (StanceControllerInstance.CurrentStanceType == EStanceType.PatrolStance)
-                // {
-                //     weaponLnField.SetValue(__instance, StanceControllerInstance.StanceModifiedWeaponLength * 0.75f);
-                //     return;
-                // }
+    //     [PatchPrefix]
+    //     private static void Prefix(Player.FirearmController __instance)
+    //     {
+    //         Player player = (Player)playerField.GetValue(__instance);
+    //         if (player.IsYourPlayer)
+    //         {
+    //             // if (StanceControllerInstance.CurrentStanceType == EStanceType.PatrolStance)
+    //             // {
+    //             //     weaponLnField.SetValue(__instance, StanceControllerInstance.StanceModifiedWeaponLength * 0.75f);
+    //             //     return;
+    //             // }
 
-                // if (WeaponStateInstance.TreatAsPistol)
-                // {
-                //     weaponLnField.SetValue(__instance, StanceControllerInstance.StanceModifiedWeaponLength * 0.85f);
-                // }
-                // else
-                // {
-                //     if (FikaIsPresent) //collisions acts funky with stances from another client's perspective
-                //     {
-                //         weaponLnField.SetValue(__instance, StanceControllerInstance.StanceModifiedWeaponLength * 0.8f);
-                //         return;
-                //     }
-                //     if (StanceControllerInstance.CurrentStanceType == EStanceType.ShortStock)
-                //     {
-                //         weaponLnField.SetValue(__instance, StanceControllerInstance.StanceModifiedWeaponLength * 0.9f);
-                //         return;
-                //     }
-                //     if (StanceControllerInstance.CurrentStanceType == EStanceType.HighReady)
-                //     {
-                //         weaponLnField.SetValue(__instance, StanceControllerInstance.StanceModifiedWeaponLength * 0.95f);
-                //         return;
-                //     }
-                //     if (StanceControllerInstance.CurrentStanceType == EStanceType.LowReady)
-                //     {
-                //         weaponLnField.SetValue(__instance, StanceControllerInstance.StanceModifiedWeaponLength * 0.98f);
-                //         return;
-                //     }
-                // }
-                // weaponLnField.SetValue(__instance, StanceControllerInstance.StanceModifiedWeaponLength);
-            }
-        }
-    }
+    //             // if (WeaponStateInstance.TreatAsPistol)
+    //             // {
+    //             //     weaponLnField.SetValue(__instance, StanceControllerInstance.StanceModifiedWeaponLength * 0.85f);
+    //             // }
+    //             // else
+    //             // {
+    //             //     if (FikaIsPresent) //collisions acts funky with stances from another client's perspective
+    //             //     {
+    //             //         weaponLnField.SetValue(__instance, StanceControllerInstance.StanceModifiedWeaponLength * 0.8f);
+    //             //         return;
+    //             //     }
+    //             //     if (StanceControllerInstance.CurrentStanceType == EStanceType.ShortStock)
+    //             //     {
+    //             //         weaponLnField.SetValue(__instance, StanceControllerInstance.StanceModifiedWeaponLength * 0.9f);
+    //             //         return;
+    //             //     }
+    //             //     if (StanceControllerInstance.CurrentStanceType == EStanceType.HighReady)
+    //             //     {
+    //             //         weaponLnField.SetValue(__instance, StanceControllerInstance.StanceModifiedWeaponLength * 0.95f);
+    //             //         return;
+    //             //     }
+    //             //     if (StanceControllerInstance.CurrentStanceType == EStanceType.LowReady)
+    //             //     {
+    //             //         weaponLnField.SetValue(__instance, StanceControllerInstance.StanceModifiedWeaponLength * 0.98f);
+    //             //         return;
+    //             //     }
+    //             // }
+    //             // weaponLnField.SetValue(__instance, StanceControllerInstance.StanceModifiedWeaponLength);
+    //         }
+    //     }
+    // }
 
 
     //Prevent BSG from moving weapon closer based on having a stock, because it looks shit

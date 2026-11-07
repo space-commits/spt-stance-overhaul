@@ -63,6 +63,9 @@ namespace StanceOverhaul
             new OperateStationaryWeaponPatch().Enable();
             new CameraDeltaTimePatch().Enable();
             new PatrolLootSpeedPatch().Enable();
+            new WeaponOverlappingPatch().Enable();
+            new ResetCanUsePropStatePatch().Enable();
+            new SetInteractInHandsPatch().Enable();
 
                         //new TacticalReloadPatch().Enable();
             /*            new SprintPatch().Enable();
