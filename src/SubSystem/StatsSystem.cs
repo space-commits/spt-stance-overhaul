@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using EFT;
 using static RealismCommonLib.Plugin;
 
@@ -32,11 +33,13 @@ public class StatsSystem : ISubSystem
     private const float ErgoExponent = 2.15f;
     private const float StaminaWeightExponentRifle = 1.35f;
     private const float StaminaWeightExponentPistol = 2f;
-    private const float SpeedWeightExponentRifle = 1.25f;
+    private const float SpeedWeightExponentRifle = 1.27f;
     private const float SpeedWeightExponentPistol = 3f;
+    private const float AimWeightExponentRifle = 1.35f;
+    private const float AimWeightExponentPistol = 3f;
 
-    private const float OffsetWeightExponentRifle = 1.25f;
-    private const float OffsetWeightExponentPistol = 3f;
+    private const float OffsetWeightExponentRifle = 1.5f;
+    private const float OffsetWeightExponentPistol = 5f;
 
     private const float DampingWeightExponentRifle = 6f;
     private const float DampingWeightExponentPistol = 6f;
@@ -78,14 +81,31 @@ public class StatsSystem : ISubSystem
     /// </summary>
     public float EffectiveWeaponWeight { get; private set; }
 
+    public float StrengthWeightModifier
+    {
+        get
+        {
+            return SkillStateInstance.StrengthLevel * 0.0075f;
+        }
+    }
+
+    // Returned by BindableEvent.Subscribe; invoking it unsubscribes.
+    private Action? _unsubscribeStrengthLevelChanged;
+
     public void RunOnAwake()
     {
         WeaponStateInstance.OnWeaponStateChangedFc += UpdateStats;
+
+        // Fires on skill level-ups and when stim buffs are applied/removed
+        _unsubscribeStrengthLevelChanged = PlayerStateInstance.Player.Skills.Strength.OnLevelUp.Subscribe(CalculateEffectiveWeight);
     }
 
     public void RunOnDestroy()
     {
         WeaponStateInstance.OnWeaponStateChangedFc -= UpdateStats;
+
+        _unsubscribeStrengthLevelChanged?.Invoke();
+        _unsubscribeStrengthLevelChanged = null;
     }
 
     public void RunOnUpdate(float deltaTime)
@@ -97,11 +117,16 @@ public class StatsSystem : ISubSystem
         CalculateEffectiveWeight();
     }
 
+    private float ReduceWeightByStrength()
+    {
+        return Mathf.Clamp(Mathf.Pow(1f - StrengthWeightModifier, 0.4f), 0.75f, 1f);
+    }
+
     public void CalculateEffectiveWeight()
     {
         var ergonomics = WeaponStateInstance.TotalErgo;
-        var weight = WeaponStateInstance.TotalWeaponWeight;
-        var minWeight = weight * MinimumWeaponWeghtPerc;
+        var weight = WeaponStateInstance.TotalWeaponWeight * ReduceWeightByStrength();
+        var minWeight = WeaponStateInstance.TotalWeaponWeight * MinimumWeaponWeghtPerc;
 
         float ergoNormalized = Mathf.Clamp(ergonomics / 100f, 0f, 1f);
 
@@ -174,11 +199,29 @@ public class StatsSystem : ISubSystem
         return baseStanceSpeed / (1 + weightFactor * modifier);
     }
 
+    public float GetAltAimSpeedModifier(float baseStanceSpeed)
+    {
+        var weightExp = WeaponStateInstance.TreatAsPistol ? AimWeightExponentPistol : AimWeightExponentRifle;
+        var weightFactor = Mathf.Pow(EffectiveWeaponWeight, weightExp);
+        var modifier = WeaponStateInstance.TreatAsPistol ? 0.28f : 0.25f;
+        return baseStanceSpeed / (1 + weightFactor * modifier);
+    }
+
     public float GetWeaponOffset()
     {
-        var weightExp = WeaponStateInstance.TreatAsPistol ? 5f : 1.5f;
+        var weightExp = WeaponStateInstance.TreatAsPistol ? OffsetWeightExponentPistol : OffsetWeightExponentRifle;
         var weightFactor = Mathf.Pow(EffectiveWeaponWeight, weightExp);
         var modifier = WeaponStateInstance.TreatAsPistol ? -0.4f : -0.45f;
         return Mathf.Clamp(weightFactor * modifier, -5f, -0.5f);
     }
+
+    public float GetTacSprintStrengthWeightValue(float baseValue)
+    {
+        return Mathf.Min(baseValue * (1f + StrengthWeightModifier), 7.5f);
+    }
+    public float GetTacSprintStrengthErgoValue(float baseValue)
+    {
+        return Mathf.Max(baseValue * StrengthWeightModifier, 10f);
+    }
+
 }

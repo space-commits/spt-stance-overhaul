@@ -27,6 +27,8 @@ namespace StanceOverhaul.Stances
         public float PumpBoltSpeedModifier { get; }
 
         public bool BlocksFiring { get; }
+        public bool DoesNotCancelOnADS { get; }
+        public bool SuspendsBonusesWhileAiming { get; }
 
         public EStanceReloadType[] ReloadTypesThatPauseStance { get; }
 
@@ -42,8 +44,13 @@ namespace StanceOverhaul.Stances
         public abstract Vector3Curve? PistolExitRotationCurve { get; }
         public abstract Vector3Curve? PistolExitPositionCurve { get; }
 
-        public abstract AnimationCurve ExitAimSpeedCurve { get; }
-        public abstract AnimationCurve EnterAimSpeedCurve { get; }
+        public abstract AnimationCurve AimSpeedCurve { get; }
+        public abstract AnimationCurve AltAimSpeedCurve { get; }
+        public abstract AnimationCurve AltAimReturnSpeedCurve { get; }
+
+        public Vector3 AimPositionScale { get; }
+        public Vector3 AimRotationScale { get; }
+        public Vector3 AltAimCorrectedPositionAxes { get; }
 
         float BlendIntoThreshold(EStanceType nextStance);
         float TransitionFromModifier(EStanceType? previousStance);

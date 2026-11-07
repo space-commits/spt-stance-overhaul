@@ -7,6 +7,7 @@ using HarmonyLib;
 using SPT.Reflection.Patching;
 using StanceOverhaul.Events;
 using StanceOverhaul.Enums;
+using StanceOverhaul.SubSystem.Aiming;
 using System;
 using System.Reflection;
 using System.Collections.Generic;
@@ -21,6 +22,73 @@ using ReloadClass = EFT.Player.FirearmController.Idling;
 
 namespace StanceOverhaul.Patches
 {
+    // EFT reads this skill buff once when a search starts revealing items:
+    // per-item time = Random.Range(1, 3) / (1 + AttentionLootSpeed + (on a body ? SearchBuffSpeed : 0)). See docs/Assembly/Looting-Search.md.
+    // AttentionLootSpeed is in both the container and body formula, so a bonus here applies once to every search.
+    // Adds a configurable bonus to it for the local player while in Patrol stance.
+    public class PatrolLootSpeedPatch : ModulePatch
+    {
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.PropertyGetter(typeof(SkillManager), nameof(SkillManager.AttentionLootSpeedValue));
+        }
+
+        [PatchPostfix]
+        private static void PatchPostfix(SkillManager __instance, ref float __result)
+        {
+            if (StanceControllerInstance == null || !StanceControllerInstance.AwakeRan) return;
+            if (PlayerStateInstance == null || PlayerStateInstance.Player == null) return;
+
+            if (ReferenceEquals(__instance, PlayerStateInstance.Player.Skills) &&
+                StanceControllerInstance.CurrentStanceType == EStanceType.PatrolStance)
+            {
+                __result += PluginConfig.PatrolSearchSpeedBonus.Value;
+            }
+        }
+    }
+
+    // EFT passes LerpCamera the summed physics tick time on frames with ticks, otherwise _armsTime. Above the tick rate
+    // the camera's per-frame movement alternates, which shows as the weapon juddering on screen, and it gets more time than
+    // really passed, so ADS speed scales with fps. This replaces that time with one based on the frame's own delta time.
+    public class CameraDeltaTimePatch : ModulePatch
+    {
+        private static readonly AccessTools.FieldRef<ProceduralWeaponAnimation, float> _overweightAimingMultiplier =
+            AccessTools.FieldRefAccess<ProceduralWeaponAnimation, float>("_overweightAimingMultiplier");
+
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(FirstPersonStrategy), nameof(FirstPersonStrategy.ApplyCameraTransformations));
+        }
+
+        [PatchPrefix]
+        private static void PatchPrefix(ProceduralWeaponAnimation pwa, ref float dt)
+        {
+            if (PlayerStateInstance?.PWA != pwa) return;
+
+            dt = FrameRateIndependentDeltaTime(CameraLerpRate(pwa), Time.deltaTime);
+        }
+
+        // the xy rate LerpCamera multiplies dt by (PWA L1925). Also used by alt aim to ease recoil follow at the vanilla camera's rate
+        internal static float CameraLerpRate(ProceduralWeaponAnimation pwa)
+        {
+            return pwa.IsAiming
+                ? pwa.AimingSpeed * pwa.CameraSmoothBlender.Value * _overweightAimingMultiplier(pwa)
+                : pwa.CameraSmoothOut;
+        }
+
+        // LerpCamera's Lerp(cam, target, dt * k) converges faster at low fps. Returns the dt that gives the per-frame factor
+        // converging per second like one lerp per physics tick (vanilla at 60 fps), at any frame rate.
+        // Exact for camera xy, approximate for camera z, which uses its own rate.
+        private static float FrameRateIndependentDeltaTime(float k, float renderDt)
+        {
+            float fixedDt = Time.fixedDeltaTime;
+            if (k <= 0f || fixedDt <= 0f) return renderDt;
+
+            float tickFactor = Mathf.Min(k * fixedDt, 0.99f);
+            float frameFactor = 1f - Mathf.Pow(1f - tickFactor, renderDt / fixedDt);
+            return frameFactor / k;
+        }
+    }
 
     public class HandIKPatch : ModulePatch
     {
@@ -83,10 +151,10 @@ namespace StanceOverhaul.Patches
         }
 
         [PatchPostfix]
-        private static void Postfix(Player __instance)
+        private static void Postfix(Player __instance, float curveWeight)
         {
-            bool cancelForPistol = WeaponStateInstance.TreatAsPistol && ReloadStateInstance.IsInReloadOpertation;
-            bool cancelForRifle = !WeaponStateInstance.TreatAsPistol && ReloadStateInstance.IsInReloadOpertation;
+            // bool cancelForPistol = WeaponStateInstance.TreatAsPistol && ReloadStateInstance.IsInReloadOpertation;
+            // bool cancelForRifle = !WeaponStateInstance.TreatAsPistol && ReloadStateInstance.IsInReloadOpertation;
 
             if (PlayerStateInstance.IsMounting || PlayerStateInstance.IsUsingStationaryWeapon)
                 return;
@@ -107,13 +175,19 @@ namespace StanceOverhaul.Patches
             Transform torso = __instance.ProceduralWeaponAnimation.HandsContainer.TrackingTransform; // swap for a spine/chest bone if you have one
 
             // Elbow points down, outward (left, for the left arm), slightly forward.
-            Vector3 elbowDir = (torso.up * -0.8f + (-torso.right) * 1f + torso.forward * -0.25f).normalized; // -0.6f + (-torso.right) * 0.5f + torso.forward * 0.25f
+            Vector3 elbowDir = (torso.up * -0.6f + (-torso.right) * 0.5f + torso.forward * -0.25f).normalized; // -0.8f + (-torso.right) * 1f + torso.forward * -0.25f
 
             // Guard against collinearity with the target direction (the degenerate case above)
-            if (Mathf.Abs(Vector3.Dot(elbowDir, toTarget)) > 0.1f) // 0.9f
-                elbowDir = Vector3.Slerp(elbowDir, torso.forward, -0.1f).normalized; //  0.5f
+            if (Mathf.Abs(Vector3.Dot(elbowDir, toTarget)) > 0.9f) // 0.1f
+                elbowDir = Vector3.Slerp(elbowDir, torso.forward, 0.5f).normalized; //  0f
 
-            solver.bendGoal.position = shoulderPos + elbowDir; // direction matters, magnitude doesn't
+            // Hand the elbow back to vanilla when an animation owns it. blind fire is a body animation
+            // and Elbow_Left is vanilla's own "animated elbow" weight.
+            float vanillaWeight = Mathf.Max(
+                Mathf.Abs(__instance.ProceduralWeaponAnimation.BlindfireBlender.Value),
+                curveWeight * __instance.GetCurveValue(PlayerAnimator.ELBOW_LEFT_WEIGHT));
+
+            solver.bendGoal.position = Vector3.Lerp(shoulderPos + elbowDir, solver.bendGoal.position, vanillaWeight); // direction matters, magnitude doesn't
         }
     }
     public class PropSoundPatch : ModulePatch
@@ -406,8 +480,8 @@ namespace StanceOverhaul.Patches
             __instance.HipInaccuracy = 1f - Mathf.Clamp01(ergo.Value / 250f - 0.15f);
             player.ProceduralWeaponAnimation.Breath.HipPenalty = __instance.HipInaccuracy;
 
-            __instance.HipInaccuracy *= _deviceBonus * StanceControllerInstance.StanceHipfireBonus * PluginConfig.test1.Value;
-            player.ProceduralWeaponAnimation.Breath.HipPenalty *= _deviceBonus * StanceControllerInstance.StanceHipfireBonus * PluginConfig.test2.Value;
+            __instance.HipInaccuracy *= _deviceBonus * StanceControllerInstance.StanceHipfireBonus;
+            player.ProceduralWeaponAnimation.Breath.HipPenalty *= _deviceBonus * StanceControllerInstance.StanceHipfireBonus;
 
             return false;
         }
@@ -431,7 +505,7 @@ namespace StanceOverhaul.Patches
             FirearmController firearmController = (FirearmController)_fcField.GetValue(__instance);
             if (firearmController == null) return;
             Player player = (Player)_playerField.GetValue(firearmController);
-            if (player == null) return;
+            if (player == null || !player.IsYourPlayer) return;
 
             StanceControllerInstance.PwaOriginalAimSpeed = ____aimingSpeed;
         }
@@ -505,7 +579,8 @@ namespace StanceOverhaul.Patches
 
             if (__instance == PlayerStateInstance.PWA.HandsContainer.HandsPosition)
             {
-                __result += StanceControllerInstance.StancePositionSpring.Get() + StanceControllerInstance.OffsetPositionSpring.Get(); // StanceControllerInstance.BaseWeaponOffsetPosition
+                // base offset is applied directly (no spring), stances and detail offsets through their springs
+                __result += StanceControllerInstance.AppliedBaseOffsetPosition + StanceControllerInstance.StanceAndOffsetPosition;
             }
 
             if (__instance == PlayerStateInstance.PWA.HandsContainer.HandsRotation)
@@ -529,7 +604,8 @@ namespace StanceOverhaul.Patches
 
             if (__instance == PlayerStateInstance.PWA.HandsContainer.HandsPosition)
             {
-                __result += StanceControllerInstance.StancePositionSpring.GetRelative() + StanceControllerInstance.OffsetPositionSpring.GetRelative(); //  + StanceControllerInstance.BaseWeaponOffsetPosition unsure if stance or base offset it should be applied here, used for camera positioning 
+                // read by LerpCamera to scale the camera's z lerp while aiming. Includes the base as it did when the base was in the stance spring
+                __result += StanceControllerInstance.StancePositionSpring.GetRelative() + StanceControllerInstance.OffsetPositionSpring.GetRelative();
             }
 
             if (__instance == PlayerStateInstance.PWA.HandsContainer.HandsRotation)
@@ -553,7 +629,8 @@ namespace StanceOverhaul.Patches
         {
             if (PlayerStateInstance.PWA == __instance)
             {
-                StanceControllerInstance.StancePositionSpring.Zero = StanceControllerInstance.StancePosition + StanceControllerInstance.BaseWeaponOffsetPosition; //  not sure if should be applied to stance zero or not
+                // base offset is not in the spring, SpringGetPatch adds it directly
+                StanceControllerInstance.StancePositionSpring.Zero = StanceControllerInstance.StancePosition;
                 StanceControllerInstance.StanceRotationSpring.Zero = StanceControllerInstance.StanceRotation;
                 StanceControllerInstance.OffsetPositionSpring.Zero = StanceControllerInstance.DetailsOffsetPosition;
                 StanceControllerInstance.OffsetRotationSpring.Zero = StanceControllerInstance.DetailsOffsetRotation;
@@ -567,6 +644,11 @@ namespace StanceOverhaul.Patches
         private static FieldInfo _fcField;
         private static FieldInfo _poseBlendField;
         private static FieldInfo _cameraByFOVOffsetField;
+
+        private static readonly AccessTools.FieldRef<ProceduralWeaponAnimation, Vector3> _localAimShift =
+            AccessTools.FieldRefAccess<ProceduralWeaponAnimation, Vector3>("_localAimShift");
+        private static readonly AccessTools.FieldRef<ProceduralWeaponAnimation, float> _leftStanceCurrentCurveValue =
+            AccessTools.FieldRefAccess<ProceduralWeaponAnimation, float>("_leftStanceCurrentCurveValue");
 
         protected override MethodBase GetTargetMethod()
         {
@@ -585,7 +667,12 @@ namespace StanceOverhaul.Patches
             Player player = (Player)_playerField.GetValue(firearmController);
             if (player != null && player.IsYourPlayer && __instance.HandsContainer.WeaponRootAnim)
             {
-                if (StanceControllerInstance.CanMoveGunToCamera && PlayerStateInstance.WeaponIsReady)
+                // with or without alt aim, z is always EFT's own aiming target
+                RemoveStanceFromAimDepth(__instance);
+
+                // blended with the vanilla (camera to sights) target by the same weight the gun offset uses
+                float altAimWeight = StanceControllerInstance.AltAimWeight;
+                if (altAimWeight > 0f)
                 {
                     Vector3 animatorBlendTarget = Vector3.zero;
                     foreach (ValueTuple<AnimatorPose, float, bool> valueTuple in __instance.ActiveBlends)
@@ -598,12 +685,137 @@ namespace StanceOverhaul.Patches
                     var animatorPoseBlend = (float)_poseBlendField.GetValue(__instance);
                     var cameraByFOVOffset = (Vector3)_cameraByFOVOffsetField.GetValue(__instance);
                     var xyOverride = __instance.HandsContainer.CameraOffset + cameraByFOVOffset + __instance.TurnAway.CameraShift;
-                    xyOverride = ((animatorPoseBlend > 0f) ? (xyOverride + animatorBlendTarget) : xyOverride);
-                    __instance._vCameraTarget = new Vector3(xyOverride.x, xyOverride.y, __instance._vCameraTarget.z);
+                    xyOverride = (animatorPoseBlend > 0f) ? (xyOverride + animatorBlendTarget) : xyOverride;
+                    Vector3 vanillaTarget = __instance._vCameraTarget;
+                    __instance._vCameraTarget = new Vector3(
+                        Mathf.Lerp(vanillaTarget.x, xyOverride.x, altAimWeight),
+                        Mathf.Lerp(vanillaTarget.y, xyOverride.y, altAimWeight),
+                        vanillaTarget.z);
 
                 }
 
             }
+        }
+
+        // EFT's aiming z target is the camera-parent z of a point along the bore from AimPointParent (PWA L1870-1898), measured after the
+        // stance springs have posed the gun. A stance still blending out (or its spring overshoot) moved it, even without moving the gun forward,
+        // because pitch/yaw changes the bore's forward reach. Recompute that point for the stance-free pose and remove the difference.
+        // Left shoulder is exempt: its pose is the aimed pose and the vanilla camera follows the sight there (same weight alt aim hands over by)
+        private static void RemoveStanceFromAimDepth(ProceduralWeaponAnimation pwa)
+        {
+            if (!pwa.IsAiming || pwa._currentAimingPlane == null || pwa.ScopeAimTransforms.Count == 0 || !Mathf.Approximately(pwa.BlindfireBlender.Value, 0f))
+                return;
+            if (StanceControllerInstance == null || !StanceControllerInstance.AwakeRan)
+                return;
+
+            Transform root = pwa.HandsContainer.WeaponRootAnim;
+
+            // crank recoil measures from WeaponRoot, which the stance doesn't move
+            if (pwa.AimPointParent != root)
+                return;
+
+            float weight = 1f - StanceControllerInstance.LeftShoulderPoseWeight;
+            if (weight <= 0f)
+                return;
+
+            if (!StanceFreePoseCapture.TryGetStanceFreePose(root, out Vector3 freePosition, out Quaternion freeRotation))
+                return;
+
+            // EFT: Matrix4x4.TRS(aimPointParent.position, aimPointParent.rotation, Scale).MultiplyPoint3x4(_localAimShift)
+            Vector3 shift = Vector3.Scale(pwa.Scale, _localAimShift(pwa));
+            Vector3 actualPoint = root.position + root.rotation * shift;
+            Vector3 freePoint = freePosition + freeRotation * shift;
+
+            // EFT converts into WeaponRoot.parent, or CameraTransform.parent during its own left stance, with the same Scale
+            Transform parent = _leftStanceCurrentCurveValue(pwa) > 0f ? pwa.HandsContainer.CameraTransform.parent : pwa.HandsContainer.WeaponRoot.parent;
+            float deltaZ = Matrix4x4.TRS(parent.position, parent.rotation, pwa.Scale).inverse.MultiplyVector(actualPoint - freePoint).z;
+
+            pwa._vCameraTarget.z -= deltaZ * weight;
+        }
+    }
+
+    // weapon pose just before EFT's rotation recoil, DeferredRotateWithCustomOrder runs right before it in ApplyComplexRotation.
+    // Also captures the same pose without the stance springs, for CalculateCameraPositionPatch's aiming depth
+    public class PreRecoilPosePatch : ModulePatch
+    {
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(ProceduralWeaponAnimation), nameof(ProceduralWeaponAnimation.DeferredRotateWithCustomOrder));
+        }
+
+        [PatchPrefix]
+        private static void PatchPrefix(ProceduralWeaponAnimation __instance, Vector3 worldPivot, Vector3 rotation,
+            Quaternion ____local, Vector3 ____temporaryPosition, Quaternion ____temporaryRotation)
+        {
+            if (PlayerStateInstance?.PWA != __instance) return;
+            if (StanceControllerInstance == null || !StanceControllerInstance.AwakeRan) return;
+
+            // the same values SpringGetPatch added to HandsPosition.Get() / HandsRotation.Get() this frame
+            Vector3 stancePosition = StanceControllerInstance.StanceAndOffsetPosition;
+            Vector3 stanceRotation = StanceControllerInstance.StanceRotationSpring.Get() + StanceControllerInstance.OffsetRotationSpring.Get();
+
+            StanceFreePoseCapture.CaptureFree(__instance.HandsContainer.WeaponRootAnim, worldPivot, rotation,
+                ____local, ____temporaryPosition, ____temporaryRotation, stancePosition, stanceRotation);
+        }
+
+        [PatchPostfix]
+        private static void PatchPostfix(ProceduralWeaponAnimation __instance, Vector3 ____temporaryPosition, Quaternion ____temporaryRotation)
+        {
+            if (PlayerStateInstance?.PWA != __instance) return;
+            RecoilPoseCapture.CapturePreRecoil(__instance.HandsContainer.WeaponRootAnim.parent, ____temporaryPosition, ____temporaryRotation);
+            StanceFreePoseCapture.CaptureActual(____temporaryPosition, ____temporaryRotation);
+        }
+    }
+
+    // weapon pose just after EFT's rotation recoil, ApplyAimingAlignment runs right after it in ApplyComplexRotation
+    public class PostRecoilPosePatch : ModulePatch
+    {
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(ProceduralWeaponAnimation), nameof(ProceduralWeaponAnimation.ApplyAimingAlignment));
+        }
+
+        [PatchPrefix]
+        private static void PatchPrefix(ProceduralWeaponAnimation __instance, Vector3 ____temporaryPosition, Quaternion ____temporaryRotation)
+        {
+            if (PlayerStateInstance?.PWA != __instance) return;
+            RecoilPoseCapture.CapturePostRecoil(__instance.HandsContainer.WeaponRootAnim.parent, ____temporaryPosition, ____temporaryRotation);
+        }
+    }
+
+    // stops EFT rolling WeaponRootAnim to stand a canted sight upright while aiming (last step of ApplyComplexRotation), alt aim applies its own roll.
+    // SightNBone.Rotation and _targetScopeRotationDeg are left alone, canted detection, mounting and optic calibration still read them.
+    // EFT only recomputes the target when the sight list or selected sight changes, so toggling alt aim takes effect from the next one
+    public class UpdateCurrentScopeRotationPatch : ModulePatch
+    {
+        private static readonly AccessTools.FieldRef<ProceduralWeaponAnimation, Quaternion> _targetScopeRotation =
+            AccessTools.FieldRefAccess<ProceduralWeaponAnimation, Quaternion>("_targetScopeRotation");
+
+        private static FieldInfo _playerField;
+        private static FieldInfo _fcField;
+
+        protected override MethodBase GetTargetMethod()
+        {
+            _playerField = AccessTools.Field(typeof(FirearmController), "_player");
+            _fcField = AccessTools.Field(typeof(ProceduralWeaponAnimation), "_firearmController");
+            return AccessTools.Method(typeof(ProceduralWeaponAnimation), nameof(ProceduralWeaponAnimation.UpdateCurrentScopeRotation));
+        }
+
+        [PatchPostfix]
+        private static void PatchPostfix(ProceduralWeaponAnimation __instance)
+        {
+            if (!PluginConfig.EnableAltAim.Value || !IsYourPlayer(__instance)) return;
+            _targetScopeRotation(__instance) = Quaternion.identity;
+        }
+
+        // the sight scan can run while a weapon is being set up, before either source is guaranteed, so either one is enough
+        private static bool IsYourPlayer(ProceduralWeaponAnimation pwa)
+        {
+            if (PlayerStateInstance != null && PlayerStateInstance.PWA == pwa) return true;
+            FirearmController firearmController = (FirearmController)_fcField.GetValue(pwa);
+            if (firearmController == null) return false;
+            Player player = (Player)_playerField.GetValue(firearmController);
+            return player != null && player.IsYourPlayer;
         }
     }
 
@@ -1126,9 +1338,10 @@ namespace StanceOverhaul.Patches
         }
 
         [PatchPostfix]
-        private static void PatchPostfix(Player __instance)
+        private static void PatchPostfix(Player __instance, StationaryWeaponPacket.EStationaryCommand command)
         {
-            if (__instance.IsYourPlayer)
+            // Also called for Leave and the leave cleanup, only Occupy sets MovementContext.StationaryWeapon
+            if (__instance.IsYourPlayer && command == StationaryWeaponPacket.EStationaryCommand.Occupy)
             {
                 StanceEvents.RaiseOnStationaryWeaponOperated();
             }
@@ -1603,37 +1816,6 @@ namespace StanceOverhaul.Patches
             if (player != null && player.MovementContext.CurrentState.Name != EPlayerState.Stationary && player.IsYourPlayer)
             {
                 //StanceControllerInstance.RunAfterEFTTransformsSet(pwa, dt);
-            }
-        }
-    }
-
-    public class LerpCameraPatch : ModulePatch
-    {
-        private static FieldInfo _playerField;
-        private static FieldInfo _fcField;
-
-        protected override MethodBase GetTargetMethod()
-        {
-            _playerField = AccessTools.Field(typeof(FirearmController), "_player");
-            _fcField = AccessTools.Field(typeof(ProceduralWeaponAnimation), "_firearmController");
-            return typeof(EFT.Animations.ProceduralWeaponAnimation).GetMethod("LerpCamera", BindingFlags.Instance | BindingFlags.Public);
-        }
-
-        [PatchPostfix]
-        private static void Postfix(EFT.Animations.ProceduralWeaponAnimation __instance, float dt, float ____overweightAimingMultiplier,
-            float ____aimingSpeed, float ____aimSwayStrength, Player.ValueBlender
-            ____aimSwayBlender, Vector3 ____aimSwayDirection, Vector3 ____headRotationVec,
-            Vector3 ____vCameraTarget, Player.ValueBlenderDelay ____tacticalReload,
-            Quaternion ____cameraIdenity, Quaternion ____rotationOffset, Vector2 ____cameraShiftToLineOfSight,
-            float ____lineOfSightDeltaAngle, Vector3 ____shotDirection, bool ____adjustCollimatorsToTrajectory,
-            Transform ____bone0, Transform ____bone1)
-        {
-            FirearmController firearmController = (FirearmController)_fcField.GetValue(__instance);
-            if (firearmController == null) return;
-            Player player = (Player)_playerField.GetValue(firearmController);
-            if (player != null && player.IsYourPlayer && firearmController.Weapon != null)
-            {
-
             }
         }
     }

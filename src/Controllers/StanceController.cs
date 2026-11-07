@@ -25,8 +25,7 @@ namespace StanceOverhaul.Controllers
         public const float HIGH_READY_RADIATION_LIMIT = 80f;
         public const float HIGH_READY_TOXICITY_LIMIT = 80f;
         public const float LEFT_SHOULDER_SWAY_MULTI = 1.3f;
-
-        private EStanceType _targetStance = EStanceType.None;
+        public const float BASE_OFFSET_SPRING_FACTOR = 2f;
 
         private static FieldInfo _pwaAimField = AccessTools.Field(typeof(ProceduralWeaponAnimation), "_aimingSpeed");
 
@@ -46,6 +45,14 @@ namespace StanceOverhaul.Controllers
         }
 
         public float PwaOriginalAimSpeed { get; set; }
+
+        public float AltAimSpeedModifier
+        {
+            get
+            {
+                return _stanceState != null ? _stanceState.AltAimSpeedModifier : 1f;
+            }
+        }
 
         public bool IsBlindFiring
         {
@@ -132,7 +139,52 @@ namespace StanceOverhaul.Controllers
         {
             get
             {
-                return PluginConfig.EnableAltAim.Value && _stanceState.ActiveStanceType != EStanceType.LeftShoulder && !PlayerStateInstance.IsMounting && !PlayerStateInstance.IsUsingStationaryWeapon;
+                return PluginConfig.EnableAltAim.Value && !PlayerStateInstance.IsMounting && !PlayerStateInstance.IsUsingStationaryWeapon;
+            }
+        }
+
+        // 0 = not in left shoulder, 1 = fully at left shoulder pose, follows the stance's enter/exit progress
+        public float LeftShoulderPoseWeight
+        {
+            get
+            {
+                return _stanceState != null ? _stanceState.GetPoseWeight(EStanceType.LeftShoulder) : 0f;
+            }
+        }
+
+        // 0 = not in active aim, 1 = fully at active aim pose, follows the stance's enter/exit progress
+        public float ActiveAimPoseWeight
+        {
+            get
+            {
+                return _stanceState != null ? _stanceState.GetPoseWeight(EStanceType.ActiveAiming) : 0f;
+            }
+        }
+
+        // stance AimPositionScale/AimRotationScale are mid-fade (see StanceState.IsAimWeightFading)
+        public bool IsAimWeightFading
+        {
+            get
+            {
+                return _stanceState != null && _stanceState.IsAimWeightFading;
+            }
+        }
+
+        // a canted sight is selected and alt aim handles its roll (see StanceAimSystem.IsCantedSightSelected)
+        public bool IsCantedSightSelected
+        {
+            get
+            {
+                return _aimSystem != null && _aimSystem.IsCantedSightSelected;
+            }
+        }
+
+        // eased version of CanMoveGunToCamera, used to blend the camera target with the gun offset
+        public float AltAimWeight
+        {
+            get
+            {
+                return _aimSystem != null ? _aimSystem.AltAimWeight : 0f;
             }
         }
 
@@ -170,11 +222,43 @@ namespace StanceOverhaul.Controllers
             }
         }
 
+        // stance position alt aim treats as part of the aimed pose (see IStance.AltAimCorrectedPositionAxes)
+        public Vector3 AltAimHeldPosition
+        {
+            get
+            {
+                return _stanceState.AltAimHeldPosition;
+            }
+        }
+
         public Vector3 BaseWeaponOffsetPosition
         {
             get
             {
                 return _weaponOffsetAnimator.BaseWeaponOffsetPosition;
+            }
+        }
+
+        /// <summary>
+        /// The base offset as added to HandsPosition.Get(), applied directly instead of through a spring.
+        /// It used to go through StancePositionSpring, which settles at Get() = 2 x Zero, so the factor keeps its on-screen size.
+        /// </summary>
+        public Vector3 AppliedBaseOffsetPosition
+        {
+            get
+            {
+                return BASE_OFFSET_SPRING_FACTOR * _weaponOffsetAnimator.EasedBaseWeaponOffsetPosition;
+            }
+        }
+
+        /// <summary>
+        /// Everything SpringGetPatch adds to HandsPosition.Get() apart from the base offset, in weapon root parent space.
+        /// </summary>
+        public Vector3 StanceAndOffsetPosition
+        {
+            get
+            {
+                return StancePositionSpring.Get() + OffsetPositionSpring.Get();
             }
         }
 
@@ -225,10 +309,10 @@ namespace StanceOverhaul.Controllers
         private WeaponOffsetAnimator _weaponOffsetAnimator;
         private LeftHandAnimaor _leftHandAnimator;
 
-        public Spring StancePositionSpring { get; private set; }
-        public Spring StanceRotationSpring { get; private set; }
-        public Spring OffsetPositionSpring { get; private set; }
-        public Spring OffsetRotationSpring { get; private set; }
+        public InterpolatedSpring StancePositionSpring { get; private set; }
+        public InterpolatedSpring StanceRotationSpring { get; private set; }
+        public InterpolatedSpring OffsetPositionSpring { get; private set; }
+        public InterpolatedSpring OffsetRotationSpring { get; private set; }
 
         private List<StanceBase> _stances = new List<StanceBase>();
         public PatrolStance PatrolStance { get; private set; }
@@ -243,9 +327,11 @@ namespace StanceOverhaul.Controllers
         public EStanceType CurrentStanceType => _stanceState.ActiveStanceType;
         public IStance? CurrentStance => _stanceState.ActiveStance;
         public StatsSystem StatsHandlerInstance => _statsSystem;
+        public StanceInputListener InputListenerInstance => _inputListener;
         public bool IsDoingTacSprint => _tacSprintSystem.IsDoingTacSprint;
 
-        public float StanceHipfireBonus => _stanceState.ActiveStance?.HipfireBonus ?? 1f;
+        // never while aiming, for any stance, so a hipfire bonus can't leak into ADS
+        public float StanceHipfireBonus => AimStateInstance.IsAiming ? 1f : _stanceState.ActiveStance?.HipfireBonus ?? 1f;
 
         void Awake()
         {
@@ -311,11 +397,11 @@ namespace StanceOverhaul.Controllers
 
         private void InitSprings()
         {
-            StancePositionSpring = Cloner.ShallowClone(PlayerStateInstance.PWA.HandsContainer.HandsPosition);
-            StanceRotationSpring = Cloner.ShallowClone(PlayerStateInstance.PWA.HandsContainer.HandsRotation);
+            StancePositionSpring = new InterpolatedSpring(Cloner.ShallowClone(PlayerStateInstance.PWA.HandsContainer.HandsPosition));
+            StanceRotationSpring = new InterpolatedSpring(Cloner.ShallowClone(PlayerStateInstance.PWA.HandsContainer.HandsRotation));
 
-            OffsetPositionSpring = Cloner.ShallowClone(PlayerStateInstance.PWA.HandsContainer.HandsPosition);
-            OffsetRotationSpring = Cloner.ShallowClone(PlayerStateInstance.PWA.HandsContainer.HandsRotation);
+            OffsetPositionSpring = new InterpolatedSpring(Cloner.ShallowClone(PlayerStateInstance.PWA.HandsContainer.HandsPosition));
+            OffsetRotationSpring = new InterpolatedSpring(Cloner.ShallowClone(PlayerStateInstance.PWA.HandsContainer.HandsRotation));
         }
 
         private void InitStateControllers()
@@ -409,16 +495,25 @@ namespace StanceOverhaul.Controllers
         private void SubscribeToStanceEvents()
         {
             StanceEvents.OnPrimaryStanceChanged += UpdatePlayerStateOnStanceChange;
+            PlayerEvents.AimStateChanged += UpdateHipInaccuracyOnAimChange;
         }
 
         private void UnsubscribeFromStanceEvents()
         {
             StanceEvents.OnPrimaryStanceChanged -= UpdatePlayerStateOnStanceChange;
+            PlayerEvents.AimStateChanged -= UpdateHipInaccuracyOnAimChange;
         }
 
         private void UpdatePlayerStateOnStanceChange()
         {
             PlayerStateInstance.ResetProceduralState();
+        }
+
+        // hip inaccuracy is a snapshot taken by UpdateHipInaccuracy, re-take it so StanceHipfireBonus follows the aim state
+        // (and a refresh during ADS, e.g. a scope change, doesn't leave the bonus off after aiming)
+        private void UpdateHipInaccuracyOnAimChange()
+        {
+            PlayerStateInstance.FirearmController?.UpdateHipInaccuracy();
         }
 
         private void SubscribeToInputEvents()

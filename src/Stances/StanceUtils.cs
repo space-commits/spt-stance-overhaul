@@ -8,6 +8,15 @@ namespace StanceOverhaul.Stances;
 public static class StanceUtils
 {
     /// <summary>
+    /// The stance whose stamina, movement and reload effects apply right now: null while aiming
+    /// if the stance suspends them during ADS (IStance.SuspendsBonusesWhileAiming), otherwise the stance itself.
+    /// </summary>
+    public static IStance? GetBonusStance(IStance? stance)
+    {
+        return stance != null && stance.SuspendsBonusesWhileAiming && AimStateInstance.IsAiming ? null : stance;
+    }
+
+    /// <summary>
     /// When weapon X axis offset (left-right) is greater than 0, stances which have a particular x offset will not have the intended
     /// positioning (for example Active Aiming is supposed to be centered). 
     /// This method normalizes the x offset of a position curve to account for the weapon offset.

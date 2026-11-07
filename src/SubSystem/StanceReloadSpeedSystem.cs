@@ -1,5 +1,6 @@
 ﻿using StanceOverhaul.Enums;
 using StanceOverhaul.Events;
+using StanceOverhaul.Stances;
 using EFT.InventoryLogic;
 using RealismCommonLib.Events;
 using RealismCommonLib.ModifierHandlers;
@@ -20,6 +21,8 @@ public class StanceReloadSpeedSystem : ISubSystem
     private FloatMultiplierHandle _revolverReload;
     
     public EStanceReloadType CurrentReloadType { get; private set; }
+
+    private static IStance? BonusStance => StanceUtils.GetBonusStance(StanceControllerInstance.CurrentStance);
 
     public bool IsInReloadOperation
     {
@@ -126,7 +129,7 @@ public class StanceReloadSpeedSystem : ISubSystem
 
     private void ApplyMagReloadSpeedBonuses()
     {
-        _magReload.Multiplier = StanceControllerInstance.CurrentStance?.MagazineReloadSpeedModifier ?? 1f;
+        _magReload.Multiplier = BonusStance?.MagazineReloadSpeedModifier ?? 1f;
     }
 
     private void OnCheckAmmo()
@@ -161,7 +164,7 @@ public class StanceReloadSpeedSystem : ISubSystem
     {
         if (PluginConfig.EnableReloadSpeedChanges.Value)
         {
-            var bonus = StanceControllerInstance.CurrentStance?.WeaponManipSpeedModifier ?? 1f;
+            var bonus = BonusStance?.WeaponManipSpeedModifier ?? 1f;
             _checkAmmo.Multiplier = bonus;
             _checkChamber.Multiplier = bonus;
             _rechamber.Multiplier = bonus;
@@ -179,19 +182,19 @@ public class StanceReloadSpeedSystem : ISubSystem
         if (ReloadStateInstance.IsAttemptingRevolverReload)
         {
             CurrentReloadType = EStanceReloadType.Revolver;
-            _revolverReload.Multiplier = StanceControllerInstance.CurrentStance?.RevolverReloadSpeedModifier ?? 1f;
+            _revolverReload.Multiplier = BonusStance?.RevolverReloadSpeedModifier ?? 1f;
             return;
         }
         else if (WeaponStateInstance.IsShotgun && WeaponStateInstance.WeaponReloadType == Weapon.EReloadMode.InternalMagazine)
         {
             CurrentReloadType = EStanceReloadType.Tube;
-            bonus = StanceControllerInstance.CurrentStance?.TubeReloadSpeedModifier ?? 1f;
+            bonus = BonusStance?.TubeReloadSpeedModifier ?? 1f;
             StanceEvents.RaiseStanceTubeReload();
         }
         else
         {
             CurrentReloadType = EStanceReloadType.Top;
-            bonus = StanceControllerInstance.CurrentStance?.TopReloadSpeedModifier ?? 1f;
+            bonus = BonusStance?.TopReloadSpeedModifier ?? 1f;
             StanceEvents.RaiseStanceTopReload();
         }
 
@@ -204,6 +207,6 @@ public class StanceReloadSpeedSystem : ISubSystem
         CurrentReloadType = EStanceReloadType.PumpBolt;
 
         if (PluginConfig.EnableReloadSpeedChanges.Value)
-            _pumpBolt.Multiplier = StanceControllerInstance.CurrentStance?.PumpBoltSpeedModifier ?? 1f;
+            _pumpBolt.Multiplier = BonusStance?.PumpBoltSpeedModifier ?? 1f;
     }
 }

@@ -40,7 +40,7 @@ public class StanceStaminaSystem : ISubSystem
     {
         get
         {
-            bool stanceCanDrain = _stanceStaminaMode == EStanceStaminaType.Drain && !IsInExternalStateThatPausesRestoration && !RestoreStamina;
+            bool stanceCanDrain = _stanceStaminaMode == EStanceStaminaType.Drain && !IsInExternalStateThatPausesRestoration && !RestoreStamina && !ExternalStateAllowsVanillaRegen;
             return stanceCanDrain || ExternalStateThatDrainsStam;
         }
     }
@@ -107,11 +107,21 @@ public class StanceStaminaSystem : ISubSystem
         }
     }
 
+    // Crouching with no stance: idle drain stops, regen stays blocked (freeze)
     public bool ExternalStatePausesStanceDrain
     {
         get
         {
-            return StanceControllerInstance.CurrentStanceType == EStanceType.ActiveAiming && PlayerStateInstance.Player.Pose == EPlayerPose.Duck;
+            return StanceControllerInstance.CurrentStanceType == EStanceType.None && PlayerStateInstance.Player.Pose == EPlayerPose.Duck && !PlayerStateInstance.IsMoving;
+        }
+    }
+
+    // Crouching in active aim: stance drain stops and vanilla regen is alloweds
+    public bool ExternalStateAllowsVanillaRegen
+    {
+        get
+        {
+            return StanceControllerInstance.CurrentStanceType == EStanceType.ActiveAiming && PlayerStateInstance.Player.Pose == EPlayerPose.Duck && !PlayerStateInstance.IsMoving;
         }
     }
 
@@ -121,6 +131,13 @@ public class StanceStaminaSystem : ISubSystem
             return -ComputeDrainRate(PluginConfig.TacSprintDrainRate.Value * PluginConfig.IdleStamDrainModi.Value);
         if (PlayerStateInstance.Player.Physical.HoldingBreath || PlayerStateInstance.Player.ProceduralWeaponAnimation.IsAiming)
             return -ComputeDrainRate(BaseIdleDrainRate * PluginConfig.IdleStamDrainModi.Value);
+        return 0f;
+    }
+
+    public float GetLegStaminaDrainRate()
+    {
+        if (StanceControllerInstance.IsDoingTacSprint)
+            return -ComputeDrainRate(PluginConfig.TacSprintDrainRate.Value * 0.85f);
         return 0f;
     }
 
@@ -148,6 +165,7 @@ public class StanceStaminaSystem : ISubSystem
         StanceEvents.OnStanceExited += OnStateChanged;
         WeaponStateInstance.OnWeaponStateChanged += OnStateChanged;
         RealismCommonLib.Events.PlayerEvents.OnAnyItemEquipped += OnStateChanged;
+        RealismCommonLib.Events.PlayerEvents.AimStateChanged += OnStateChanged;
     }
 
     public void RunOnDestroy()
@@ -156,6 +174,7 @@ public class StanceStaminaSystem : ISubSystem
         StanceEvents.OnStanceExited -= OnStateChanged;
         WeaponStateInstance.OnWeaponStateChanged -= OnStateChanged;
         RealismCommonLib.Events.PlayerEvents.OnAnyItemEquipped -= OnStateChanged;
+        RealismCommonLib.Events.PlayerEvents.AimStateChanged -= OnStateChanged;
     }
 
     public void RunOnUpdate(float deltaTime)
@@ -163,7 +182,13 @@ public class StanceStaminaSystem : ISubSystem
         if (!PluginConfig.EnableStanceStamChanges.Value) return;
 
         var physical = PlayerStateInstance.Player?.Physical;
-        if (physical == null || _stanceStaminaMode == EStanceStaminaType.Neutral) return;
+        if (physical == null) return;
+
+        // Tac sprint drains leg stamina on top of vanilla sprint drain, at the same rate as arm stamina
+        if (StanceControllerInstance.IsDoingTacSprint && PlayerStateInstance.IsSprinting)
+            physical.Stamina.Current = Mathf.Max(physical.Stamina.Current + GetLegStaminaDrainRate() * deltaTime, 0f);
+
+        if (_stanceStaminaMode == EStanceStaminaType.Neutral) return;
 
         if (RestoreStamina)
         {
@@ -172,9 +197,6 @@ public class StanceStaminaSystem : ISubSystem
         }
         else if (DrainStamina)
         {
-            //ModLogger.LogWarning($"DrainStamina: stance={StanceControllerInstance?.CurrentStance?.StanceType}, staminaMode={_stanceStaminaMode}, staminaRate={_stanceRate}");
-            //ModLogger.LogWarning($"DrainStamina: current={physical.HandsStamina.Current}, min={StanceMinArmStamina}, drainRate={StaminaDrainRate}");
-
             if (physical.HandsStamina.Current > StanceMinArmStamina)
                 physical.HandsStamina.Current = physical.HandsStamina.Current + StaminaDrainRate * deltaTime;
         }
@@ -193,6 +215,8 @@ public class StanceStaminaSystem : ISubSystem
 
     private void CheckState(IStance? stance)
     {
+        stance = StanceUtils.GetBonusStance(stance);
+
         switch (stance?.StaminaMode)
         {
             case EStanceStaminaType.Regen:

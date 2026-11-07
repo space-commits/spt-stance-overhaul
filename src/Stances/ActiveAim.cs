@@ -28,10 +28,20 @@ public class ActiveAim : StanceBase
     public override float WeaponManipSpeedModifier => PluginConfig.ActiveAimWeaponManipSpeedModifier.Value;
 
     public override bool BlocksFiring => false;
+    public override bool DoesNotCancelOnADS => true;
+    public override bool SuspendsBonusesWhileAiming => true;
 
-    public override AnimationCurve ExitAimSpeedCurve => CurveDrawer.GetCurve("active_exit_aim_speed", CurveAxis.X)!;
+    public override AnimationCurve AimSpeedCurve => CurveDrawer.GetCurve("active_aim_speed", CurveAxis.X)!;
+    public override AnimationCurve AltAimSpeedCurve => CurveDrawer.GetCurve("active_alt_aim_speed", CurveAxis.X)!;
 
-    public override AnimationCurve EnterAimSpeedCurve => CurveDrawer.GetCurve("active_enter_aim_speed", CurveAxis.X)!;
+
+    // keeps its roll while aiming a canted sight (the canted roll only adds the rest, StanceAimSystem.ApplyCantedRoll), fades it with upright sights
+    public override Vector3 AimRotationScale => new Vector3(1f, StanceControllerInstance.IsCantedSightSelected ? 1f : 0f, 1f);
+    
+    // keeps its left/right offset while aiming, alt aim brings the sight to the camera from there,
+    // so ADS in/out has one mover instead of the stance fade plus alt aim. Without alt aim the offset still fades (vanilla camera-to-sight would follow it)
+    public override Vector3 AimPositionScale => StanceControllerInstance.CanMoveGunToCamera ? new Vector3(1f, 0f, 0f) : Vector3.zero;
+    public override Vector3 AltAimCorrectedPositionAxes => new Vector3(1f, 0f, 0f);
 
     public override EStanceReloadType[] ReloadTypesThatPauseStance => new EStanceReloadType[]
     {

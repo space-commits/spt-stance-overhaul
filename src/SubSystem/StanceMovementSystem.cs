@@ -24,6 +24,7 @@ namespace StanceOverhaul.SubSystem
             StanceEvents.OnTacSprintStarted += OnExternalStateChange;
             StanceEvents.OnTacSprintEnded += OnExternalStateChange;
             RealismCommonLib.Events.PlayerEvents.OnWeaponEquipped += OnExternalStateChange;
+            RealismCommonLib.Events.PlayerEvents.AimStateChanged += OnExternalStateChange;
 
             _walkSpeed = StatModifiers.WalkSpeedModifier.Add(1f);
             _sprintSpeed = StatModifiers.SprintSpeedModifier.Add(1f);
@@ -38,6 +39,7 @@ namespace StanceOverhaul.SubSystem
             StanceEvents.OnTacSprintStarted -= OnExternalStateChange;
             StanceEvents.OnTacSprintEnded -= OnExternalStateChange;
             RealismCommonLib.Events.PlayerEvents.OnWeaponEquipped -= OnExternalStateChange;
+            RealismCommonLib.Events.PlayerEvents.AimStateChanged -= OnExternalStateChange;
 
             StatModifiers.WalkSpeedModifier.Remove(_walkSpeed);
             StatModifiers.SprintSpeedModifier.Remove(_sprintSpeed);
@@ -60,6 +62,7 @@ namespace StanceOverhaul.SubSystem
             if (physical == null) return;
 
             //TODO: if in future tac sprint can be done wihout a stance, this will need to be handled in this method and still apply bonuses rather than short circuiting
+            stance = StanceUtils.GetBonusStance(stance);
             if (stance == null)
             {
                 OnStanceExited();

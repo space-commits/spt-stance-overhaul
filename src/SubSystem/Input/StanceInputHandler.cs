@@ -1,16 +1,20 @@
 using System;
 using System.Linq;
+using EFT;
+using EFT.InputSystem;
+using UnityEngine;
 using RealismCommonLib.Events;
 using StanceOverhaul.Events;
 using StanceOverhaul.Enums;
 using StanceOverhaul.Stances;
 using StanceOverhaul.State;
+using RealismCommonLib.Utils;
 using static RealismCommonLib.Plugin;
 using static StanceOverhaul.Plugin;
 
 namespace StanceOverhaul.SubSystem.StanceInput
 {
-    // Yes, the input system is AI-slopified, except it saved me hours of work dealing with persistent bugs, sue me!
+    // Yes, the input system is AI-slopified, except it saved me hours of work dealing with persistent bugs and actually works, sue me!
     //
     //
     // Turns player input and game events into stance changes.
@@ -19,8 +23,11 @@ namespace StanceOverhaul.SubSystem.StanceInput
     //
     //   Intent       _chosen            the stance the player has toggled on (null = none)
     //                _beforeActiveAim   the stance to go back to when active aim is switched off
+    //                _leftShoulderFromLean / _beforeLeanLeftShoulder
+    //                                   left shoulder was put on by a full left lean, and what to go back to when it ends
     //
-    //   Suppressors  aiming (plus a short settle delay), a reload that pauses the stance, an item in hand.
+    //   Suppressors  aiming (plus a short settle delay, only for stances without IStance.DoesNotCancelOnAds),
+    //                a reload that pauses the stance, an item in hand.
     //                While one applies, the stance is put away but the intent is left alone.
     //
     // Every event edits intent and/or a suppressor and then calls Reconcile(), the only method that talks to
@@ -35,21 +42,27 @@ namespace StanceOverhaul.SubSystem.StanceInput
     // This handler is assumed to be the only thing requesting stances from StanceState.
     internal class StanceInputHandler : ISubSystem
     {
-        // After ADS ends, wait this long before bringing the stance back. If the aim state flickers while the
-        // ADS transition settles, the stance is never re-requested, so it can't flash on screen.
-        private const float RestoreAfterADSDelay = 0.1f;
+        // If ADS ends during a stance cross-fade, wait this long before bringing the stance back. If the aim state
+        // flickers while the ADS transition settles, the stance is never re-requested, so it can't flash on screen.
+        private const float RestoreAfterADSDelay = 0.05f;
 
         private readonly StanceState _stanceState;
 
         // ---- Intent ----
         private IStance? _chosen;
         private IStance? _beforeActiveAim;
+        private bool _leftShoulderFromLean;
+        private IStance? _beforeLeanLeftShoulder;
+        private EStanceType _stanceFromFireAttempt;
 
         // ---- Suppressors ----
         private bool _isAiming;
         private float _aimSettleTimer;
         private bool _reloadPausesStance;
         private bool _itemInHand;
+
+        private DelayTimer _fireQueueTimer = new DelayTimer(1f);
+        private bool _queueShot;
 
         public StanceInputHandler(StanceState stanceState)
         {
@@ -70,6 +83,8 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
         public void RunOnUpdate(float deltaTime)
         {
+            FireQueueUpdate();
+
             if (_aimSettleTimer <= 0f)
                 return;
 
@@ -95,10 +110,12 @@ namespace StanceOverhaul.SubSystem.StanceInput
             StanceInputEvents.OnActiveAimKeyDown += EnterActiveAim;
             StanceInputEvents.OnActiveAimKeyUp += ExitActiveAim;
             InputEvents.ToggleLeftStanceInput += ToggleLeftShoulder;
+            PlayerEvents.OnFullLeftLeanChanged += OnFullLeftLeanChanged;
             StanceEvents.OnStanceReload += OnReloadStarted;
             StanceEvents.OnStanceReloadReset += OnReloadFinished;
             StanceEvents.OnTransformsInit += OnWeaponInit;
-            StanceEvents.OnStationaryWeaponOperated += _stanceState.CancelAll;
+            StanceEvents.OnStationaryWeaponOperated += OnStationaryWeaponOperated;
+            PlayerEvents.OnMountedStateChanged += OnMountedStateChanged;
             // TODO: StanceInputEvents.ToggleMelee
             // TODO: StanceInputEvents.ToggleMounting, decide if it will override BSG mounting
         }
@@ -119,10 +136,12 @@ namespace StanceOverhaul.SubSystem.StanceInput
             StanceInputEvents.OnActiveAimKeyDown -= EnterActiveAim;
             StanceInputEvents.OnActiveAimKeyUp -= ExitActiveAim;
             InputEvents.ToggleLeftStanceInput -= ToggleLeftShoulder;
+            PlayerEvents.OnFullLeftLeanChanged -= OnFullLeftLeanChanged;
             StanceEvents.OnStanceReload -= OnReloadStarted;
             StanceEvents.OnStanceReloadReset -= OnReloadFinished;
             StanceEvents.OnTransformsInit -= OnWeaponInit;
-            StanceEvents.OnStationaryWeaponOperated -= _stanceState.CancelAll;
+            StanceEvents.OnStationaryWeaponOperated -= OnStationaryWeaponOperated;
+            PlayerEvents.OnMountedStateChanged -= OnMountedStateChanged;
         }
 
         // ================= Rules and policy =================
@@ -138,17 +157,12 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
         private bool IsSuppressed(IStance stance)
         {
-            if (_itemInHand || _reloadPausesStance)
+            if (_itemInHand || _reloadPausesStance || PlayerStateInstance.IsMounting || PlayerStateInstance.IsUsingStationaryWeapon)
                 return true;
 
-            return IsAimSuppressing && !SurvivesADS(stance);
-        }
-
-        // Left shoulder is compatible with ADS: aiming leaves it alone.
-        // (Could become a flag on IStance if more stances need this.)
-        private static bool SurvivesADS(IStance stance)
-        {
-            return stance.StanceType == EStanceType.LeftShoulder;
+            // Stances compatible with ADS (left shoulder, active aim) are left alone by aiming,
+            // StanceState fades out the parts of their pose they flag with AimPositionScale/AimRotationScale
+            return IsAimSuppressing && !stance.DoesNotCancelOnADS;
         }
 
         // Stances that come back after aiming (and after item use, if RememberStanceItem is on).
@@ -166,9 +180,9 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
         // A stance that blocks firing is dropped when the player tries to shoot, so the shot can go through.
         // (Flip this if you want the opposite: "firing cancels stances that do NOT block it".)
-        private static bool FiringDropsStance(IStance stance)
+        private static bool FiringDropsStance(IStance? stance)
         {
-            return stance.BlocksFiring;
+            return stance != null && stance.BlocksFiring;
         }
 
         // What the player may toggle on the current weapon: pistols only get patrol (plus their default,
@@ -186,6 +200,10 @@ namespace StanceOverhaul.SubSystem.StanceInput
         {
             _chosen = stance;
             _beforeActiveAim = null; // only meaningful while active aim is chosen, callers set it afterwards
+
+            // Any other change of intent (a key press, a weapon swap, ...) means the lean no longer owns left shoulder
+            _leftShoulderFromLean = false;
+            _beforeLeanLeftShoulder = null;
         }
 
         // Makes StanceState match what should be showing right now. Idempotent, safe to call from anywhere.
@@ -197,12 +215,11 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
             if (wanted == null)
             {
-                if (active != null)
-                    _stanceState.CancelAll();
+                // Not gated on the active stance: it doesn't report a paused incoming stance, which still has to go.
+                _stanceState.CancelAll();
             }
             else if (active?.StanceType != wanted.StanceType)
             {
-                // Never request what is already active: RequestStance toggles.
                 _stanceState.RequestStance(wanted);
             }
         }
@@ -286,6 +303,58 @@ namespace StanceOverhaul.SubSystem.StanceInput
             Reconcile();
         }
 
+        // ================= Leaning =================
+
+        private void OnFullLeftLeanChanged(bool isFullyLeaningLeft)
+        {
+            if (isFullyLeaningLeft)
+                EnterLeanLeftShoulder();
+            else
+                ExitLeanLeftShoulder();
+        }
+
+        private void EnterLeanLeftShoulder()
+        {
+            var leftShoulder = StanceControllerInstance.LeftShoulder;
+
+            if (!PluginConfig.LeanLeftTogglesLeftShoulder.Value || !CanLeanEnterLeftShoulder(leftShoulder))
+                return;
+
+            // Only a remembered stance is worth going back to
+            var previous = IsRemembered(_chosen) ? _chosen : null;
+
+            SetChosen(leftShoulder);
+            _leftShoulderFromLean = true;
+            _beforeLeanLeftShoulder = previous;
+
+            Reconcile();
+        }
+
+        // Not gated by the config, so a lean that started with it on still cleans up after itself.
+        private void ExitLeanLeftShoulder()
+        {
+            // Cleared by SetChosen if anything (e.g. the left shoulder key) changed the stance during the lean
+            if (!_leftShoulderFromLean)
+                return;
+
+            SetChosen(_beforeLeanLeftShoulder);
+            Reconcile();
+        }
+
+        private bool CanLeanEnterLeftShoulder(IStance leftShoulder)
+        {
+            var isLeft = _chosen?.StanceType == EStanceType.LeftShoulder || _stanceState.ActiveStance?.StanceType == EStanceType.LeftShoulder;
+            var weaponAllowsLeft = !PlayerStateInstance.WeaponIsReady || WeaponStateInstance.IsPistol;
+            var statePreventsLeft = PlayerStateInstance.IsUsingStationaryWeapon || PlayerStateInstance.IsMounting;
+
+            if (isLeft || weaponAllowsLeft || statePreventsLeft)
+                return false;
+
+            // Same rules as the key: no stockless machine pistols, not while an item is in hand or a reload pauses it.
+            // Aiming does not block it, left shoulder survives ADS.
+            return IsAllowedOnCurrentWeapon(leftShoulder) && !IsSuppressed(leftShoulder);
+        }
+
         // ================= Aiming =================
 
         private void OnAimStateChanged()
@@ -299,8 +368,10 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
             if (aiming)
                 OnADSStarted();
+            else if (_stanceState.IsTransitioningBetweenStances)
+                _aimSettleTimer = RestoreAfterADSDelay; // restored from RunOnUpdate
             else
-                _aimSettleTimer = _stanceState.IsTransitioning ? RestoreAfterADSDelay : 0.001f; // restored from RunOnUpdate, so a flicker can't flash the stance
+                Reconcile(); // right away, so the alt aim return never runs without the stance's slot
         }
 
         private void OnADSStarted()
@@ -309,10 +380,10 @@ namespace StanceOverhaul.SubSystem.StanceInput
             _aimSettleTimer = 0f;
 
             // Only remembered stances (and ones that are compatible with ADS) outlive aiming
-            if (_chosen != null && !SurvivesADS(_chosen) && !IsRemembered(_chosen))
+            if (_chosen != null && !_chosen.DoesNotCancelOnADS && !IsRemembered(_chosen))
                 SetChosen(null);
 
-            // High Ready -> Active Aim -> ADS: forget High Ready, ADS ends back in Active Aim
+            // High Ready -> Active Aim -> ADS: forget High Ready, active aim stays through ADS and is still on after it
             _beforeActiveAim = null;
 
             Reconcile();
@@ -323,6 +394,8 @@ namespace StanceOverhaul.SubSystem.StanceInput
         // Both "a shot was fired" and "tried to fire from a stance" end up here.
         private void OnFireAttempt()
         {
+            QueueShotFromFireAttempt();
+
             if (_chosen == null || !FiringDropsStance(_chosen))
                 return;
 
@@ -333,6 +406,53 @@ namespace StanceOverhaul.SubSystem.StanceInput
             // The default stance is the baseline and is never dropped, Reconcile puts it back if needed
             SetChosen(null);
             Reconcile();
+        }
+
+        private void QueueShotFromFireAttempt()
+        {
+
+            if (FiringDropsStance(_stanceState.ActiveStance) && PluginConfig.BlockFiring.Value && !FiringStateInstance.IsFiring)
+            {
+                _queueShot = true;
+                _fireQueueTimer.Start();
+                _stanceFromFireAttempt = _stanceState.ActiveStance.StanceType;
+            }
+            else
+                _queueShot = false;
+        }
+
+        private void FireQueueUpdate()
+        {
+            if (!_queueShot)
+                return;
+
+            bool holdingKey = StanceControllerInstance.InputListenerInstance.IsHoldingFireKey;
+            bool cantFire = !PlayerStateInstance.WeaponIsReady || PlayerStateInstance.IsInventoryOpen || Cursor.visible;
+
+            if (_fireQueueTimer.Update() || !holdingKey || cantFire || FiringStateInstance.IsFiring)
+            {
+                ClearFireQueue();
+                return;
+            }
+
+            if (_stanceState.GetPoseWeight(_stanceFromFireAttempt) > PluginConfig.FireQueueReleaseWeight.Value)
+                return;
+
+            var translator = PlayerStateInstance.Player?.GetComponent<PlayerOwner>()?.HandsInputTranslator as FirearmHandsInputTranslator;
+
+            // ToggleShooting is a toggle, so only send it while the trigger is up
+            if (translator == null || translator._firearmTriggerPressed)
+                return;
+
+            translator.TranslateCommand(ECommand.ToggleShooting);
+
+            ClearFireQueue();
+        }
+
+        private void ClearFireQueue()
+        {
+            _queueShot = false;
+            _fireQueueTimer.Stop();
         }
 
         // ================= Reload =================
@@ -352,6 +472,24 @@ namespace StanceOverhaul.SubSystem.StanceInput
         {
             _reloadPausesStance = false;
             Reconcile();
+        }
+
+        // ================= Mounting and stationary weapons =================
+
+        // Both drop the chosen stance outright. IsSuppressed keeps every stance (default included) off and
+        // ignores stance keys until the player leaves them.
+        private void OnStationaryWeaponOperated()
+        {
+            SetChosen(null);
+            Reconcile();
+        }
+
+        private void OnMountedStateChanged(bool isMounted)
+        {
+            if (isMounted)
+                SetChosen(null);
+
+            Reconcile(); // on unmount, brings the default stance back
         }
 
         // ================= Items and weapons =================

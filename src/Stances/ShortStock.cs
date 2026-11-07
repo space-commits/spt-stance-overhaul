@@ -41,9 +41,8 @@ public class ShortStock : StanceBase
         EStanceReloadType.RemoveMagazine
     };
 
-    public override AnimationCurve ExitAimSpeedCurve => CurveDrawer.GetCurve("short_exit_aim_speed", CurveAxis.X)!;
-
-    public override AnimationCurve EnterAimSpeedCurve => CurveDrawer.GetCurve("short_enter_aim_speed", CurveAxis.X)!;
+    public override AnimationCurve AimSpeedCurve => CurveDrawer.GetCurve("short_aim_speed", CurveAxis.X)!;
+    public override AnimationCurve AltAimSpeedCurve => CurveDrawer.GetCurve("short_alt_aim_speed", CurveAxis.X)!;
 
     public override float BlendIntoThreshold(EStanceType nextStance)
     {

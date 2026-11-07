@@ -7,6 +7,8 @@ using UnityEngine;
 using static RealismCommonLib.Plugin;
 using RootMotion.FinalIK;
 using StanceOverhaul.Events;
+using StanceOverhaul.Integration;
+using RealismCommonLib.Integration;
 
 namespace StanceOverhaul
 {
@@ -18,11 +20,13 @@ namespace StanceOverhaul
 
         public const string MOD_GUID = "com.fontaine.spt-stance-overhaul";
         public const string MOD_NAME = "Fontaine-SPTStanceOverhaul";
-        public const string MOD_VERSION = "0.0.2";
+        public const string MOD_VERSION = "0.1.0";
 
         void Awake()
         {
             PluginConfig.InitConfigBindings(Config);
+
+            ModuleServices.Register<IStanceInfo>(new StanceInfoProvider());
 
             SubscribeToEvents();
 
@@ -45,8 +49,10 @@ namespace StanceOverhaul
             new HandIKPatch().Enable();
             new ElbowIKPatch().Enable();
             new PropSoundPatch().Enable();
-            new LerpCameraPatch().Enable();
             new VisualPassPatch().Enable();
+            new PreRecoilPosePatch().Enable();
+            new PostRecoilPosePatch().Enable();
+            new UpdateCurrentScopeRotationPatch().Enable();
 
             //State & Stats
             //new OperateStationaryWeaponPatch().Enable();
@@ -55,6 +61,8 @@ namespace StanceOverhaul
             new ApplyTransformsPatch().Enable();
             new CalculateCameraPositionPatch().Enable();
             new OperateStationaryWeaponPatch().Enable();
+            new CameraDeltaTimePatch().Enable();
+            new PatrolLootSpeedPatch().Enable();
 
                         //new TacticalReloadPatch().Enable();
             /*            new SprintPatch().Enable();

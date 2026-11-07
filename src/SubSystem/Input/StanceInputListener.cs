@@ -1,18 +1,53 @@
 ﻿using RealismCommonLib.Events;
 using StanceOverhaul.Enums;
 using StanceOverhaul.State;
+using System;
 using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
+using Unity;
 using static RealismCommonLib.Plugin;
 using static StanceOverhaul.Plugin;
+using Comfort.Common;
+using EFT.InputSystem;
+using EFT.UI.Screens;
 
 namespace StanceOverhaul.SubSystem.StanceInput
 {
-    internal class StanceInputListener : ISubSystem
+    public class StanceInputListener : ISubSystem
     {
+        private const string ScrollAxisName = "Mouse Scroll";
+
         private bool _activeAimHoldInProgress;
         private bool _meleeIsToggleable = true;
         private float _meleeTimer = 0f;
+
+        private bool _speedIsWheelOnly;
+
+        private List<KeyCode[]> _aimControls = new List<KeyCode[]>();
+        private List<KeyCode[]> _scrollBlockingControls = new List<KeyCode[]>();
+        private List<KeyCode[]> _fireControl = new List<KeyCode[]>();
+
+        private List<EGameKey> _scrollBlockingActions = new List<EGameKey>()
+        {
+            EGameKey.Duck,
+            EGameKey.Next,
+            EGameKey.Previous,
+            EGameKey.ScopeZoomIn,
+            EGameKey.ScopeZoomOut,
+            EGameKey.ReloadWeapon,
+        };
+
+
+        private Action _unbindKeybinds;
+
+        public bool IsHoldingFireKey
+        {
+            get
+            {
+                return AnyControlHeld(_fireControl);
+            }
+        }
 
         private bool StanceInputBlocked
         {
@@ -22,21 +57,66 @@ namespace StanceOverhaul.SubSystem.StanceInput
                     || PlayerStateInstance.IsSprinting
                     || PlayerStateInstance.IsInventoryOpen
                     || !PlayerStateInstance.WeaponIsReady
-                    || PlayerStateInstance.IsUsingStationaryWeapon;
+                    || PlayerStateInstance.IsUsingStationaryWeapon
+                    || EftScreenManager.Instance.CheckCurrentScreen(EEftScreenType.MainMenu)
+                    || Cursor.visible;
             }
         }
 
         public void RunOnAwake()
         {
+            _unbindKeybinds = Singleton<EFT.Settings.SettingsManager>.Instance.Control.Settings
+                .UserKeyBindings.Bind(CacheGameKeybinds);
         }
 
         public void RunOnDestroy()
         {
+            _unbindKeybinds?.Invoke();
+            _unbindKeybinds = null;
         }
 
         public void RunOnUpdate(float deltaTime)
         {
             StanceInputUpdate(deltaTime);
+        }
+
+        private void CacheGameKeybinds(List<KeyGroup> keyBindings)
+        {
+            _aimControls.Clear();
+            _scrollBlockingControls.Clear();
+            _fireControl.Clear();
+            _speedIsWheelOnly = false;
+
+            foreach (KeyGroup group in keyBindings)
+            {
+                foreach (InputSource variant in group.variants)
+                {
+                    // No keys to hold, so AnyControlHeld can't detect this binding
+                    if (variant.keyCode.Count == 0)
+                    {
+                        if (variant.axisName == ScrollAxisName && (group.keyName == EGameKey.Next || group.keyName == EGameKey.Previous))
+                            _speedIsWheelOnly = true;
+
+                        continue;
+                    }
+
+                    if (_scrollBlockingActions.Contains(group.keyName))
+                        _scrollBlockingControls.Add(variant.keyCode.ToArray());
+                    else if (group.keyName == EGameKey.Aim)
+                        _aimControls.Add(variant.keyCode.ToArray());
+                    else if (group.keyName == EGameKey.Shoot)
+                        _fireControl.Add(variant.keyCode.ToArray());
+                }
+            }
+        }
+
+        private static bool AnyControlHeld(List<KeyCode[]> controls)
+        {
+            foreach (KeyCode[] control in controls)
+            {
+                if (control.All(Input.GetKey)) return true;
+            }
+            return false;
         }
 
         public void StanceInputUpdate(float deltaTime)
@@ -81,14 +161,10 @@ namespace StanceOverhaul.SubSystem.StanceInput
         {
             if (!PluginConfig.UseMouseWheelStance.Value) return;
 
-            //TODO: get actual player keybinds
-            bool isHoldingMagSelect = UnityEngine.Input.GetKey(KeyCode.R);
-            bool isHoldingHeightStance = Input.GetKey(KeyCode.C);
-            bool isHoldingKeyModifier = Input.GetKey(KeyCode.C);
+            bool canDoMouseWheelOnly = !PluginConfig.UseMouseWheelPlusKey.Value && !_speedIsWheelOnly && !AnyControlHeld(_scrollBlockingControls);
+            bool canDoMouseWheelPlusKey = Input.GetKey(PluginConfig.StanceWheelComboKeyBind.Value.MainKey) && PluginConfig.UseMouseWheelPlusKey.Value;
 
-            if (UnityEngine.Input.GetKey(PluginConfig.StanceWheelComboKeyBind.Value.MainKey) &&
-                PluginConfig.UseMouseWheelPlusKey.Value ||
-                !PluginConfig.UseMouseWheelPlusKey.Value && !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.LeftAlt))
+            if (canDoMouseWheelPlusKey || canDoMouseWheelOnly)
             {
                 float scrollDelta = Input.mouseScrollDelta.y;
 
@@ -186,8 +262,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             if (WeaponStateInstance.TreatAsPistol)
                 return;
 
-            bool activeAimOverridesAds = (Input.GetKeyDown(KeyCode.Mouse1) || Input.GetKey(KeyCode.Mouse1))
-               && StanceControllerInstance.AdsIsBlocked;
+            bool activeAimOverridesAds = AnyControlHeld(_aimControls) && StanceControllerInstance.AdsIsBlocked;
             bool keyIsHeld = Input.GetKey(PluginConfig.ActiveAimKeybind.Value.MainKey)
                 && PluginConfig.ActiveAimKeybind.Value.Modifiers.All(Input.GetKey);
             bool anyHeld = keyIsHeld || activeAimOverridesAds;

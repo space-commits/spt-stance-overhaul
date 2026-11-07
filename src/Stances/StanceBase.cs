@@ -31,6 +31,18 @@ namespace StanceOverhaul.Stances
 
         public virtual bool BlocksFiring => true;
 
+        /// <summary>
+        /// The stance stays active while aiming instead of being put away. Use AimPositionScale/AimRotationScale
+        /// to fade out the parts of the pose that get in the way of the sights.
+        /// </summary>
+        public virtual bool DoesNotCancelOnADS => false;
+
+        /// <summary>
+        /// While aiming, this stance's stamina, movement and reload effects are suspended (see StanceUtils.GetBonusStance).
+        /// Only matters for stances that stay up through ADS.
+        /// </summary>
+        public virtual bool SuspendsBonusesWhileAiming => false;
+
         public virtual EStanceReloadType[] ReloadTypesThatPauseStance => [];
 
         public abstract Vector3Curve EnterPositionCurve { get; }
@@ -43,7 +55,12 @@ namespace StanceOverhaul.Stances
         public virtual Vector3Curve? PistolExitPositionCurve { get; }
         public virtual Vector3Curve? PistolExitRotationCurve { get; }
 
-        public virtual AnimationCurve ExitAimSpeedCurve { get; }
+        /// <summary>
+        /// Multiplier on EFT's aim speed while aiming during this stance's transition, so the camera doesn't follow
+        /// the stance animation too closely. Time is how far the gun is through its current movement (0 = start, 1 = end).
+        /// Doesn't affect alt aim, see <see cref="AltAimSpeedCurve"/>.
+        /// </summary>
+        public virtual AnimationCurve AimSpeedCurve { get; }
             = new AnimationCurve
             (
                 new Keyframe { time = 0f, value = 0f },
@@ -55,7 +72,11 @@ namespace StanceOverhaul.Stances
                 new Keyframe { time = 1f, value = 1f }
             );
 
-        public virtual AnimationCurve EnterAimSpeedCurve { get; }
+        /// <summary>
+        /// Multiplier on alt aim speed (gun to camera) while aiming during this stance's transition.
+        /// Time is how far the gun is through its current movement (0 = start, 1 = end).
+        /// </summary>
+        public virtual AnimationCurve AltAimSpeedCurve { get; }
             = new AnimationCurve
             (
                 new Keyframe { time = 0f, value = 0f },
@@ -66,6 +87,27 @@ namespace StanceOverhaul.Stances
                 new Keyframe { time = 0.95f, value = 0.8f },
                 new Keyframe { time = 1f, value = 1f }
             );
+
+        /// <summary>
+        /// Multiplier on alt aim speed (gun back to rest) out of ADS, shared by all stances unless overridden.
+        /// Time is how far the gun is through its current movement (0 = start, 1 = end). Keep the end value above 0,
+        /// a stance held through ADS uses it for the whole return.
+        /// Runs every frame in any stance, so reads the curve directly to avoid the copy GetCurve(name, axis) makes.
+        /// </summary>
+        public virtual AnimationCurve AltAimReturnSpeedCurve => CurveDrawer.GetCurve("alt_aim_return_speed")!.XCurve;
+
+        /// <summary>
+        /// Per-axis multiplier on this stance's pose while fully aimed, faded in/out with ADS.
+        /// 1 = axis unchanged, 0 = axis removed while aiming.
+        /// </summary>
+        public virtual Vector3 AimPositionScale => Vector3.one;
+        public virtual Vector3 AimRotationScale => Vector3.one;
+
+        /// <summary>
+        /// Position axes the stance keeps while aiming (AimPositionScale 1) that alt aim should treat as part of the aimed pose,
+        /// bringing the sight to the camera from there. Default none: stance positions play out as authored, alt aim only corrects the base pose.
+        /// </summary>
+        public virtual Vector3 AltAimCorrectedPositionAxes => Vector3.zero;
 
         /// <summary>
         /// Blend threshold for this stance when transitioning to another stance.
