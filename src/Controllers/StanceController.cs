@@ -152,6 +152,24 @@ namespace StanceOverhaul.Controllers
             }
         }
 
+        // 0 = not in active aim, 1 = fully at active aim pose, follows the stance's enter/exit progress
+        public float ActiveAimPoseWeight
+        {
+            get
+            {
+                return _stanceState != null ? _stanceState.GetPoseWeight(EStanceType.ActiveAiming) : 0f;
+            }
+        }
+
+        // stance AimPositionScale/AimRotationScale are mid-fade (see StanceState.IsAimWeightFading)
+        public bool IsAimWeightFading
+        {
+            get
+            {
+                return _stanceState != null && _stanceState.IsAimWeightFading;
+            }
+        }
+
         // a canted sight is selected and alt aim handles its roll (see StanceAimSystem.IsCantedSightSelected)
         public bool IsCantedSightSelected
         {

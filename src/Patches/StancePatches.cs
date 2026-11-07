@@ -151,7 +151,7 @@ namespace StanceOverhaul.Patches
         }
 
         [PatchPostfix]
-        private static void Postfix(Player __instance)
+        private static void Postfix(Player __instance, float curveWeight)
         {
             // bool cancelForPistol = WeaponStateInstance.TreatAsPistol && ReloadStateInstance.IsInReloadOpertation;
             // bool cancelForRifle = !WeaponStateInstance.TreatAsPistol && ReloadStateInstance.IsInReloadOpertation;
@@ -181,7 +181,13 @@ namespace StanceOverhaul.Patches
             if (Mathf.Abs(Vector3.Dot(elbowDir, toTarget)) > 0.1f) // 0.9f
                 elbowDir = Vector3.Slerp(elbowDir, torso.forward, -0.1f).normalized; //  0.5f
 
-            solver.bendGoal.position = shoulderPos + elbowDir; // direction matters, magnitude doesn't
+            // Hand the elbow back to vanilla when an animation owns it. blind fire is a body animation
+            // and Elbow_Left is vanilla's own "animated elbow" weight.
+            float vanillaWeight = Mathf.Max(
+                Mathf.Abs(__instance.ProceduralWeaponAnimation.BlindfireBlender.Value),
+                curveWeight * __instance.GetCurveValue(PlayerAnimator.ELBOW_LEFT_WEIGHT));
+
+            solver.bendGoal.position = Vector3.Lerp(shoulderPos + elbowDir, solver.bendGoal.position, vanillaWeight); // direction matters, magnitude doesn't
         }
     }
     public class PropSoundPatch : ModulePatch

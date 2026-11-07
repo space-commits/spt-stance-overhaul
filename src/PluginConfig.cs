@@ -238,6 +238,9 @@ namespace StanceOverhaul
         public static ConfigEntry<float> TacSprintSpeedBonus { get; set; }
         public static ConfigEntry<float> TacSprintAccelBonus { get; set; }
         public static ConfigEntry<float> TacSprintDrainRate { get; set; }
+        public static ConfigEntry<float> TacSprintWeightLimit { get; set; }
+        public static ConfigEntry<float> TacSprintBullpupWeightLimit { get; set; }
+        public static ConfigEntry<float> TacSprintErgoLimit { get; set; }
         public static ConfigEntry<bool> BlockFiring { get; set; }
         public static ConfigEntry<float> FireQueueReleaseWeight { get; set; }
         public static ConfigEntry<bool> RememberStanceFiring { get; set; }
@@ -271,22 +274,22 @@ namespace StanceOverhaul
 
         public static void InitConfigBindings(ConfigFile config)
         {
-            string dev = "0. Dev";
-            string general = "1. General";
-            string aiming = "2. Aiming";
-            string stanceSpeed = "3. Stance Speed";
-            string stamina = "4. Stamina";
-            string movement = "5. Movement";
-            string weapAimAndPos = "6. Offsets";
-            string deviceBonuses = "7. Device Bonuses";
-            string controls = "8. Controls";
-            string activeAim = "9. Active Aim";
-            string highReady = "10. High Ready";
-            string lowReady = "11. Low Ready";
-            string shortStock = "12. Short-Stocking";
-            string patrol = "13. Patrol Stance";
-            string leftShoulder = "14. Left Shoulder";
-            string pistol = "15. Pistol Stance";
+            string dev = "0. Dev.";
+            string general = "1. General.";
+            string aiming = "2. Aiming.";
+            string stanceSpeed = "3. Stance Speed.";
+            string stamina = "4. Stamina.";
+            string movement = "5. Movement.";
+            string weapAimAndPos = "6. Offsets.";
+            string deviceBonuses = "7. Device Bonuses.";
+            string controls = "8. Controls.";
+            string activeAim = "9. Active Aim.";
+            string highReady = "10. High Ready.";
+            string lowReady = "11. Low Ready.";
+            string shortStock = "12. Short-Stocking.";
+            string patrol = "13. Patrol Stance.";
+            string leftShoulder = "14. Left Shoulder.";
+            string pistol = "15. Pistol Stance.";
 
             test1 = config.Bind<float>(dev, "test 1", 1f, new ConfigDescription("", new AcceptableValueRange<float>(-5000f, 5000f), new ConfigurationManagerAttributes { Order = 170, IsAdvanced = true, Browsable = true }));
             test2 = config.Bind<float>(dev, "test 2", 1f, new ConfigDescription("", new AcceptableValueRange<float>(-5000f, 5000f), new ConfigurationManagerAttributes { Order = 160, IsAdvanced = true, Browsable = true }));
@@ -338,9 +341,12 @@ namespace StanceOverhaul
             EnableStanceStamChanges = config.Bind<bool>(stamina, "Enable Stance Stamina And Movement Effects", true, new ConfigDescription("Enabled Stances And Mounting To Affect Stamina And Movement Speed. Stamina Drain May Not Work Correctly If Disabled. High + Low Ready, Short-Stocking And Pistol Idle Will Regenerate Stamina Faster And Optionally Idle With Rifles Drains Stamina. High Ready Has Faster Sprint Speed And Sprint Accel, Low Ready Has Faster Sprint Accel. Arm Stamina Won't Drain Regular Stamina If It Reaches 0.", null, new ConfigurationManagerAttributes { Order = 183, Browsable = true }));
 
             EnableTacSprint = config.Bind<bool>(movement, "Enable Tactical Sprint Animation", true, new ConfigDescription("Enables Usage Of Tactical Sprint Animation When Sprinting From High Ready Position.", null, new ConfigurationManagerAttributes { Order = 230, Browsable = true }));
-            TacSprintSpeedBonus = config.Bind<float>(movement, "Tactical Sprint Sprint Speed Bonus", 1.1f, new ConfigDescription("Sprint Speed Bonus When Sprinting From High Ready Position.", new AcceptableValueRange<float>(0.1f, 5f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 230, Browsable = true }));
+            TacSprintSpeedBonus = config.Bind<float>(movement, "Tactical Sprint Sprint Speed Bonus", 1.13f, new ConfigDescription("Sprint Speed Bonus When Sprinting From High Ready Position.", new AcceptableValueRange<float>(0.1f, 5f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 230, Browsable = true }));
             TacSprintAccelBonus = config.Bind<float>(movement, "Tactical Sprint Sprint Acceleration Bonus", 1.3f, new ConfigDescription("Sprint Acceleration Bonus When Sprinting From High Ready Position.", new AcceptableValueRange<float>(0.1f, 5f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 230, Browsable = true }));
-            TacSprintDrainRate = config.Bind<float>(movement, "Tactical Sprint Stamina Drain Rate", 2.2f, new ConfigDescription("Stamina Drain Rate When Sprinting From High Ready Position.", new AcceptableValueRange<float>(0.1f, 5f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 230, Browsable = true }));
+            TacSprintDrainRate = config.Bind<float>(movement, "Tactical Sprint Stamina Drain Rate", 2.3f, new ConfigDescription("Stamina Drain Rate When Sprinting From High Ready Position.", new AcceptableValueRange<float>(0.1f, 5f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 230, Browsable = true }));
+            TacSprintWeightLimit = config.Bind<float>(movement, "Tactical Sprint Weapon Weight Limit", 5f, new ConfigDescription("Maximum Weapon Weight Allowed For Tactical Sprint. Scaled By Strength Skill.", new AcceptableValueRange<float>(4f, 8f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 230, Browsable = true }));
+            TacSprintBullpupWeightLimit = config.Bind<float>(movement, "Tactical Sprint Bullpup Weapon Weight Limit", 6.1f, new ConfigDescription("Maximum Bullpup Weapon Weight Allowed For Tactical Sprint. Scaled By Strength Skill.", new AcceptableValueRange<float>(4f, 9f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 230, Browsable = true }));
+            TacSprintErgoLimit = config.Bind<float>(movement, "Tactical Sprint Ergo Limit", 30f, new ConfigDescription("Minimum Weapon Ergonomics To Allow Tactical Sprint. Scaled By Strength Skill.", new AcceptableValueRange<float>(15f, 50f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 230, Browsable = true }));
 
             RifleOffsetX = config.Bind<float>(weapAimAndPos, "Weapon Position Offset X", -0.015f, new ConfigDescription("Adjusts The Position Of Rifle On Screen.", null, new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 152, Browsable = true }));
             RifleOffsetY = config.Bind<float>(weapAimAndPos, "Weapon Position Offset Y", 0f, new ConfigDescription("Adjusts The Position Of Rifle On Screen.", null, new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 152, Browsable = true }));

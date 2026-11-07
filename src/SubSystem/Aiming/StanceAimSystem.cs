@@ -18,8 +18,9 @@ namespace StanceOverhaul.SubSystem.Aiming
         private const float OffsetSnapThresholdSqr = 1e-10f;
         private const float CantedRollSnapThreshold = 0.01f;
 
+        // multiplier on the alt aim speed while active aim's roll fades with ADS, lower is slower. 1 = no change
         // multiplier on the roll speed when switching between a canted and an upright sight while already aimed, lower is slower
-        private const float SightSwitchRollSpeedMulti = 0.5f;
+        private const float RollSpeedMulti = 0.6f;
 
         // exponent on left shoulder stance progress: 1 = linear with the stance,
         // >1 = camera hands over later in the transition, <1 = earlier
@@ -117,9 +118,14 @@ namespace StanceOverhaul.SubSystem.Aiming
 
             float baseSpeed = (pwa.IsAiming ? adsInSpeed * recoilModifierIn : adsOutSpeed * recoilModifierOut) * StanceControllerInstance.AltAimSpeedModifier;
 
-            // rolling between a canted and an upright sight while already aimed
-            if (_sightSwitchRoll)
-                baseSpeed *= 0.75f;
+            // active aim's roll is fading with ADS (AimRotationScale.y != 1, i.e. no canted sight selected)
+            bool activeAimRollFading =
+                StanceControllerInstance.IsAimWeightFading
+                && StanceControllerInstance.ActiveAimPoseWeight > 0f
+                && StanceControllerInstance.ActiveAim.AimRotationScale.y != 1f;
+
+            if (activeAimRollFading || _sightSwitchRoll)
+                baseSpeed *= RollSpeedMulti;
 
             return StanceControllerInstance.StatsHandlerInstance.GetAltAimSpeedModifier(baseSpeed);
         }

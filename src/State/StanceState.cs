@@ -36,7 +36,7 @@ namespace StanceOverhaul.State
     internal class StanceState : ISubSystem
     {
         // scaled by the weapon's original aim speed, same as StanceAimSystem's ADS offset
-        private const float AimFadeInSpeed = 14f;
+        private const float AimFadeInSpeed = 13.5f;
         private const float AimFadeOutSpeed = 15f;
         private const float AimWeightSnapThreshold = 0.001f;
 
@@ -65,6 +65,14 @@ namespace StanceOverhaul.State
 
         // 0 = not aiming, 1 = fully aimed, eased so each stance's AimPositionScale/AimRotationScale fades with ADS
         private float _aimWeight;
+
+        public float AimWeight => _aimWeight;
+
+        /// <summary>
+        /// The aim weight is still easing toward its target (in on ADS, out on un-ADS), so stance AimPositionScale/AimRotationScale are mid-fade.
+        /// Exact compare is safe, UpdateAimWeight snaps to the target.
+        /// </summary>
+        public bool IsAimWeightFading => _aimWeight != (AimStateInstance.IsAiming ? 1f : 0f);
 
         public Vector3 StancePosition { get; private set; }
         public Vector3 StanceRotation { get; private set; }
