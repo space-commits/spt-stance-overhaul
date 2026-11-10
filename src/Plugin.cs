@@ -49,7 +49,6 @@ namespace StanceOverhaul
             new HandIKPatch().Enable();
             new ElbowIKPatch().Enable();
             new PropSoundPatch().Enable();
-            new VisualPassPatch().Enable();
             new PreRecoilPosePatch().Enable();
             new PostRecoilPosePatch().Enable();
             new UpdateCurrentScopeRotationPatch().Enable();
@@ -58,7 +57,6 @@ namespace StanceOverhaul
             //new OperateStationaryWeaponPatch().Enable();
             new UpdateWeaponVariablesPatch().Enable();
             new UpdateHipInaccuracyPatch().Enable();
-            new ApplyTransformsPatch().Enable();
             new CalculateCameraPositionPatch().Enable();
             new OperateStationaryWeaponPatch().Enable();
             new CameraDeltaTimePatch().Enable();

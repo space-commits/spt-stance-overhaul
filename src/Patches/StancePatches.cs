@@ -1414,291 +1414,291 @@ namespace StanceOverhaul.Patches
     //Used as entry point for melee hit and mounting
     //Should move logic to own classes
     //Could move some of this to gneric player update in monobehaviour
-    public class CollisionPatch : ModulePatch
-    {
-        private static FieldInfo _playerField;
-        private static FieldInfo _hitIgnoreField;
+    // public class CollisionPatch : ModulePatch
+    // {
+    //     private static FieldInfo _playerField;
+    //     private static FieldInfo _hitIgnoreField;
 
-        private static int _timer = 0;
-        private static MaterialType[] _allowedMats = { MaterialType.Helmet, MaterialType.BodyArmor, MaterialType.Body, MaterialType.Glass, MaterialType.GlassShattered, MaterialType.GlassVisor };
+    //     private static int _timer = 0;
+    //     private static MaterialType[] _allowedMats = { MaterialType.Helmet, MaterialType.BodyArmor, MaterialType.Body, MaterialType.Glass, MaterialType.GlassShattered, MaterialType.GlassVisor };
 
-        private static Vector3 _startLeftDir = new Vector3(0.143f, 0f, 0f);
-        private static Vector3 _startRightDir = new Vector3(-0.143f, 0f, 0f);
-        private static Vector3 _startDownDir = new Vector3(0f, 0f, -0.19f);
+    //     private static Vector3 _startLeftDir = new Vector3(0.143f, 0f, 0f);
+    //     private static Vector3 _startRightDir = new Vector3(-0.143f, 0f, 0f);
+    //     private static Vector3 _startDownDir = new Vector3(0f, 0f, -0.19f);
 
-        private static Vector3 _wiggleLeftDir = new Vector3(2.5f, 7.5f, -5) * 0.5f;
-        private static Vector3 _wiggleRightDir = new Vector3(2.5f, -7.5f, -5f) * 0.5f;
-        private static Vector3 _wiggleDownDir = new Vector3(7.5f, 2.5f, -5f) * 0.5f;
+    //     private static Vector3 _wiggleLeftDir = new Vector3(2.5f, 7.5f, -5) * 0.5f;
+    //     private static Vector3 _wiggleRightDir = new Vector3(2.5f, -7.5f, -5f) * 0.5f;
+    //     private static Vector3 _wiggleDownDir = new Vector3(7.5f, 2.5f, -5f) * 0.5f;
 
-        private static int PlayerMask = LayerMask.NameToLayer("Player");
+    //     private static int PlayerMask = LayerMask.NameToLayer("Player");
 
-        protected override MethodBase GetTargetMethod()
-        {
-            _playerField = AccessTools.Field(typeof(EFT.Player.FirearmController), "_player");
-            _hitIgnoreField = AccessTools.Field(typeof(EFT.Player.FirearmController), "_isOverlapHitIgnoredTest");
+    //     protected override MethodBase GetTargetMethod()
+    //     {
+    //         _playerField = AccessTools.Field(typeof(EFT.Player.FirearmController), "_player");
+    //         _hitIgnoreField = AccessTools.Field(typeof(EFT.Player.FirearmController), "_isOverlapHitIgnoredTest");
 
-            return typeof(Player.FirearmController).GetMethod("OverlapLn", BindingFlags.Instance | BindingFlags.Public);
-        }
+    //         return typeof(Player.FirearmController).GetMethod("OverlapLn", BindingFlags.Instance | BindingFlags.Public);
+    //     }
 
-        /*       private static void SetMountingStatus(EBracingDirection coverDir)
-               {
-                   if (!StanceControllerInstance.IsMounting)
-                   {
-                       StanceControllerInstance.BracingDirection = coverDir;
-                   }
-                   StanceControllerInstance.IsBracing = true;
-               }
+    //     /*       private static void SetMountingStatus(EBracingDirection coverDir)
+    //            {
+    //                if (!StanceControllerInstance.IsMounting)
+    //                {
+    //                    StanceControllerInstance.BracingDirection = coverDir;
+    //                }
+    //                StanceControllerInstance.IsBracing = true;
+    //            }
 
-               private static Vector3 GetWiggleDir(EBracingDirection coverDir)
-               {
-                   {
-                       switch (coverDir)
-                       {
-                           case EBracingDirection.Right:
-                               return _wiggleRightDir;
-                           case EBracingDirection.Left:
-                               return _wiggleLeftDir;
-                           case EBracingDirection.Top:
-                               return _wiggleDownDir;
-                           default: return Vector3.zero;
-                       }
-                   }
-               }
+    //            private static Vector3 GetWiggleDir(EBracingDirection coverDir)
+    //            {
+    //                {
+    //                    switch (coverDir)
+    //                    {
+    //                        case EBracingDirection.Right:
+    //                            return _wiggleRightDir;
+    //                        case EBracingDirection.Left:
+    //                            return _wiggleLeftDir;
+    //                        case EBracingDirection.Top:
+    //                            return _wiggleDownDir;
+    //                        default: return Vector3.zero;
+    //                    }
+    //                }
+    //            }
 
-               private static bool IsBracingProne(Player player)
-               {
-                   if (player.IsInPronePose)
-                   {
-                       SetMountingStatus(EBracingDirection.Top);
-                       return true;
-                   }
-                   return false;
-               }*/
+    //            private static bool IsBracingProne(Player player)
+    //            {
+    //                if (player.IsInPronePose)
+    //                {
+    //                    SetMountingStatus(EBracingDirection.Top);
+    //                    return true;
+    //                }
+    //                return false;
+    //            }*/
 
-        /*     private static bool CheckForCoverCollision(EBracingDirection coverDir, Vector3 start, Vector3 direction, Vector3 spherePos, float radius)
-             {
-                 RaycastHit raycastHit;
-                 if (Physics.Linecast(start, direction, out raycastHit, EFTHardSettings.Instance.WEAPON_OCCLUSION_LAYERS))
-                 {
-                     if (raycastHit.collider.gameObject.layer != PlayerMask)
-                     {
-                         SetMountingStatus(coverDir);
-                         StanceControllerInstance.CoverWiggleDirection = GetWiggleDir(coverDir);
-                         return true;
-                     }
+    //     /*     private static bool CheckForCoverCollision(EBracingDirection coverDir, Vector3 start, Vector3 direction, Vector3 spherePos, float radius)
+    //          {
+    //              RaycastHit raycastHit;
+    //              if (Physics.Linecast(start, direction, out raycastHit, EFTHardSettings.Instance.WEAPON_OCCLUSION_LAYERS))
+    //              {
+    //                  if (raycastHit.collider.gameObject.layer != PlayerMask)
+    //                  {
+    //                      SetMountingStatus(coverDir);
+    //                      StanceControllerInstance.CoverWiggleDirection = GetWiggleDir(coverDir);
+    //                      return true;
+    //                  }
 
-                 }
+    //              }
 
-                 Collider[] hitColliders = Physics.OverlapSphere(spherePos, radius, EFTHardSettings.Instance.WEAPON_OCCLUSION_LAYERS);
-                 foreach (var hitCollider in hitColliders)
-                 {
-                     if (hitCollider.gameObject.layer != PlayerMask)
-                     {
-                         SetMountingStatus(coverDir);
-                         StanceControllerInstance.CoverWiggleDirection = GetWiggleDir(coverDir);
-                         return true;
-                     }
-                 }
+    //              Collider[] hitColliders = Physics.OverlapSphere(spherePos, radius, EFTHardSettings.Instance.WEAPON_OCCLUSION_LAYERS);
+    //              foreach (var hitCollider in hitColliders)
+    //              {
+    //                  if (hitCollider.gameObject.layer != PlayerMask)
+    //                  {
+    //                      SetMountingStatus(coverDir);
+    //                      StanceControllerInstance.CoverWiggleDirection = GetWiggleDir(coverDir);
+    //                      return true;
+    //                  }
+    //              }
 
-                 return false;
-             }*/
+    //              return false;
+    //          }*/
 
-        // TODO: move to a difference class and possible integrate with  BSG's mounting system
-        /*        private static void DetectBracing(FirearmController fc, Player player, float ln)
-                {
-                    _timer += 1;
-                    if (_timer >= 60)
-                    {
-                        _timer = 0;
-                        Transform weapTransform = player.ProceduralWeaponAnimation.HandsContainer.WeaponRootAnim;
-                        Vector3 linecastDirection = weapTransform.TransformDirection(Vector3.up);
+    //     // TODO: move to a difference class and possible integrate with  BSG's mounting system
+    //     /*        private static void DetectBracing(FirearmController fc, Player player, float ln)
+    //             {
+    //                 _timer += 1;
+    //                 if (_timer >= 60)
+    //                 {
+    //                     _timer = 0;
+    //                     Transform weapTransform = player.ProceduralWeaponAnimation.HandsContainer.WeaponRootAnim;
+    //                     Vector3 linecastDirection = weapTransform.TransformDirection(Vector3.up);
 
-                        Vector3 downDir = WeaponStateInstance.BipodIsDeployed ? new Vector3(_startDownDir.x, _startDownDir.y, _startDownDir.z + -0.21f) : _startDownDir;
+    //                     Vector3 downDir = WeaponStateInstance.BipodIsDeployed ? new Vector3(_startDownDir.x, _startDownDir.y, _startDownDir.z + -0.21f) : _startDownDir;
 
-                        Vector3 startDown = weapTransform.position + weapTransform.TransformDirection(downDir);
-                        Vector3 startLeft = weapTransform.position + weapTransform.TransformDirection(_startLeftDir);
-                        Vector3 startRight = weapTransform.position + weapTransform.TransformDirection(_startRightDir);
+    //                     Vector3 startDown = weapTransform.position + weapTransform.TransformDirection(downDir);
+    //                     Vector3 startLeft = weapTransform.position + weapTransform.TransformDirection(_startLeftDir);
+    //                     Vector3 startRight = weapTransform.position + weapTransform.TransformDirection(_startRightDir);
 
-                        Vector3 sphereDown = weapTransform.position + weapTransform.TransformDirection(new Vector3(0f, -0.45f, -0.1f));
-                        Vector3 sphereLeft = weapTransform.position + weapTransform.TransformDirection(new Vector3(0.05f, -0.5f, -0.065f));
-                        Vector3 sphereRight = weapTransform.position + weapTransform.TransformDirection(new Vector3(-0.05f, -0.5f, -0.065f));
+    //                     Vector3 sphereDown = weapTransform.position + weapTransform.TransformDirection(new Vector3(0f, -0.45f, -0.1f));
+    //                     Vector3 sphereLeft = weapTransform.position + weapTransform.TransformDirection(new Vector3(0.05f, -0.5f, -0.065f));
+    //                     Vector3 sphereRight = weapTransform.position + weapTransform.TransformDirection(new Vector3(-0.05f, -0.5f, -0.065f));
 
-                        Vector3 forwardDirection = startDown - linecastDirection * ln;
-                        Vector3 leftDirection = startLeft - linecastDirection * ln;
-                        Vector3 rightDirection = startRight - linecastDirection * ln;
+    //                     Vector3 forwardDirection = startDown - linecastDirection * ln;
+    //                     Vector3 leftDirection = startLeft - linecastDirection * ln;
+    //                     Vector3 rightDirection = startRight - linecastDirection * ln;
 
-                        if (PluginConfig.OverrideMounting.Value)
-                        {
-                            if (IsBracingProne(player) ||
-                            CheckForCoverCollision(EBracingDirection.Top, startDown, forwardDirection, sphereDown, 0.045f) ||
-                            CheckForCoverCollision(EBracingDirection.Left, startLeft, leftDirection, sphereLeft, 0.09f) ||
-                            CheckForCoverCollision(EBracingDirection.Right, startRight, rightDirection, sphereRight, 0.09f))
-                            {
-                                return;
-                            }
-                        }
-                        StanceControllerInstance.IsBracing = false;
-                    }
+    //                     if (PluginConfig.OverrideMounting.Value)
+    //                     {
+    //                         if (IsBracingProne(player) ||
+    //                         CheckForCoverCollision(EBracingDirection.Top, startDown, forwardDirection, sphereDown, 0.045f) ||
+    //                         CheckForCoverCollision(EBracingDirection.Left, startLeft, leftDirection, sphereLeft, 0.09f) ||
+    //                         CheckForCoverCollision(EBracingDirection.Right, startRight, rightDirection, sphereRight, 0.09f))
+    //                         {
+    //                             return;
+    //                         }
+    //                     }
+    //                     StanceControllerInstance.IsBracing = false;
+    //                 }
 
-                    if (StanceControllerInstance.IsBracing || StanceControllerInstance.IsMounting)
-                    {
-                        float mountOrientationBonus = StanceControllerInstance.BracingDirection == EBracingDirection.Top ? 0.75f : 1f;
-                        float mountingRecoilLimit = StanceControllerInstance.TreatWeaponAsPistolStance ? 0.25f : 0.75f;
-                        float recoilBonus =
-                            StanceControllerInstance.IsMounting && fc.Weapon.IsBeltMachineGun && WeaponStateInstance.BipodIsDeployed ? 0.4f :
-                            StanceControllerInstance.IsMounting && fc.Weapon.IsBeltMachineGun ? 0.75f :
-                            StanceControllerInstance.IsMounting && WeaponStateInstance.BipodIsDeployed ? 0.45f :
-                            StanceControllerInstance.IsMounting ? 0.85f :
-                            0.95f;
-                        float swayBonus = StanceControllerInstance.IsMounting && WeaponStateInstance.BipodIsDeployed ? 0.05f : StanceControllerInstance.IsMounting ? 0.35f : 0.65f;
-                        StanceControllerInstance.BracingRecoilBonus = Mathf.Lerp(StanceControllerInstance.BracingRecoilBonus, recoilBonus * mountOrientationBonus, 0.04f);
-                        StanceControllerInstance.BracingSwayBonus = Mathf.Lerp(StanceControllerInstance.BracingSwayBonus, swayBonus * mountOrientationBonus, 0.04f);
-                    }
-                    else
-                    {
-                        StanceControllerInstance.BracingSwayBonus = Mathf.Lerp(StanceControllerInstance.BracingSwayBonus, 1f, 0.05f);
-                        StanceControllerInstance.BracingRecoilBonus = Mathf.Lerp(StanceControllerInstance.BracingRecoilBonus, 1f, 0.05f);
-                    }
-                }
-        */
-        //move to a mellee stance class as much as possible
-        /*        private static void DoMelee(FirearmController fc, Player player, float ln)
-                {
-                    if (StanceControllerInstance.TargetStance == EStance.Melee && StanceControllerInstance.CanDoMeleeDetection && !StanceControllerInstance.MeleeHitSomething)
-                    {
-                        Transform weapTransform = player.ProceduralWeaponAnimation.HandsContainer.WeaponRootAnim;
-                        Vector3 linecastDirection = weapTransform.TransformDirection(Vector3.up);
-                        Vector3 startMeleeDir = new Vector3(0, -0.5f, -0.025f);
-                        Vector3 meleeStart = weapTransform.position + weapTransform.TransformDirection(startMeleeDir);
-                        Vector3 meleeDir = meleeStart - linecastDirection * (ln - (WeaponStateInstance.HasBayonet ? 0.1f : 0.25f));
+    //                 if (StanceControllerInstance.IsBracing || StanceControllerInstance.IsMounting)
+    //                 {
+    //                     float mountOrientationBonus = StanceControllerInstance.BracingDirection == EBracingDirection.Top ? 0.75f : 1f;
+    //                     float mountingRecoilLimit = StanceControllerInstance.TreatWeaponAsPistolStance ? 0.25f : 0.75f;
+    //                     float recoilBonus =
+    //                         StanceControllerInstance.IsMounting && fc.Weapon.IsBeltMachineGun && WeaponStateInstance.BipodIsDeployed ? 0.4f :
+    //                         StanceControllerInstance.IsMounting && fc.Weapon.IsBeltMachineGun ? 0.75f :
+    //                         StanceControllerInstance.IsMounting && WeaponStateInstance.BipodIsDeployed ? 0.45f :
+    //                         StanceControllerInstance.IsMounting ? 0.85f :
+    //                         0.95f;
+    //                     float swayBonus = StanceControllerInstance.IsMounting && WeaponStateInstance.BipodIsDeployed ? 0.05f : StanceControllerInstance.IsMounting ? 0.35f : 0.65f;
+    //                     StanceControllerInstance.BracingRecoilBonus = Mathf.Lerp(StanceControllerInstance.BracingRecoilBonus, recoilBonus * mountOrientationBonus, 0.04f);
+    //                     StanceControllerInstance.BracingSwayBonus = Mathf.Lerp(StanceControllerInstance.BracingSwayBonus, swayBonus * mountOrientationBonus, 0.04f);
+    //                 }
+    //                 else
+    //                 {
+    //                     StanceControllerInstance.BracingSwayBonus = Mathf.Lerp(StanceControllerInstance.BracingSwayBonus, 1f, 0.05f);
+    //                     StanceControllerInstance.BracingRecoilBonus = Mathf.Lerp(StanceControllerInstance.BracingRecoilBonus, 1f, 0.05f);
+    //                 }
+    //             }
+    //     */
+    //     //move to a mellee stance class as much as possible
+    //     /*        private static void DoMelee(FirearmController fc, Player player, float ln)
+    //             {
+    //                 if (StanceControllerInstance.TargetStance == EStance.Melee && StanceControllerInstance.CanDoMeleeDetection && !StanceControllerInstance.MeleeHitSomething)
+    //                 {
+    //                     Transform weapTransform = player.ProceduralWeaponAnimation.HandsContainer.WeaponRootAnim;
+    //                     Vector3 linecastDirection = weapTransform.TransformDirection(Vector3.up);
+    //                     Vector3 startMeleeDir = new Vector3(0, -0.5f, -0.025f);
+    //                     Vector3 meleeStart = weapTransform.position + weapTransform.TransformDirection(startMeleeDir);
+    //                     Vector3 meleeDir = meleeStart - linecastDirection * (ln - (WeaponStateInstance.HasBayonet ? 0.1f : 0.25f));
 
-                        BallisticCollider hitBalls = null;
-                        RaycastHit raycastHit;
-                        if (Physics.Linecast(meleeStart, meleeDir, out raycastHit, CollisionLayerClass.HitMask))
-                        {
-                            Collider col = raycastHit.collider;
-                            BaseBallistic baseballComp = col.GetComponent<BaseBallistic>();
-                            if (baseballComp != null)
-                            {
-                                hitBalls = baseballComp.Get(raycastHit.point);
-                            }
-                            float weaponWeight = fc.Weapon.TotalWeight;
-                            float damage = 19f + WeaponStateInstance.BaseMeleeDamage * (1f + player.Skills.StrengthBuffMeleePowerInc) * (1f + (weaponWeight / 10f));
-                            damage *= player.Physical.HandsStamina.Exhausted ? Singleton<BackendConfigSettingsClass>.Instance.Stamina.ExhaustedMeleeDamageMultiplier : 1f;
-                            damage *= player.Speed;
-                            float pen = 15f + WeaponStateInstance.BaseMeleePen * (1f + (weaponWeight / 10f));
-                            bool shouldSkipHit = false;
+    //                     BallisticCollider hitBalls = null;
+    //                     RaycastHit raycastHit;
+    //                     if (Physics.Linecast(meleeStart, meleeDir, out raycastHit, CollisionLayerClass.HitMask))
+    //                     {
+    //                         Collider col = raycastHit.collider;
+    //                         BaseBallistic baseballComp = col.GetComponent<BaseBallistic>();
+    //                         if (baseballComp != null)
+    //                         {
+    //                             hitBalls = baseballComp.Get(raycastHit.point);
+    //                         }
+    //                         float weaponWeight = fc.Weapon.TotalWeight;
+    //                         float damage = 19f + WeaponStateInstance.BaseMeleeDamage * (1f + player.Skills.StrengthBuffMeleePowerInc) * (1f + (weaponWeight / 10f));
+    //                         damage *= player.Physical.HandsStamina.Exhausted ? Singleton<BackendConfigSettingsClass>.Instance.Stamina.ExhaustedMeleeDamageMultiplier : 1f;
+    //                         damage *= player.Speed;
+    //                         float pen = 15f + WeaponStateInstance.BaseMeleePen * (1f + (weaponWeight / 10f));
+    //                         bool shouldSkipHit = false;
 
-                            if (hitBalls as BodyPartCollider != null)
-                            {
-                                player.ExecuteSkill(new Action(() => player.Skills.FistfightAction.Complete(1f)));
-                            }
+    //                         if (hitBalls as BodyPartCollider != null)
+    //                         {
+    //                             player.ExecuteSkill(new Action(() => player.Skills.FistfightAction.Complete(1f)));
+    //                         }
 
-                            if (hitBalls.TypeOfMaterial == MaterialType.Glass || hitBalls.TypeOfMaterial == MaterialType.GlassShattered)
-                            {
-                                int rndNum = UnityEngine.Random.Range(1, 11);
-                                if (rndNum > (4f + WeaponStateInstance.BaseMeleeDamage))
-                                {
-                                    shouldSkipHit = true;
-                                }
-                            }
+    //                         if (hitBalls.TypeOfMaterial == MaterialType.Glass || hitBalls.TypeOfMaterial == MaterialType.GlassShattered)
+    //                         {
+    //                             int rndNum = UnityEngine.Random.Range(1, 11);
+    //                             if (rndNum > (4f + WeaponStateInstance.BaseMeleeDamage))
+    //                             {
+    //                                 shouldSkipHit = true;
+    //                             }
+    //                         }
 
-                            bool isAllowableHit = _allowedMats.Contains(hitBalls.TypeOfMaterial) && !shouldSkipHit;
-                            if ((WeaponStateInstance.HasBayonet || isAllowableHit) && raycastHit.collider.gameObject.layer != PlayerMask)
-                            {
-                                Vector3 position = fc.CurrentFireport.position;
-                                Vector3 vector = fc.WeaponDirection;
-                                Vector3 shotPosition = position;
-                                fc.AdjustShotVectors(ref shotPosition, ref vector);
-                                Vector3 shotDirection = vector;
-                                DamageInfoStruct damageInfo = new DamageInfoStruct
-                                {
-                                    SourceId = fc.Weapon.Id,
-                                    DamageType = EDamageType.Melee,
-                                    Damage = damage,
-                                    PenetrationPower = pen,
-                                    ArmorDamage = 10f + (damage / 10f),
-                                    Direction = shotDirection.normalized,
-                                    HitCollider = col,
-                                    HitPoint = raycastHit.point,
-                                    Player = Singleton<GameWorld>.Instance.GetAlivePlayerBridgeByProfileID(player.ProfileId),
-                                    HittedBallisticCollider = hitBalls,
-                                    HitNormal = raycastHit.normal,
-                                    Weapon = fc.Item as Item,
-                                    IsForwardHit = true,
-                                    StaminaBurnRate = 5f
-                                };
-                                ShotInfoClass result = Singleton<GameWorld>.Instance.HackShot(damageInfo);
-                            }
-                            float vol = WeaponStateInstance.HasBayonet ? 10f : 12f;
-                            Singleton<BetterAudio>.Instance.PlayDropItem(baseballComp.SurfaceSound, JsonType.EItemDropSoundType.Rifle, raycastHit.point, vol);
-                            *//*                  StanceControllerInstance.DoWiggleEffects(player, player.ProceduralWeaponAnimation, fc, new Vector3(-10f, 10f, 0f), true, 1.5f);
-                            *//*
-                            player.Physical.ConsumeAsMelee(0.2f * (1f + (weaponWeight * 0.1f)));
+    //                         bool isAllowableHit = _allowedMats.Contains(hitBalls.TypeOfMaterial) && !shouldSkipHit;
+    //                         if ((WeaponStateInstance.HasBayonet || isAllowableHit) && raycastHit.collider.gameObject.layer != PlayerMask)
+    //                         {
+    //                             Vector3 position = fc.CurrentFireport.position;
+    //                             Vector3 vector = fc.WeaponDirection;
+    //                             Vector3 shotPosition = position;
+    //                             fc.AdjustShotVectors(ref shotPosition, ref vector);
+    //                             Vector3 shotDirection = vector;
+    //                             DamageInfoStruct damageInfo = new DamageInfoStruct
+    //                             {
+    //                                 SourceId = fc.Weapon.Id,
+    //                                 DamageType = EDamageType.Melee,
+    //                                 Damage = damage,
+    //                                 PenetrationPower = pen,
+    //                                 ArmorDamage = 10f + (damage / 10f),
+    //                                 Direction = shotDirection.normalized,
+    //                                 HitCollider = col,
+    //                                 HitPoint = raycastHit.point,
+    //                                 Player = Singleton<GameWorld>.Instance.GetAlivePlayerBridgeByProfileID(player.ProfileId),
+    //                                 HittedBallisticCollider = hitBalls,
+    //                                 HitNormal = raycastHit.normal,
+    //                                 Weapon = fc.Item as Item,
+    //                                 IsForwardHit = true,
+    //                                 StaminaBurnRate = 5f
+    //                             };
+    //                             ShotInfoClass result = Singleton<GameWorld>.Instance.HackShot(damageInfo);
+    //                         }
+    //                         float vol = WeaponStateInstance.HasBayonet ? 10f : 12f;
+    //                         Singleton<BetterAudio>.Instance.PlayDropItem(baseballComp.SurfaceSound, JsonType.EItemDropSoundType.Rifle, raycastHit.point, vol);
+    //                         *//*                  StanceControllerInstance.DoWiggleEffects(player, player.ProceduralWeaponAnimation, fc, new Vector3(-10f, 10f, 0f), true, 1.5f);
+    //                         *//*
+    //                         player.Physical.ConsumeAsMelee(0.2f * (1f + (weaponWeight * 0.1f)));
 
-                            StanceControllerInstance.CanDoMeleeDetection = false;
-                            StanceControllerInstance.MeleeHitSomething = true;
-                            return;
-                        }
-                    }
-                }*/
+    //                         StanceControllerInstance.CanDoMeleeDetection = false;
+    //                         StanceControllerInstance.MeleeHitSomething = true;
+    //                         return;
+    //                     }
+    //                 }
+    //             }*/
 
 
-        [PatchPrefix]
-        private static void PatchPrefix(Player.FirearmController __instance, Vector3 origin, float ln, Vector3? weaponUp = null)
-        {
-            Player player = (Player)_playerField.GetValue(__instance);
-            if (player.IsYourPlayer)
-            {
-                //DoMelee(__instance, player, ln);
-                //DetectBracing(__instance, player, ln);
-            }
-        }
-    }
+    //     [PatchPrefix]
+    //     private static void PatchPrefix(Player.FirearmController __instance, Vector3 origin, float ln, Vector3? weaponUp = null)
+    //     {
+    //         Player player = (Player)_playerField.GetValue(__instance);
+    //         if (player.IsYourPlayer)
+    //         {
+    //             //DoMelee(__instance, player, ln);
+    //             //DetectBracing(__instance, player, ln);
+    //         }
+    //     }
+    // }
 
     //TODO: If using BSG's mounting, skip check
     //Override to prevent BSG collision check when mounting or doing own collision detectio
-    public class WeaponOverlapViewPatch : ModulePatch
-    {
-        private static FieldInfo _playerField;
+    // public class WeaponOverlapViewPatch : ModulePatch
+    // {
+    //     private static FieldInfo _playerField;
 
-        protected override MethodBase GetTargetMethod()
-        {
-            _playerField = AccessTools.Field(typeof(EFT.Player.FirearmController), "_player");
+    //     protected override MethodBase GetTargetMethod()
+    //     {
+    //         _playerField = AccessTools.Field(typeof(EFT.Player.FirearmController), "_player");
 
-            return typeof(Player.FirearmController).GetMethod("WeaponOverlapView", BindingFlags.Instance | BindingFlags.Public);
-        }
+    //         return typeof(Player.FirearmController).GetMethod("WeaponOverlapView", BindingFlags.Instance | BindingFlags.Public);
+    //     }
 
-        [PatchPrefix]
-        private static bool PatchPrefix(Player.FirearmController __instance)
-        {
-            Player player = (Player)_playerField.GetValue(__instance);
-            /*            if (player.IsYourPlayer && (StanceControllerInstance.CurrentStance == EStance.Mounting || StanceControllerInstance.IsColliding))
-                        {
-                            return false;
-                        }*/
+    //     [PatchPrefix]
+    //     private static bool PatchPrefix(Player.FirearmController __instance)
+    //     {
+    //         Player player = (Player)_playerField.GetValue(__instance);
+    //         /*            if (player.IsYourPlayer && (StanceControllerInstance.CurrentStance == EStance.Mounting || StanceControllerInstance.IsColliding))
+    //                     {
+    //                         return false;
+    //                     }*/
 
-            /*     too jank to use TurnAway, but I could possible try to extract how they rotate the arms
-                   if (StanceControllerInstance.CurrentStanceType == EStance.PatrolStance) 
-                   {
-                       Vector3 vector = player.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Get();
-                       player.ProceduralWeaponAnimation.OverlappingAllowsBlindfire = false;
-                       player.ProceduralWeaponAnimation.TurnAway.OverlapsWithPlayer = true;
-                       player.ProceduralWeaponAnimation.TurnAway.OriginZShift = vector.y;
-                       player.ProceduralWeaponAnimation.TurnAway.OverlapDepth = PluginConfig.test18.Value;
+    //         /*     too jank to use TurnAway, but I could possible try to extract how they rotate the arms
+    //                if (StanceControllerInstance.CurrentStanceType == EStance.PatrolStance) 
+    //                {
+    //                    Vector3 vector = player.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Get();
+    //                    player.ProceduralWeaponAnimation.OverlappingAllowsBlindfire = false;
+    //                    player.ProceduralWeaponAnimation.TurnAway.OverlapsWithPlayer = true;
+    //                    player.ProceduralWeaponAnimation.TurnAway.OriginZShift = vector.y;
+    //                    player.ProceduralWeaponAnimation.TurnAway.OverlapDepth = PluginConfig.test18.Value;
 
-                       _blendField.SetValue(player.ProceduralWeaponAnimation.TurnAway, PluginConfig.test15.Value);
-                       _smoothInField.SetValue(player.ProceduralWeaponAnimation.TurnAway, PluginConfig.test16.Value);
-                       _smoothOutField.SetValue(player.ProceduralWeaponAnimation.TurnAway, PluginConfig.test17.Value);
+    //                    _blendField.SetValue(player.ProceduralWeaponAnimation.TurnAway, PluginConfig.test15.Value);
+    //                    _smoothInField.SetValue(player.ProceduralWeaponAnimation.TurnAway, PluginConfig.test16.Value);
+    //                    _smoothOutField.SetValue(player.ProceduralWeaponAnimation.TurnAway, PluginConfig.test17.Value);
 
-                       return false;
-                   }*/
+    //                    return false;
+    //                }*/
 
 
 
-            return true;
-        }
-    }
+    //         return true;
+    //     }
+    // }
 
     //Entry point to get original and new weapon length, should move to common lib
     public class WeaponLengthPatch : ModulePatch
@@ -1836,49 +1836,6 @@ namespace StanceOverhaul.Patches
             if (player != null && player.MovementContext.CurrentState.Name != EPlayerState.Stationary && player.IsYourPlayer)
             {
                 StanceEvents.RaiseOnTransformsInit(firearmController);
-                //if (!Plugin.FOVFixPresent) __instance.HandsContainer.CameraOffset = new Vector3(0.04f, 0.04f, 0.025f);
-            }
-        }
-    }
-
-    public class VisualPassPatch : ModulePatch
-    {
-        protected override MethodBase GetTargetMethod()
-        {
-            return typeof(Player).GetMethod("VisualPass", BindingFlags.Instance | BindingFlags.Public);
-        }
-
-        [PatchPostfix]
-        private static void PatchPostfix(Player __instance)
-        {
-            if (__instance.IsYourPlayer && __instance.MovementContext.CurrentState.Name != EPlayerState.Stationary)
-            {
-                //StanceControllerInstance.RunAfterEFTTransformsSet(__instance.ProceduralWeaponAnimation, Time.deltaTime);
-            }
-        }
-    }
-
-    public class ApplyTransformsPatch : ModulePatch
-    {
-        private static FieldInfo _playerField;
-        private static FieldInfo _fcField;
-
-        protected override MethodBase GetTargetMethod()
-        {
-            _playerField = AccessTools.Field(typeof(EFT.Player.FirearmController), "_player");
-            _fcField = AccessTools.Field(typeof(ProceduralWeaponAnimation), "_firearmController");
-            return typeof(FirstPersonStrategy).GetMethod("ApplyTransformations", BindingFlags.Instance | BindingFlags.Public);
-        }
-
-        [PatchPostfix]
-        private static void PatchPostfix(FirstPersonStrategy __instance, ProceduralWeaponAnimation pwa, float dt)
-        {
-            FirearmController firearmController = (FirearmController)_fcField.GetValue(pwa);
-            if (firearmController == null) return;
-            Player player = (Player)_playerField.GetValue(firearmController);
-            if (player != null && player.MovementContext.CurrentState.Name != EPlayerState.Stationary && player.IsYourPlayer)
-            {
-                //StanceControllerInstance.RunAfterEFTTransformsSet(pwa, dt);
             }
         }
     }
@@ -1886,69 +1843,69 @@ namespace StanceOverhaul.Patches
     //TODO: move to common lib
     //entry point for pose changes
     //move to common lib + use event
-    public class ChangePosePatch : ModulePatch
-    {
-        private static FieldInfo movementContextField;
-        private static FieldInfo playerField;
+    // public class ChangePosePatch : ModulePatch
+    // {
+    //     private static FieldInfo movementContextField;
+    //     private static FieldInfo playerField;
 
-        protected override MethodBase GetTargetMethod()
-        {
-            movementContextField = AccessTools.Field(typeof(MovementState), "MovementContext");
-            playerField = AccessTools.Field(typeof(MovementContext), "_player");
-            return typeof(MovementState).GetMethod("ChangePose", BindingFlags.Instance | BindingFlags.Public);
-        }
+    //     protected override MethodBase GetTargetMethod()
+    //     {
+    //         movementContextField = AccessTools.Field(typeof(MovementState), "MovementContext");
+    //         playerField = AccessTools.Field(typeof(MovementContext), "_player");
+    //         return typeof(MovementState).GetMethod("ChangePose", BindingFlags.Instance | BindingFlags.Public);
+    //     }
 
 
-        [PatchPrefix]
-        private static void Prefix(MovementState __instance)
-        {
-            MovementContext movementContext = (MovementContext)movementContextField.GetValue(__instance);
-            Player player = (Player)playerField.GetValue(movementContext);
+    //     [PatchPrefix]
+    //     private static void Prefix(MovementState __instance)
+    //     {
+    //         MovementContext movementContext = (MovementContext)movementContextField.GetValue(__instance);
+    //         Player player = (Player)playerField.GetValue(movementContext);
 
-            if (player.IsYourPlayer)
-            {   //TODO replace with event, and have mount stance class sub to it
-                //StanceControllerInstance.IsMounting = false;
-            }
-        }
-    }
+    //         if (player.IsYourPlayer)
+    //         {   //TODO replace with event, and have mount stance class sub to it
+    //             //StanceControllerInstance.IsMounting = false;
+    //         }
+    //     }
+    // }
 
     //TODO: move to common lib and make event driven
     //used to determine threshold for cancelling mounting
-    public class SetTiltPatch : ModulePatch
-    {
-        private static FieldInfo movementContextField;
-        private static FieldInfo playerField;
-        public static float tiltBeforeMount = 0f;
+    // public class SetTiltPatch : ModulePatch
+    // {
+    //     private static FieldInfo movementContextField;
+    //     private static FieldInfo playerField;
+    //     public static float tiltBeforeMount = 0f;
 
-        protected override MethodBase GetTargetMethod()
-        {
-            movementContextField = AccessTools.Field(typeof(MovementState), "MovementContext");
-            playerField = AccessTools.Field(typeof(MovementContext), "_player");
-            return typeof(MovementState).GetMethod("SetTilt", BindingFlags.Instance | BindingFlags.Public);
-        }
+    //     protected override MethodBase GetTargetMethod()
+    //     {
+    //         movementContextField = AccessTools.Field(typeof(MovementState), "MovementContext");
+    //         playerField = AccessTools.Field(typeof(MovementContext), "_player");
+    //         return typeof(MovementState).GetMethod("SetTilt", BindingFlags.Instance | BindingFlags.Public);
+    //     }
 
-        [PatchPrefix]
-        private static void Prefix(MovementState __instance, float tilt)
-        {
-            MovementContext movementContext = (MovementContext)movementContextField.GetValue(__instance);
-            Player player = (Player)playerField.GetValue(movementContext);
+    //     [PatchPrefix]
+    //     private static void Prefix(MovementState __instance, float tilt)
+    //     {
+    //         MovementContext movementContext = (MovementContext)movementContextField.GetValue(__instance);
+    //         Player player = (Player)playerField.GetValue(movementContext);
 
-            if (player.IsYourPlayer)
-            {
-                float tiltTolerance = WeaponStateInstance.BipodIsDeployed ? 0.5f : 2.5f;
-                if (!StanceControllerInstance)
-                {
-                    tiltBeforeMount = tilt;
-                }
-                else if (Math.Abs(tiltBeforeMount - tilt) > tiltTolerance)
-                {
-                    //TODO replace with event, and have mount stance class sub to it
-                    //StanceControllerInstance.IsMounting = false;
-                    tiltBeforeMount = 0f;
-                }
-            }
-        }
-    }
+    //         if (player.IsYourPlayer)
+    //         {
+    //             float tiltTolerance = WeaponStateInstance.BipodIsDeployed ? 0.5f : 2.5f;
+    //             if (!StanceControllerInstance)
+    //             {
+    //                 tiltBeforeMount = tilt;
+    //             }
+    //             else if (Math.Abs(tiltBeforeMount - tilt) > tiltTolerance)
+    //             {
+    //                 //TODO replace with event, and have mount stance class sub to it
+    //                 //StanceControllerInstance.IsMounting = false;
+    //                 tiltBeforeMount = 0f;
+    //             }
+    //         }
+    //     }
+    // }
 
     //TODO move 3rd person logic to controller, and own class. It's likely not needed at all, since I am now doing it all in component update. If so, just adjust stances if third person.
     //used for applying player and bot third person proc animations

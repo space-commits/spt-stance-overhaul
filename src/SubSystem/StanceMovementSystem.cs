@@ -76,12 +76,14 @@ namespace StanceOverhaul.SubSystem
             physical.PreSprintAcceleration = inertia.PreSprintAccelerationLimits.Evaluate(physical.Inertia);
 
             float tacSprintAccelBonus = StanceControllerInstance.IsDoingTacSprint ? PluginConfig.TacSprintAccelBonus.Value : 1f;
+            bool stanceSpeedChanges = PluginConfig.EnableStanceMovementSpeedChanges.Value;
+            float stanceAccelBonus = stanceSpeedChanges ? stance.SprintAccelBonus : 1f;
 
             //Todo: move to common lib
-            physical.SprintAcceleration *= stance.SprintAccelBonus * tacSprintAccelBonus;
-            physical.PreSprintAcceleration *= stance.SprintAccelBonus * tacSprintAccelBonus;
+            physical.SprintAcceleration *= stanceAccelBonus * tacSprintAccelBonus;
+            physical.PreSprintAcceleration *= stanceAccelBonus * tacSprintAccelBonus;
 
-            _walkSpeed.Multiplier = stance.WalkSpeedBonus;
+            _walkSpeed.Multiplier = stanceSpeedChanges ? stance.WalkSpeedBonus : 1f;
 
             _sprintSpeed.Multiplier = StanceControllerInstance.IsDoingTacSprint ? PluginConfig.TacSprintSpeedBonus.Value : 1f;
 
