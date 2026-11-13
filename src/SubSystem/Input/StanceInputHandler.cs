@@ -109,6 +109,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             StanceInputEvents.ToggleActiveAim += ToggleActiveAim;
             StanceInputEvents.OnActiveAimKeyDown += EnterActiveAim;
             StanceInputEvents.OnActiveAimKeyUp += ExitActiveAim;
+            StanceInputEvents.ToggleOffAllStances += ToggleOffAllStances;
             InputEvents.ToggleLeftStanceInput += ToggleLeftShoulder;
             PlayerEvents.OnFullLeftLeanChanged += OnFullLeftLeanChanged;
             StanceEvents.OnStanceReload += OnReloadStarted;
@@ -135,6 +136,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             StanceInputEvents.ToggleActiveAim -= ToggleActiveAim;
             StanceInputEvents.OnActiveAimKeyDown -= EnterActiveAim;
             StanceInputEvents.OnActiveAimKeyUp -= ExitActiveAim;
+            StanceInputEvents.ToggleOffAllStances -= ToggleOffAllStances;
             InputEvents.ToggleLeftStanceInput -= ToggleLeftShoulder;
             PlayerEvents.OnFullLeftLeanChanged -= OnFullLeftLeanChanged;
             StanceEvents.OnStanceReload -= OnReloadStarted;
@@ -237,6 +239,16 @@ namespace StanceOverhaul.SubSystem.StanceInput
             bool switchingOff = _stanceState.ActiveStance?.StanceType == stance.StanceType;
 
             SetChosen(switchingOff ? null : stance);
+            Reconcile();
+        }
+
+        // Drops whatever the player has toggled on, left shoulder included. The default stance comes back through Reconcile.
+        private void ToggleOffAllStances()
+        {
+            if (_chosen == null)
+                return;
+
+            SetChosen(null);
             Reconcile();
         }
 

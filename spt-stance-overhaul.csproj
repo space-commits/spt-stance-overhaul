@@ -65,6 +65,10 @@
       <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\UnityEngine.UI.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
       <HintPath>F:\SP EFT\SPT-41X\EscapeFromTarkov_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
       <Private>false</Private>

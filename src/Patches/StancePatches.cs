@@ -8,6 +8,7 @@ using SPT.Reflection.Patching;
 using StanceOverhaul.Events;
 using StanceOverhaul.Enums;
 using StanceOverhaul.SubSystem.Aiming;
+using StanceOverhaul.SubSystem.StanceInput;
 using System;
 using System.Reflection;
 using System.Collections.Generic;
@@ -22,6 +23,26 @@ using ReloadClass = EFT.Player.FirearmController.Idling;
 
 namespace StanceOverhaul.Patches
 {
+    // Stops the mouse turning the player and the free-look head while the stance selection wheel is open.
+    // Movement and lean are left alone, so the player can keep walking. Indices follow EAxis:
+    // 0-1 move, 2-3 turn, 4-5 free look, 6 lean. InputPreset.UpdateInput refills the array every Update,
+    // so zeroing it in place is safe. See docs/Assembly/Input-And-Keybinds.md ("Axes and custom input nodes").
+    public class SelectionWheelAxesPatch : ModulePatch
+    {
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(MoveInputTranslator), nameof(MoveInputTranslator.TranslateAxes));
+        }
+
+        [PatchPrefix]
+        private static void PatchPrefix(ref float[] axes)
+        {
+            if (axes == null || axes.Length < 6 || !StanceSelectionWheel.IsOpen) return;
+
+            axes[2] = axes[3] = axes[4] = axes[5] = 0f;
+        }
+    }
+
     // EFT reads this skill buff once when a search starts revealing items:
     // per-item time = Random.Range(1, 3) / (1 + AttentionLootSpeed + (on a body ? SearchBuffSpeed : 0)). See docs/Assembly/Looting-Search.md.
     // AttentionLootSpeed is in both the container and body formula, so a bonus here applies once to every search.

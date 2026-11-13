@@ -65,6 +65,9 @@ namespace StanceOverhaul
             new ResetCanUsePropStatePatch().Enable();
             new SetInteractInHandsPatch().Enable();
 
+            //Input
+            new SelectionWheelAxesPatch().Enable();
+
                         //new TacticalReloadPatch().Enable();
             /*            new SprintPatch().Enable();
                         new DisableAimOnReloadPatch().Enable();*/

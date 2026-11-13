@@ -298,6 +298,7 @@ namespace StanceOverhaul.Controllers
         private InputHookPipeline _inputHookPipeline;
         private StanceInputHandler _inputHandler;
         private StanceInputListener _inputListener;
+        private StanceSelectionWheel _selectionWheel;
         private StanceStaminaSystem _staminaSystem;
         private StanceMovementSystem _movementSystem;
         private TacSprintSystem _tacSprintSystem;
@@ -432,6 +433,9 @@ namespace StanceOverhaul.Controllers
 
             _inputListener =
                 InitStateController(() => new StanceInputListener());
+
+            _selectionWheel =
+                InitStateController(() => new StanceSelectionWheel(_inputListener));
 
             _stanceAudioSystem =
                 InitStateController(() => new StanceAudioSystem());
