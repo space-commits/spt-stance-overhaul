@@ -24,25 +24,35 @@ namespace StanceOverhaul.SubSystem.StanceInput
     {
         private class Slice
         {
-            public readonly string Label;
-            public readonly float StartAngle; // degrees, counter-clockwise from the right: 0 = right, 90 = up
-            public readonly float Width;      // degrees. All widths add up to 360
-            public readonly EStanceType StanceType;
-            public readonly Action Toggle;
+            // Fixed: the slot this slice sits in
+            public readonly string Name;
+            public readonly float SlotStart;    // degrees, counter-clockwise from the right: 0 = right, 90 = up
+            public readonly float SlotWidth;    // degrees. All slots add up to 360
+            public readonly bool PairsWithNext; // the first half of a quarter: the next slot is its other half
+            public readonly Func<EWheelStance> Stance;
+
+            // From the config, worked out each time the wheel opens (see ApplyLayout)
+            public bool InUse;       // false = set to None, its neighbours have taken the slot
+            public float StartAngle; // the slot, plus its share of the empty slots around it
+            public float Width;
+            public float GapAfter;   // empty degrees between this slice and the next, before they are shared out
+            public string Label = string.Empty;
+            public EStanceType StanceType;
+            public Action Toggle = () => { };
 
             public float CentreAngle => StartAngle + Width * 0.5f;
-            public string Name => Label.Replace('\n', ' ');
 
-            public Image? Glow; // on top of the dark base, shown for highlight or active
+            public Image? Panel; // the dark base
+            public Image? Glow;  // on top of the base, shown for highlight or active
             public TextMeshProUGUI? Text;
 
-            public Slice(string label, float startAngle, float width, EStanceType stanceType, Action toggle)
+            public Slice(string name, float slotStart, float slotWidth, bool pairsWithNext, Func<EWheelStance> stance)
             {
-                Label = label;
-                StartAngle = startAngle;
-                Width = width;
-                StanceType = stanceType;
-                Toggle = toggle;
+                Name = name;
+                SlotStart = slotStart;
+                SlotWidth = slotWidth;
+                PairsWithNext = pairsWithNext;
+                Stance = stance;
             }
         }
 
@@ -60,7 +70,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
         private const float GapDegrees = 1.6f; // divider line between slices, drawing only
         private const float PointerDotSize = 10f;
         private const float FontSize = 15f;
-        private const int SliceTextureSize = 512; // one base and one glow per distinct slice width
+        private const int SliceTextureSize = 512; // one base and one glow per distinct slice width in use
         private const int DotTextureSize = 32;
 
         // ---- Look, modelled on EFT's gesture menu: near-black panels with a faint light rim, gold when selected ----
@@ -79,6 +89,14 @@ namespace StanceOverhaul.SubSystem.StanceInput
         private const float RingScale = 1f / (1f + OuterGlowReach);
         private const float SliceImageSize = WheelDiameter / RingScale;
 
+        // The radial fill only cuts out the part of the texture a slice may draw in: the slice plus some padding
+        // past each divider for its outer glow. The slice's own edges are drawn by the texture.
+        //
+        // Dark panels stop at the middle of the gap, so neighbours meet there without overlapping. The gold glow
+        // gets enough padding to spread its full width over the neighbours.
+        private const float BasePad = GapDegrees * 0.5f;
+        private static readonly float GlowPad = Mathf.Min(45f, 1f + Mathf.Rad2Deg * OuterGlowReach / Mathf.Max(InnerRadiusRatio - OuterGlowReach, 0.01f));
+
         private static readonly Color BaseFillColor = new Color(0.055f, 0.055f, 0.05f, 0.92f);
         private static readonly Color BaseRimColor = new Color(0.62f, 0.62f, 0.58f, 0.15f);
         private static readonly Color GlowFillColor = new Color(0.34f, 0.3f, 0.14f, 0.9f);
@@ -88,14 +106,19 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
         private readonly StanceInputListener _inputListener;
 
-        // Counter-clockwise from the right. Three full quarters, and the right quarter split in two.
+        // The six slots, counter-clockwise from the right: the up and down quarters, and the left and right quarters
+        // in two halves each. Which stance each one holds comes from the config.
+        //
+        // A slot set to None has no slice, and its neighbours grow into it (see ApplyLayout). So there can be anything
+        // from six slices down to one that takes the whole circle, or none at all, and then the wheel doesn't open.
         private readonly Slice[] _slices =
         {
-            new Slice("SHORT\nSTOCK", 0f, 45f, EStanceType.ShortStock, StanceInputEvents.RaiseToggleShortStock),
-            new Slice("HIGH READY", 45f, 90f, EStanceType.HighReady, StanceInputEvents.RaiseToggleHighReady),
-            new Slice("ACTIVE AIM", 135f, 90f, EStanceType.ActiveAiming, StanceInputEvents.RaiseToggleActiveAim),
-            new Slice("LOW READY", 225f, 90f, EStanceType.LowReady, StanceInputEvents.RaiseToggleLowReady),
-            new Slice("PATROL", 315f, 45f, EStanceType.PatrolStance, StanceInputEvents.RaiseTogglePatrolStance),
+            new Slice("Upper Right", 0f, 45f, false, () => PluginConfig.WheelUpperRightStance.Value),
+            new Slice("Up", 45f, 90f, false, () => PluginConfig.WheelUpStance.Value),
+            new Slice("Upper Left", 135f, 45f, true, () => PluginConfig.WheelUpperLeftStance.Value),
+            new Slice("Lower Left", 180f, 45f, false, () => PluginConfig.WheelLowerLeftStance.Value),
+            new Slice("Down", 225f, 90f, false, () => PluginConfig.WheelDownStance.Value),
+            new Slice("Lower Right", 315f, 45f, true, () => PluginConfig.WheelLowerRightStance.Value),
         };
 
         private Vector2 _pointer;
@@ -106,9 +129,10 @@ namespace StanceOverhaul.SubSystem.StanceInput
         private RectTransform? _pointerDot;
         private Sprite? _dotSprite;
 
-        // Slices of the same width share their textures
+        // By slice width: slices of the same width share their textures. Only the widths in use are kept.
         private readonly Dictionary<float, Sprite> _baseSprites = new Dictionary<float, Sprite>();
         private readonly Dictionary<float, Sprite> _glowSprites = new Dictionary<float, Sprite>();
+        private readonly List<float> _unusedWidths = new List<float>();
 
         public StanceSelectionWheel(StanceInputListener inputListener)
         {
@@ -117,8 +141,13 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
         // ================= Lifecycle =================
 
+        // Built here, while the raid is still loading, so the first open doesn't hitch on making the textures.
+        // StanceController only exists on the local player (the common lib's PlayerInitPatch raises OnPlayerInit
+        // for IsYourPlayer only), so this never runs for bots.
         public void RunOnAwake()
         {
+            BuildCanvas();
+            ApplyLayout();
         }
 
         public void RunOnDestroy()
@@ -162,15 +191,176 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
         private void Open()
         {
+            if (_canvasObject == null)
+                BuildCanvas();
+
+            // Every slice set to None: there is nothing to pick, so the key does nothing
+            if (!ApplyLayout())
+                return;
+
             _pointer = Vector2.zero;
             _selected = null;
             IsOpen = true;
 
-            if (_canvasObject == null)
-                BuildCanvas();
-
             UpdateVisuals();
             _canvasObject!.SetActive(true);
+        }
+
+        // Works out the slices from the config: which slots are in use, how far each one reaches, and its stance.
+        // Run on every open, so a changed setting shows up the next time. Returns false when no slot is in use.
+        //
+        // Textures are only made for a slice width that isn't cached yet, which is a first open after a config
+        // change at worst. Widths that are no longer used are dropped.
+        private bool ApplyLayout()
+        {
+            int count = _slices.Length;
+            bool anyInUse = false;
+
+            foreach (Slice slice in _slices)
+            {
+                slice.InUse = slice.Stance() != EWheelStance.None;
+                slice.StartAngle = slice.SlotStart;
+                slice.Width = slice.InUse ? slice.SlotWidth : 0f;
+                anyInUse |= slice.InUse;
+            }
+
+            // The empty slots go to their neighbours, so the slices still cover the whole circle.
+            //
+            // First the halves: where only one half of the left or right quarter is in use, it takes the other half
+            // and becomes the whole quarter.
+            for (int i = 0; i < count; i++)
+            {
+                Slice first = _slices[i];
+                Slice second = _slices[(i + 1) % count];
+
+                if (!first.PairsWithNext)
+                    continue;
+
+                if (first.InUse && !second.InUse)
+                {
+                    first.Width += second.SlotWidth;
+                }
+                else if (!first.InUse && second.InUse)
+                {
+                    second.StartAngle -= first.SlotWidth;
+                    second.Width += first.SlotWidth;
+                }
+            }
+
+            // What is still empty is whole quarters. The slices on either side of an empty stretch take half of it
+            // each: up and down alone split the circle into a top and a bottom half, a left and a right slice into a
+            // left and a right half. A slice on its own gets both halves of its one stretch and so the whole circle.
+            //
+            // Measured before any of it is handed out, so one stretch doesn't change the size of the next.
+            for (int i = 0; i < count; i++)
+            {
+                Slice slice = _slices[i];
+
+                if (slice.InUse)
+                    slice.GapAfter = Mathf.Repeat(NextInUse(i).StartAngle - (slice.StartAngle + slice.Width), 360f);
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                Slice slice = _slices[i];
+
+                if (!slice.InUse)
+                    continue;
+
+                Slice next = NextInUse(i);
+                float half = slice.GapAfter * 0.5f;
+
+                slice.Width += half;
+                next.StartAngle -= half;
+                next.Width += half;
+            }
+
+            float radius = WheelDiameter * 0.5f;
+
+            foreach (Slice slice in _slices)
+            {
+                if (slice.Panel != null) slice.Panel.gameObject.SetActive(slice.InUse);
+                if (slice.Glow != null) slice.Glow.gameObject.SetActive(slice.InUse);
+                if (slice.Text != null) slice.Text.gameObject.SetActive(slice.InUse);
+
+                if (!slice.InUse)
+                {
+                    // Its textures may be dropped below
+                    if (slice.Panel != null) slice.Panel.sprite = null;
+                    if (slice.Glow != null) slice.Glow.sprite = null;
+                    continue;
+                }
+
+                if (slice.Panel != null)
+                    PlaceSliceImage(slice.Panel, slice, GetSliceSprite(slice.Width, false), BasePad);
+
+                if (slice.Glow != null)
+                    PlaceSliceImage(slice.Glow, slice, GetSliceSprite(slice.Width, true), GlowPad);
+
+                if (slice.Text != null)
+                {
+                    float radians = slice.CentreAngle * Mathf.Deg2Rad;
+                    slice.Text.rectTransform.anchoredPosition = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians)) * (radius * LabelRadiusRatio);
+                }
+
+                bool narrow = slice.Width < 90f; // a one-line label doesn't fit in the 45° slices
+
+                switch (slice.Stance())
+                {
+                    case EWheelStance.HighReady:
+                        slice.Label = narrow ? "HIGH\nREADY" : "HIGH READY";
+                        slice.StanceType = EStanceType.HighReady;
+                        slice.Toggle = StanceInputEvents.RaiseToggleHighReady;
+                        break;
+                    case EWheelStance.LowReady:
+                        slice.Label = narrow ? "LOW\nREADY" : "LOW READY";
+                        slice.StanceType = EStanceType.LowReady;
+                        slice.Toggle = StanceInputEvents.RaiseToggleLowReady;
+                        break;
+                    case EWheelStance.ActiveAim:
+                        slice.Label = narrow ? "ACTIVE\nAIM" : "ACTIVE AIM";
+                        slice.StanceType = EStanceType.ActiveAiming;
+                        slice.Toggle = StanceInputEvents.RaiseToggleActiveAim;
+                        break;
+                    case EWheelStance.ShortStock:
+                        slice.Label = narrow ? "SHORT\nSTOCK" : "SHORT STOCK";
+                        slice.StanceType = EStanceType.ShortStock;
+                        slice.Toggle = StanceInputEvents.RaiseToggleShortStock;
+                        break;
+                    case EWheelStance.LeftShoulder:
+                        slice.Label = narrow ? "LEFT\nSHOULDER" : "LEFT SHOULDER";
+                        slice.StanceType = EStanceType.LeftShoulder;
+                        slice.Toggle = StanceInputEvents.RaiseToggleLeftShoulder;
+                        break;
+                    default:
+                        slice.Label = "PATROL";
+                        slice.StanceType = EStanceType.PatrolStance;
+                        slice.Toggle = StanceInputEvents.RaiseTogglePatrolStance;
+                        break;
+                }
+
+                if (slice.Text != null)
+                    slice.Text.text = slice.Label;
+            }
+
+            DropUnusedSprites(_baseSprites);
+            DropUnusedSprites(_glowSprites);
+
+            return anyInUse;
+        }
+
+        // The next slice in use counter-clockwise of this slot. The slice itself when it is the only one.
+        private Slice NextInUse(int index)
+        {
+            for (int step = 1; step < _slices.Length; step++)
+            {
+                Slice slice = _slices[(index + step) % _slices.Length];
+
+                if (slice.InUse)
+                    return slice;
+            }
+
+            return _slices[index];
         }
 
         // keyReleased = the player let go of the key. False when the wheel was forced shut (aiming, sprinting, ...),
@@ -214,10 +404,10 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
             float angle = Mathf.Atan2(_pointer.y, _pointer.x) * Mathf.Rad2Deg;
 
-            // The slices cover the whole circle, so one of them always contains the angle
+            // The slices in use cover the whole circle, so one of them always contains the angle
             foreach (Slice slice in _slices)
             {
-                if (Mathf.Repeat(angle - slice.StartAngle, 360f) < slice.Width)
+                if (slice.InUse && Mathf.Repeat(angle - slice.StartAngle, 360f) < slice.Width)
                 {
                     _selected = slice;
                     return;
@@ -233,6 +423,9 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
             foreach (Slice slice in _slices)
             {
+                if (!slice.InUse)
+                    continue;
+
                 bool highlighted = slice == _selected;
                 bool active = slice.StanceType == currentStance;
 
@@ -269,50 +462,22 @@ namespace StanceOverhaul.SubSystem.StanceInput
             _dotSprite = CreateRingSprite(DotTextureSize, 0f);
 
             TMP_FontAsset? font = FindHudFont();
-            float radius = WheelDiameter * 0.5f;
 
-            // The radial fill only cuts out the part of the texture a slice may draw in: the slice plus some padding
-            // past each divider for its outer glow. The slice's own edges are drawn by the texture.
-            //
-            // Dark panels stop at the middle of the gap, so neighbours meet there without overlapping. The gold glow
-            // gets enough padding to spread its full width over the neighbours.
-            float basePad = GapDegrees * 0.5f;
-            float glowPad = Mathf.Min(45f, 1f + Mathf.Rad2Deg * OuterGlowReach / Mathf.Max(InnerRadiusRatio - OuterGlowReach, 0.01f));
-
+            // One image of each kind per slot. ApplyLayout gives them their texture, angle and size.
             foreach (Slice slice in _slices)
-            {
-                float arc = slice.Width - GapDegrees;
-
-                if (!_baseSprites.TryGetValue(arc, out Sprite baseSprite))
-                {
-                    baseSprite = CreateSliceSprite(SliceTextureSize, arc, basePad, BaseFillColor, BaseRimColor, BaseFadeWidth, BaseEdgeAlpha);
-                    _baseSprites.Add(arc, baseSprite);
-                }
-
-                AddSliceImage(slice.Name, slice, baseSprite, arc, basePad);
-            }
+                slice.Panel = AddSliceImage(slice.Name);
 
             // Glows after every dark panel, so a glow that spills over a neighbour isn't covered by it
             foreach (Slice slice in _slices)
             {
-                float arc = slice.Width - GapDegrees;
-
-                if (!_glowSprites.TryGetValue(arc, out Sprite glowSprite))
-                {
-                    glowSprite = CreateSliceSprite(SliceTextureSize, arc, glowPad, GlowFillColor, GlowRimColor, GlowFadeWidth, GlowEdgeAlpha);
-                    _glowSprites.Add(arc, glowSprite);
-                }
-
-                slice.Glow = AddSliceImage(slice.Name + " Glow", slice, glowSprite, arc, glowPad);
+                slice.Glow = AddSliceImage(slice.Name + " Glow");
                 slice.Glow.enabled = false;
             }
 
             // Labels after the slices, so they draw on top of them
             foreach (Slice slice in _slices)
             {
-                float radians = slice.CentreAngle * Mathf.Deg2Rad;
                 RectTransform textRect = CreateChild(slice.Name + " Label", _canvasObject.transform, 160f, 40f);
-                textRect.anchoredPosition = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians)) * (radius * LabelRadiusRatio);
 
                 TextMeshProUGUI text = textRect.gameObject.AddComponent<TextMeshProUGUI>();
                 if (font != null) text.font = font;
@@ -353,27 +518,86 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
             foreach (Slice slice in _slices)
             {
+                slice.Panel = null;
                 slice.Glow = null;
                 slice.Text = null;
             }
         }
 
-        // Fill runs counter-clockwise from the right, and a positive z rotation is counter-clockwise too. In texture
-        // space the fill starts at 0°, and the slice itself at padDegrees (see CreateSliceSprite).
-        private Image AddSliceImage(string name, Slice slice, Sprite sprite, float arcDegrees, float padDegrees)
+        private Image AddSliceImage(string name)
         {
             RectTransform rect = CreateChild(name, _canvasObject!.transform, SliceImageSize, SliceImageSize);
-            rect.localEulerAngles = new Vector3(0f, 0f, slice.StartAngle + GapDegrees * 0.5f - padDegrees);
 
             Image image = rect.gameObject.AddComponent<Image>();
-            image.sprite = sprite;
             image.type = Image.Type.Filled;
             image.fillMethod = Image.FillMethod.Radial360;
             image.fillOrigin = (int)Image.Origin360.Right;
             image.fillClockwise = false;
-            image.fillAmount = Mathf.Clamp01((arcDegrees + padDegrees * 2f) / 360f);
             image.raycastTarget = false;
             return image;
+        }
+
+        // Fill runs counter-clockwise from the right, and a positive z rotation is counter-clockwise too. In texture
+        // space the fill starts at 0°, and the slice itself at the padding (see CreateSliceSprite).
+        private static void PlaceSliceImage(Image image, Slice slice, Sprite sprite, float padDegrees)
+        {
+            float arc = ArcOf(slice.Width);
+            float pad = PadOf(slice.Width, padDegrees);
+
+            image.sprite = sprite;
+            image.fillAmount = Mathf.Clamp01((arc + pad * 2f) / 360f);
+            image.rectTransform.localEulerAngles = new Vector3(0f, 0f, slice.StartAngle + (slice.Width - arc) * 0.5f - pad);
+        }
+
+        // The part of a slice's width that is drawn: the rest is the divider line. A slice that takes the whole
+        // circle has no dividers.
+        private static float ArcOf(float width)
+        {
+            return width >= 360f ? 360f : width - GapDegrees;
+        }
+
+        // No more padding than there is circle left, which is none at all for a slice that takes the whole circle
+        private static float PadOf(float width, float padDegrees)
+        {
+            return Mathf.Min(padDegrees, (360f - ArcOf(width)) * 0.5f);
+        }
+
+        private Sprite GetSliceSprite(float width, bool glow)
+        {
+            Dictionary<float, Sprite> cache = glow ? _glowSprites : _baseSprites;
+
+            if (cache.TryGetValue(width, out Sprite sprite))
+                return sprite;
+
+            sprite = glow
+                ? CreateSliceSprite(SliceTextureSize, ArcOf(width), PadOf(width, GlowPad), GlowFillColor, GlowRimColor, GlowFadeWidth, GlowEdgeAlpha)
+                : CreateSliceSprite(SliceTextureSize, ArcOf(width), PadOf(width, BasePad), BaseFillColor, BaseRimColor, BaseFadeWidth, BaseEdgeAlpha);
+
+            cache.Add(width, sprite);
+            return sprite;
+        }
+
+        // Frees the textures of slice widths the current layout doesn't have
+        private void DropUnusedSprites(Dictionary<float, Sprite> cache)
+        {
+            _unusedWidths.Clear();
+
+            foreach (float width in cache.Keys)
+            {
+                bool used = false;
+
+                foreach (Slice slice in _slices)
+                    used |= slice.InUse && slice.Width == width;
+
+                if (!used)
+                    _unusedWidths.Add(width);
+            }
+
+            foreach (float width in _unusedWidths)
+            {
+                DestroySprite(cache[width]);
+                cache.Remove(width);
+            }
         }
 
         private static void DestroySprite(Sprite? sprite)
@@ -456,6 +680,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             float glowPixels = Mathf.Max(OuterGlowWidth * thickness, 0.001f);
             float halfArc = arcDegrees * 0.5f;
             float sliceCentre = padDegrees + halfArc;
+            bool hasDividers = arcDegrees < 360f; // a slice that takes the whole circle is a plain ring
             Color32[] pixels = new Color32[size * size];
 
             for (int y = 0; y < size; y++)
@@ -468,7 +693,9 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
                     // Distance to the dividers is measured along the arc, so it is in pixels like the radial ones
                     float angle = Mathf.Atan2(dy, dx) * Mathf.Rad2Deg;
-                    float toDividers = (halfArc - Mathf.Abs(Mathf.DeltaAngle(angle, sliceCentre))) * Mathf.Deg2Rad * distance;
+                    float toDividers = hasDividers
+                        ? (halfArc - Mathf.Abs(Mathf.DeltaAngle(angle, sliceCentre))) * Mathf.Deg2Rad * distance
+                        : float.MaxValue;
                     float signedToEdge = Mathf.Min(toDividers, Mathf.Min(distance - innerRadius, outerRadius - distance));
                     float inside = Mathf.Max(signedToEdge, 0f);
                     float outside = Mathf.Max(-signedToEdge, 0f);

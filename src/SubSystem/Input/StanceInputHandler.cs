@@ -111,6 +111,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             StanceInputEvents.OnActiveAimKeyUp += ExitActiveAim;
             StanceInputEvents.ToggleOffAllStances += ToggleOffAllStances;
             InputEvents.ToggleLeftStanceInput += ToggleLeftShoulder;
+            StanceInputEvents.ToggleLeftShoulder += ToggleLeftShoulder;
             PlayerEvents.OnFullLeftLeanChanged += OnFullLeftLeanChanged;
             StanceEvents.OnStanceReload += OnReloadStarted;
             StanceEvents.OnStanceReloadReset += OnReloadFinished;
@@ -138,6 +139,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             StanceInputEvents.OnActiveAimKeyUp -= ExitActiveAim;
             StanceInputEvents.ToggleOffAllStances -= ToggleOffAllStances;
             InputEvents.ToggleLeftStanceInput -= ToggleLeftShoulder;
+            StanceInputEvents.ToggleLeftShoulder -= ToggleLeftShoulder;
             PlayerEvents.OnFullLeftLeanChanged -= OnFullLeftLeanChanged;
             StanceEvents.OnStanceReload -= OnReloadStarted;
             StanceEvents.OnStanceReloadReset -= OnReloadFinished;
