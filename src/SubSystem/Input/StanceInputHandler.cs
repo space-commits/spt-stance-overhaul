@@ -109,13 +109,16 @@ namespace StanceOverhaul.SubSystem.StanceInput
             StanceInputEvents.ToggleActiveAim += ToggleActiveAim;
             StanceInputEvents.OnActiveAimKeyDown += EnterActiveAim;
             StanceInputEvents.OnActiveAimKeyUp += ExitActiveAim;
+            StanceInputEvents.ToggleOffAllStances += ToggleOffAllStances;
             InputEvents.ToggleLeftStanceInput += ToggleLeftShoulder;
+            StanceInputEvents.ToggleLeftShoulder += ToggleLeftShoulder;
             PlayerEvents.OnFullLeftLeanChanged += OnFullLeftLeanChanged;
             StanceEvents.OnStanceReload += OnReloadStarted;
             StanceEvents.OnStanceReloadReset += OnReloadFinished;
             StanceEvents.OnTransformsInit += OnWeaponInit;
             StanceEvents.OnStationaryWeaponOperated += OnStationaryWeaponOperated;
             PlayerEvents.OnMountedStateChanged += OnMountedStateChanged;
+            WeaponStateInstance.OnTreatAsPistolChanged += OnWeaponClassChanged;
             // TODO: StanceInputEvents.ToggleMelee
             // TODO: StanceInputEvents.ToggleMounting, decide if it will override BSG mounting
         }
@@ -135,13 +138,16 @@ namespace StanceOverhaul.SubSystem.StanceInput
             StanceInputEvents.ToggleActiveAim -= ToggleActiveAim;
             StanceInputEvents.OnActiveAimKeyDown -= EnterActiveAim;
             StanceInputEvents.OnActiveAimKeyUp -= ExitActiveAim;
+            StanceInputEvents.ToggleOffAllStances -= ToggleOffAllStances;
             InputEvents.ToggleLeftStanceInput -= ToggleLeftShoulder;
+            StanceInputEvents.ToggleLeftShoulder -= ToggleLeftShoulder;
             PlayerEvents.OnFullLeftLeanChanged -= OnFullLeftLeanChanged;
             StanceEvents.OnStanceReload -= OnReloadStarted;
             StanceEvents.OnStanceReloadReset -= OnReloadFinished;
             StanceEvents.OnTransformsInit -= OnWeaponInit;
             StanceEvents.OnStationaryWeaponOperated -= OnStationaryWeaponOperated;
             PlayerEvents.OnMountedStateChanged -= OnMountedStateChanged;
+            WeaponStateInstance.OnTreatAsPistolChanged -= OnWeaponClassChanged;
         }
 
         // ================= Rules and policy =================
@@ -237,6 +243,16 @@ namespace StanceOverhaul.SubSystem.StanceInput
             bool switchingOff = _stanceState.ActiveStance?.StanceType == stance.StanceType;
 
             SetChosen(switchingOff ? null : stance);
+            Reconcile();
+        }
+
+        // Drops whatever the player has toggled on, left shoulder included. The default stance comes back through Reconcile.
+        private void ToggleOffAllStances()
+        {
+            if (_chosen == null)
+                return;
+
+            SetChosen(null);
             Reconcile();
         }
 
@@ -533,6 +549,21 @@ namespace StanceOverhaul.SubSystem.StanceInput
         // the previous weapon gone).
         private void OnWeaponInit()
         {
+            Reconcile();
+        }
+
+        // The weapon in hands switched between pistol and rifle handling without a swap (e.g. a stock folded, attached
+        // or removed on a pistol). Drop a chosen stance the weapon can no longer use, then let the default stance in or out.
+        private void OnWeaponClassChanged()
+        {
+            // No weapon in hands means an equip is in progress and the PWA is only part-way through setting up the
+            // new weapon. OnWeaponInit and OnWeaponSwap reconcile once it is ready, as they always have.
+            if (!PlayerStateInstance.WeaponIsReady)
+                return;
+
+            if (_chosen != null && !IsAllowedOnCurrentWeapon(_chosen))
+                SetChosen(null);
+
             Reconcile();
         }
     }

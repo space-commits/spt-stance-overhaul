@@ -8,6 +8,7 @@ using SPT.Reflection.Patching;
 using StanceOverhaul.Events;
 using StanceOverhaul.Enums;
 using StanceOverhaul.SubSystem.Aiming;
+using StanceOverhaul.SubSystem.StanceInput;
 using System;
 using System.Reflection;
 using System.Collections.Generic;
@@ -22,6 +23,72 @@ using ReloadClass = EFT.Player.FirearmController.Idling;
 
 namespace StanceOverhaul.Patches
 {
+    // EFT scales the first person hands hierarchy by (1, 1, RibcageScaleCurrent) along the look axis, so a weapon rotated off
+    // that axis (e.g. a stance) is drawn sheared and its barrel looks more angled than its real rotation. LaserBeam aims along
+    // transform.rotation, which ignores that shear, so the laser leaves at an angle to the visible barrel. For the duration of
+    // LateUpdate, point the emitter along its sheared forward (the same direction AdjustShotVectors gives bullets), then restore it.
+    // No-op when the scale is 1 (bots, third person, FOV-Fix FOV Scale 1). See Realism docs/Assembly/Lasers-Lights-And-FOV-Scale.md.
+    public class LaserBeamFovShearPatch : ModulePatch
+    {
+        private static readonly AccessTools.FieldRef<LaserBeam, Light> _lightRef = AccessTools.FieldRefAccess<LaserBeam, Light>("_light");
+
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(LaserBeam), nameof(LaserBeam.LateUpdate));
+        }
+
+        [PatchPrefix]
+        private static void Prefix(LaserBeam __instance, out Quaternion __state)
+        {
+            Transform t = __instance.transform;
+            __state = t.localRotation;
+            if (t.parent == null) return;
+
+            // parent matrix only, so the emitter's own scale can't flip or skew its axes
+            Matrix4x4 m = t.parent.localToWorldMatrix;
+            t.rotation = Quaternion.LookRotation(m.MultiplyVector(__state * Vector3.forward), m.MultiplyVector(__state * Vector3.up));
+        }
+
+        [PatchPostfix]
+        private static void Postfix(LaserBeam __instance, Quaternion __state)
+        {
+            Transform t = __instance.transform;
+            Light light = _lightRef(__instance);
+            if (light == null)
+            {
+                t.localRotation = __state;
+                return;
+            }
+
+            // LateUpdate placed the dot's light (a child) in world space; keep it there through the restore
+            Transform lt = light.transform;
+            Vector3 lightPos = lt.position;
+            Quaternion lightRot = lt.rotation;
+            t.localRotation = __state;
+            lt.SetPositionAndRotation(lightPos, lightRot);
+        }
+    }
+
+    // Stops the mouse turning the player and the free-look head while the stance selection wheel is open.
+    // Movement and lean are left alone, so the player can keep walking. Indices follow EAxis:
+    // 0-1 move, 2-3 turn, 4-5 free look, 6 lean. InputPreset.UpdateInput refills the array every Update,
+    // so zeroing it in place is safe. See docs/Assembly/Input-And-Keybinds.md ("Axes and custom input nodes").
+    public class SelectionWheelAxesPatch : ModulePatch
+    {
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(MoveInputTranslator), nameof(MoveInputTranslator.TranslateAxes));
+        }
+
+        [PatchPrefix]
+        private static void PatchPrefix(ref float[] axes)
+        {
+            if (axes == null || axes.Length < 6 || !StanceSelectionWheel.IsOpen) return;
+
+            axes[2] = axes[3] = axes[4] = axes[5] = 0f;
+        }
+    }
+
     // EFT reads this skill buff once when a search starts revealing items:
     // per-item time = Random.Range(1, 3) / (1 + AttentionLootSpeed + (on a body ? SearchBuffSpeed : 0)). See docs/Assembly/Looting-Search.md.
     // AttentionLootSpeed is in both the container and body formula, so a bonus here applies once to every search.

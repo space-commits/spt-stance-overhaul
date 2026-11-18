@@ -25,6 +25,8 @@ namespace StanceOverhaul.SubSystem
             StanceEvents.OnTacSprintEnded += OnExternalStateChange;
             RealismCommonLib.Events.PlayerEvents.OnWeaponEquipped += OnExternalStateChange;
             RealismCommonLib.Events.PlayerEvents.AimStateChanged += OnExternalStateChange;
+            // EFT overwrites SprintAcceleration and PreSprintAcceleration when it recalculates weight, re-apply the bonuses
+            RealismCommonLib.Events.PlayerEvents.OnWeightUpdated += OnExternalStateChange;
 
             _walkSpeed = StatModifiers.WalkSpeedModifier.Add(1f);
             _sprintSpeed = StatModifiers.SprintSpeedModifier.Add(1f);
@@ -40,6 +42,7 @@ namespace StanceOverhaul.SubSystem
             StanceEvents.OnTacSprintEnded -= OnExternalStateChange;
             RealismCommonLib.Events.PlayerEvents.OnWeaponEquipped -= OnExternalStateChange;
             RealismCommonLib.Events.PlayerEvents.AimStateChanged -= OnExternalStateChange;
+            RealismCommonLib.Events.PlayerEvents.OnWeightUpdated -= OnExternalStateChange;
 
             StatModifiers.WalkSpeedModifier.Remove(_walkSpeed);
             StatModifiers.SprintSpeedModifier.Remove(_sprintSpeed);

@@ -9,6 +9,7 @@ namespace StanceOverhaul.Stances;
 public class LeftShoulder : StanceBase
 {
     public override EStanceType StanceType => EStanceType.LeftShoulder;
+    public override EStanceStaminaType StaminaMode => EStanceStaminaType.Drain;
 
     public override Vector3Curve EnterPositionCurve => _enterPos;
     public override Vector3Curve EnterRotationCurve => _enterRot;

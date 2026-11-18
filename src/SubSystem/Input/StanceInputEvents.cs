@@ -12,6 +12,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
         public static event Action? ToggleShortStock;
         public static event Action? ToggleActiveAim;
         public static event Action? TogglePatrolStance;
+        public static event Action? ToggleLeftShoulder; // from the selection wheel. EFT's own key goes through InputEvents.ToggleLeftStanceInput
         public static event Action? ToggleMelee;
         public static event Action? OnActiveAimKeyDown;
         public static event Action? OnActiveAimKeyUp;
@@ -51,6 +52,11 @@ namespace StanceOverhaul.SubSystem.StanceInput
         internal static void RaiseToggleActiveAim()
         {
             BaseEventHandler.RaiseEvent(ToggleActiveAim);
+        }
+
+        internal static void RaiseToggleLeftShoulder()
+        {
+            BaseEventHandler.RaiseEvent(ToggleLeftShoulder);
         }
 
         internal static void RaiseToggleMelee()

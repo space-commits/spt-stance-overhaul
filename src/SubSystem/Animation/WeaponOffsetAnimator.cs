@@ -23,7 +23,8 @@ namespace StanceOverhaul.SubSystem.Animator
 
         private Vector3 _targetPosOffest = Vector3.zero;
         private Vector3 _targetRotOffest = Vector3.zero;
-        private Vector3 _baseWeaponOffsetPosition = Vector3.zero;
+        // Offset for this specific weapon from the table below, looked up once per equip
+        private Vector3 _weaponSpecificOffset = Vector3.zero;
 
 
         private Vector3 _originalPos = Vector3.zero;
@@ -38,7 +39,15 @@ namespace StanceOverhaul.SubSystem.Animator
                 bool blockOffset = !PlayerStateInstance.WeaponIsReady ||
                     PlayerStateInstance.IsUsingStationaryWeapon;
 
-                return blockOffset ? Vector3.zero : _baseWeaponOffsetPosition;
+                if (blockOffset)
+                    return Vector3.zero;
+
+                // config and pistol handling are read here, not cached per equip, so a config change or a stock change applies straight away
+                Vector3 configOffset = WeaponStateInstance.TreatAsPistol ?
+                    new Vector3(PluginConfig.PistolOffsetX.Value, PluginConfig.PistolOffsetY.Value, PluginConfig.PistolOffsetZ.Value) :
+                    new Vector3(PluginConfig.RifleOffsetX.Value, PluginConfig.RifleOffsetY.Value, PluginConfig.RifleOffsetZ.Value);
+
+                return configOffset + _weaponSpecificOffset;
             }
 
         }
@@ -281,12 +290,7 @@ namespace StanceOverhaul.SubSystem.Animator
 
         private void SetBaseWeaponOffsetPosition(Player.FirearmController fc)
         {
-            Vector3 baseOffset = GetWeaponOffset(fc.Weapon?.TemplateId) ?? Vector3.zero;
-            Vector3 configOffset = WeaponStateInstance.TreatAsPistol ?
-                new Vector3(PluginConfig.PistolOffsetX.Value, PluginConfig.PistolOffsetY.Value, PluginConfig.PistolOffsetZ.Value) :
-                new Vector3(PluginConfig.RifleOffsetX.Value, PluginConfig.RifleOffsetY.Value, PluginConfig.RifleOffsetZ.Value);
-
-            _baseWeaponOffsetPosition = configOffset + baseOffset;
+            _weaponSpecificOffset = GetWeaponOffset(fc.Weapon?.TemplateId) ?? Vector3.zero;
         }
 
         //todo: do this once per weapon variable update, cache result

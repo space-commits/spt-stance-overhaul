@@ -95,6 +95,10 @@ namespace StanceOverhaul.Controllers.PatchHooks
 
         private bool ShouldVetoFiring()
         {
+            // Not a fire attempt from a stance: it must not drop the stance or queue a shot
+            if (StanceSelectionWheel.IsOpen)
+                return true;
+
             bool isInStanceThatCanBlockFiring = StanceControllerInstance?.CurrentStance?.BlocksFiring == true;
 
             bool shouldVeto = PluginConfig.BlockFiring.Value && isInStanceThatCanBlockFiring;

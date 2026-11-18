@@ -1,4 +1,5 @@
 ﻿using BepInEx.Configuration;
+using StanceOverhaul.Enums;
 using System;
 using UnityEngine;
 using static MineDirectional;
@@ -212,6 +213,14 @@ namespace StanceOverhaul
         public static ConfigEntry<KeyboardShortcut> PatrolKeybind { get; set; }
         public static ConfigEntry<KeyboardShortcut> MeleeKeybind { get; set; } = null!;
         public static ConfigEntry<KeyboardShortcut> StanceWheelComboKeyBind { get; set; } = null!;
+        public static ConfigEntry<KeyboardShortcut> StanceSelectorKeybind { get; set; } = null!;
+        public static ConfigEntry<float> StanceSelectorSensitivity { get; set; } = null!;
+        public static ConfigEntry<EWheelStance> WheelUpStance { get; set; } = null!;
+        public static ConfigEntry<EWheelStance> WheelUpperLeftStance { get; set; } = null!;
+        public static ConfigEntry<EWheelStance> WheelLowerLeftStance { get; set; } = null!;
+        public static ConfigEntry<EWheelStance> WheelDownStance { get; set; } = null!;
+        public static ConfigEntry<EWheelStance> WheelUpperRightStance { get; set; } = null!;
+        public static ConfigEntry<EWheelStance> WheelLowerRightStance { get; set; } = null!;
         public static ConfigEntry<float> StanceSfxModifier { get; set; } = null!;
         public static ConfigEntry<bool> EnableAnimationFixes { get; set; } = null!;
         public static ConfigEntry<bool> OverrideCollision { get; set; } = null!;
@@ -231,7 +240,8 @@ namespace StanceOverhaul
         public static ConfigEntry<float> PistolAdsInSpeed { get; set; }
         public static ConfigEntry<float> PistolAdsOutSpeed { get; set; }
         public static ConfigEntry<bool> EnableIdleStamDrain { get; set; }
-        public static ConfigEntry<float> IdleStamDrainModi { get; set; }
+        public static ConfigEntry<float> StamDrainModi { get; set; }
+        public static ConfigEntry<float> StamRegenRate { get; set; }
         public static ConfigEntry<bool> EnableStanceStamChanges { get; set; }
         public static ConfigEntry<bool> EnableReloadSpeedChanges { get; set; }
         public static ConfigEntry<bool> EnableStanceMovementSpeedChanges { get; set; }
@@ -291,6 +301,7 @@ namespace StanceOverhaul
             string patrol = "13. Patrol Stance.";
             string leftShoulder = "14. Left Shoulder.";
             string pistol = "15. Pistol Stance.";
+            string stanceWheel = "16. Stance Selection Wheel.";
 
             test1 = config.Bind<float>(dev, "test 1", 1f, new ConfigDescription("", new AcceptableValueRange<float>(-5000f, 5000f), new ConfigurationManagerAttributes { Order = 170, IsAdvanced = true, Browsable = true }));
             test2 = config.Bind<float>(dev, "test 2", 1f, new ConfigDescription("", new AcceptableValueRange<float>(-5000f, 5000f), new ConfigurationManagerAttributes { Order = 160, IsAdvanced = true, Browsable = true }));
@@ -338,7 +349,8 @@ namespace StanceOverhaul
             StancePistolReturnSpeedModifier = config.Bind<float>(stanceSpeed, "Stance Pistol Return Speed Modifier", 1f, new ConfigDescription("Global multiplier for all stance return speeds. Defines responsivenss and tightness of movement.", new AcceptableValueRange<float>(0f, 2f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 150, IsAdvanced = true, Browsable = true }));
 
             EnableIdleStamDrain = config.Bind<bool>(stamina, "Enable Idle Arm Stamina Drain", true, new ConfigDescription("Arm Stamina Will Drain When Not In A Stance (High And Low Ready, Short-Stocking).", null, new ConfigurationManagerAttributes { Order = 210, Browsable = true }));
-            IdleStamDrainModi = config.Bind<float>(stamina, "Idle Stam Drain Modifer", 1f, new ConfigDescription("Modifier for stamina drain rate, including stances that drain stamina (Active Aim, Left Shoulder). Set to 0 to disable.", new AcceptableValueRange<float>(0.0f, 5f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 200, Browsable = true }));
+            StamDrainModi = config.Bind<float>(stamina, "Arm Stamina Drain Modifer", 1f, new ConfigDescription("Modifier for stamina drain rate as calculated by this mod. It affects stances, tac sprint, and aiming. For aiming, this mod adds its calcualted drain rate on top of the base game's ADS drain rate; this modifier only affects the former. Setting to 0 will pause regeneration instead of draining it.", new AcceptableValueRange<float>(0.0f, 5f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 200, Browsable = true }));
+            StamRegenRate = config.Bind<float>(stamina, "Arm Stamina Regen Rate", 2.5f, new ConfigDescription("Base regen rate used when not in a stance, but in a state that allows stamina regen (prone, mounting, inventory).", new AcceptableValueRange<float>(0.0f, 5f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 200, Browsable = true }));
             EnableStanceStamChanges = config.Bind<bool>(stamina, "Enable Stance Stamina Changes", true, new ConfigDescription("Enabled Stances And Mounting To Affect Stamina And Movement Speed.", null, new ConfigurationManagerAttributes { Order = 183, Browsable = true }));
 
             EnableStanceMovementSpeedChanges = config.Bind<bool>(movement, "Enable Stance Movement Speed Changes", true, new ConfigDescription("Stances Modify Walk Speed And Sprint Acceleration. Does Not Affect Tactical Sprint Bonuses.", null, new ConfigurationManagerAttributes { Order = 231, Browsable = true }));
@@ -376,7 +388,7 @@ namespace StanceOverhaul
             BlockFiring = config.Bind<bool>(controls, "Block Shooting While In Stance", true, new ConfigDescription("Blocks Firing While In A Stance, Will Cancel Stance If Attempting To Fire.", null, new ConfigurationManagerAttributes { Order = 250, Browsable = true }));
             FireQueueReleaseWeight = config.Bind<float>(controls, "Queued Shot Release Timing", 0.025f, new ConfigDescription("When Shooting Is Blocked By A Stance, The Queued Shot Fires Once The Stance's Animation Has Faded Below This Fraction. Lower = Later (0 = Fully Out Of The Stance, 1 = Immediately).", new AcceptableValueRange<float>(0f, 1f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 245, Browsable = true }));
 
-            ActiveAimKeybind = config.Bind(activeAim, "Active Aim Keybind", new KeyboardShortcut(KeyCode.Mouse4), new ConfigDescription("Cants The Weapon Sideways, Improving Hipfire Accuracy.", null, new ConfigurationManagerAttributes { Order = 110, Browsable = true }));
+            ActiveAimKeybind = config.Bind(activeAim, "Active Aim Keybind", new KeyboardShortcut(KeyCode.None), new ConfigDescription("Cants The Weapon Sideways, Improving Hipfire Accuracy. Unbound By Default, Active Aim Is Also On The Stance Selection Wheel.", null, new ConfigurationManagerAttributes { Order = 110, Browsable = true }));
             ToggleActiveAim = config.Bind<bool>(activeAim, "Use Toggle For Active Aim", false, new ConfigDescription("", null, new ConfigurationManagerAttributes { Order = 109, Browsable = true }));
             ActiveAimWalkSpeedBonus = config.Bind<float>(activeAim, "Active Aim Walk Speed Modifier", 0.9f, new ConfigDescription("Multiplier applied to walk speed while in Active Aim.", new AcceptableValueRange<float>(0.1f, 5f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 108, Browsable = true }));
             ActiveAimSprintAccelBonus = config.Bind<float>(activeAim, "Active Aim Sprint Accel Modifier", 1.1f, new ConfigDescription("Multiplier applied to sprint acceleration while in Active Aim.", new AcceptableValueRange<float>(0.1f, 5f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 107, Browsable = true }));
@@ -547,6 +559,15 @@ namespace StanceOverhaul
             PistolMagazineReloadSpeedModifier = config.Bind<float>(pistol, "Pistol Magazine Reload Speed Modifier", 1f, new ConfigDescription("Multiplier applied to magazine reload speed while in pistol stance.", new AcceptableValueRange<float>(0f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 7, IsAdvanced = true, Browsable = true }));
             PistolRevolverReloadSpeedModifier = config.Bind<float>(pistol, "Pistol Revolver Reload Speed Modifier", 1.1f, new ConfigDescription("Multiplier applied to revolver reload speed while in pistol stance.", new AcceptableValueRange<float>(0f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 6, IsAdvanced = true, Browsable = true }));
             PistolWeaponManipSpeedModifier = config.Bind<float>(pistol, "Pistol Chamber Reload Speed Modifier", 1.1f, new ConfigDescription("Multiplier applied to chamber reload speed while in pistol stance.", new AcceptableValueRange<float>(0f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 5, IsAdvanced = true, Browsable = true }));
+
+            StanceSelectorKeybind = config.Bind(stanceWheel, "Stance Selection Wheel Keybind", new KeyboardShortcut(KeyCode.Mouse4), new ConfigDescription("Hold To Open The Stance Selection Wheel, Move The Mouse Towards A Stance, Release To Toggle It. Release With The Mouse In The Centre To Cancel The Current Stance. Not Available With Pistols, Or When Every Slice Is Set To None. If Active Aim Is Bound To The Same Key, The Wheel Takes It.", null, new ConfigurationManagerAttributes { Order = 70, Browsable = true }));
+            StanceSelectorSensitivity = config.Bind<float>(stanceWheel, "Stance Selection Wheel Sensitivity", 3f, new ConfigDescription("How Little Mouse Movement Is Needed To Select A Stance On The Wheel. Higher = Less Movement.", new AcceptableValueRange<float>(0.05f, 5f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 60, Browsable = true }));
+            WheelUpStance = config.Bind(stanceWheel, "Up Slice Stance", EWheelStance.HighReady, new ConfigDescription("Stance On This Slice Of The Stance Selection Wheel. None Removes The Slice And Its Neighbours Grow Into Its Place. Applies The Next Time The Wheel Is Opened.", null, new ConfigurationManagerAttributes { Order = 50, Browsable = true }));
+            WheelUpperLeftStance = config.Bind(stanceWheel, "Upper Left Slice Stance", EWheelStance.ActiveAim, new ConfigDescription("Stance On This Slice Of The Stance Selection Wheel. None Removes The Slice And Its Neighbours Grow Into Its Place. Applies The Next Time The Wheel Is Opened.", null, new ConfigurationManagerAttributes { Order = 40, Browsable = true }));
+            WheelLowerLeftStance = config.Bind(stanceWheel, "Lower Left Slice Stance", EWheelStance.None, new ConfigDescription("Stance On This Slice Of The Stance Selection Wheel. None Removes The Slice And Its Neighbours Grow Into Its Place. Applies The Next Time The Wheel Is Opened.", null, new ConfigurationManagerAttributes { Order = 35, Browsable = true }));
+            WheelDownStance = config.Bind(stanceWheel, "Down Slice Stance", EWheelStance.LowReady, new ConfigDescription("Stance On This Slice Of The Stance Selection Wheel. None Removes The Slice And Its Neighbours Grow Into Its Place. Applies The Next Time The Wheel Is Opened.", null, new ConfigurationManagerAttributes { Order = 30, Browsable = true }));
+            WheelUpperRightStance = config.Bind(stanceWheel, "Upper Right Slice Stance", EWheelStance.ShortStock, new ConfigDescription("Stance On This Slice Of The Stance Selection Wheel. None Removes The Slice And Its Neighbours Grow Into Its Place. Applies The Next Time The Wheel Is Opened.", null, new ConfigurationManagerAttributes { Order = 20, Browsable = true }));
+            WheelLowerRightStance = config.Bind(stanceWheel, "Lower Right Slice Stance", EWheelStance.Patrol, new ConfigDescription("Stance On This Slice Of The Stance Selection Wheel. None Removes The Slice And Its Neighbours Grow Into Its Place. Applies The Next Time The Wheel Is Opened.", null, new ConfigurationManagerAttributes { Order = 10, Browsable = true }));
         }
     }
 }

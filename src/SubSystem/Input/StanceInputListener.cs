@@ -49,7 +49,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             }
         }
 
-        private bool StanceInputBlocked
+        public bool StanceInputBlocked
         {
             get
             {
@@ -263,7 +263,13 @@ namespace StanceOverhaul.SubSystem.StanceInput
                 return;
 
             bool activeAimOverridesAds = AnyControlHeld(_aimControls) && StanceControllerInstance.AdsIsBlocked;
-            bool keyIsHeld = Input.GetKey(PluginConfig.ActiveAimKeybind.Value.MainKey)
+            // Configs from before the selection wheel still have active aim on the wheel's default key.
+            // The wheel wins, or every press that opens it would also enter active aim.
+            KeyCode activeAimKey = PluginConfig.ActiveAimKeybind.Value.MainKey;
+            bool keyIsUsedByWheel = activeAimKey != KeyCode.None && activeAimKey == PluginConfig.StanceSelectorKeybind.Value.MainKey;
+
+            bool keyIsHeld = !keyIsUsedByWheel
+                && Input.GetKey(activeAimKey)
                 && PluginConfig.ActiveAimKeybind.Value.Modifiers.All(Input.GetKey);
             bool anyHeld = keyIsHeld || activeAimOverridesAds;
 
