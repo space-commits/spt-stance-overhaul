@@ -107,15 +107,28 @@ internal class StanceSlot
         return Stance.AltAimReturnSpeedCurve.Evaluate(MovementProgress);
     }
 
+    /// <summary>
+    /// Transition speed in progress per second (1 / transition duration) for the current transition context.
+    /// Computed, so it's valid as soon as the slot exists and follows Transition when it changes.
+    /// Also read by the left hand animator so the hand moves at the stance's speed.
+    /// </summary>
+    public float Speed
+    {
+        get
+        {
+            var speed = Stance.TransitionFromModifier(Transition.From) *
+                        Stance.TransitionToSpeedModifier(Transition.To) *
+                        PluginConfig.GlobalStanceSpeed.Value;
+
+            return Mathf.Clamp(StanceControllerInstance.StatsHandlerInstance.GetStanceSpeedModifier(speed), Mathf.Min(1f, speed), speed);
+        }
+    }
+
     public void StanceSlotUpdate(float deltaTime)
     {
         if (Direction == 0) return; // holding
 
-        var speed = Stance.TransitionFromModifier(Transition.From) *
-                    Stance.TransitionToSpeedModifier(Transition.To) *
-                    PluginConfig.GlobalStanceSpeed.Value;
-
-        speed = Mathf.Clamp(StanceControllerInstance.StatsHandlerInstance.GetStanceSpeedModifier(speed), 1f, speed);
+        var speed = Speed;
 
         PreviousProgress = Progress;
 

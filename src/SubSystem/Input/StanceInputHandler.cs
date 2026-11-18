@@ -118,6 +118,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             StanceEvents.OnTransformsInit += OnWeaponInit;
             StanceEvents.OnStationaryWeaponOperated += OnStationaryWeaponOperated;
             PlayerEvents.OnMountedStateChanged += OnMountedStateChanged;
+            WeaponStateInstance.OnTreatAsPistolChanged += OnWeaponClassChanged;
             // TODO: StanceInputEvents.ToggleMelee
             // TODO: StanceInputEvents.ToggleMounting, decide if it will override BSG mounting
         }
@@ -146,6 +147,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             StanceEvents.OnTransformsInit -= OnWeaponInit;
             StanceEvents.OnStationaryWeaponOperated -= OnStationaryWeaponOperated;
             PlayerEvents.OnMountedStateChanged -= OnMountedStateChanged;
+            WeaponStateInstance.OnTreatAsPistolChanged -= OnWeaponClassChanged;
         }
 
         // ================= Rules and policy =================
@@ -547,6 +549,21 @@ namespace StanceOverhaul.SubSystem.StanceInput
         // the previous weapon gone).
         private void OnWeaponInit()
         {
+            Reconcile();
+        }
+
+        // The weapon in hands switched between pistol and rifle handling without a swap (e.g. a stock folded, attached
+        // or removed on a pistol). Drop a chosen stance the weapon can no longer use, then let the default stance in or out.
+        private void OnWeaponClassChanged()
+        {
+            // No weapon in hands means an equip is in progress and the PWA is only part-way through setting up the
+            // new weapon. OnWeaponInit and OnWeaponSwap reconcile once it is ready, as they always have.
+            if (!PlayerStateInstance.WeaponIsReady)
+                return;
+
+            if (_chosen != null && !IsAllowedOnCurrentWeapon(_chosen))
+                SetChosen(null);
+
             Reconcile();
         }
     }

@@ -241,6 +241,7 @@ namespace StanceOverhaul
         public static ConfigEntry<float> PistolAdsOutSpeed { get; set; }
         public static ConfigEntry<bool> EnableIdleStamDrain { get; set; }
         public static ConfigEntry<float> StamDrainModi { get; set; }
+        public static ConfigEntry<float> StamRegenRate { get; set; }
         public static ConfigEntry<bool> EnableStanceStamChanges { get; set; }
         public static ConfigEntry<bool> EnableReloadSpeedChanges { get; set; }
         public static ConfigEntry<bool> EnableStanceMovementSpeedChanges { get; set; }
@@ -349,6 +350,7 @@ namespace StanceOverhaul
 
             EnableIdleStamDrain = config.Bind<bool>(stamina, "Enable Idle Arm Stamina Drain", true, new ConfigDescription("Arm Stamina Will Drain When Not In A Stance (High And Low Ready, Short-Stocking).", null, new ConfigurationManagerAttributes { Order = 210, Browsable = true }));
             StamDrainModi = config.Bind<float>(stamina, "Arm Stamina Drain Modifer", 1f, new ConfigDescription("Modifier for stamina drain rate as calculated by this mod. It affects stances, tac sprint, and aiming. For aiming, this mod adds its calcualted drain rate on top of the base game's ADS drain rate; this modifier only affects the former. Setting to 0 will pause regeneration instead of draining it.", new AcceptableValueRange<float>(0.0f, 5f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 200, Browsable = true }));
+            StamRegenRate = config.Bind<float>(stamina, "Arm Stamina Regen Rate", 2.5f, new ConfigDescription("Base regen rate used when not in a stance, but in a state that allows stamina regen (prone, mounting, inventory).", new AcceptableValueRange<float>(0.0f, 5f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 200, Browsable = true }));
             EnableStanceStamChanges = config.Bind<bool>(stamina, "Enable Stance Stamina Changes", true, new ConfigDescription("Enabled Stances And Mounting To Affect Stamina And Movement Speed.", null, new ConfigurationManagerAttributes { Order = 183, Browsable = true }));
 
             EnableStanceMovementSpeedChanges = config.Bind<bool>(movement, "Enable Stance Movement Speed Changes", true, new ConfigDescription("Stances Modify Walk Speed And Sprint Acceleration. Does Not Affect Tactical Sprint Bonuses.", null, new ConfigurationManagerAttributes { Order = 231, Browsable = true }));

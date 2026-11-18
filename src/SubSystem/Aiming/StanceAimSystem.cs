@@ -52,9 +52,12 @@ namespace StanceOverhaul.SubSystem.Aiming
 
             RealismCommonLib.Events.PlayerEvents.OnPlayerInit += CheckForAimBlockers;
             RealismCommonLib.Events.PlayerEvents.AimStateChanged += CheckForAimBlockers;
-            RealismCommonLib.Events.PlayerEvents.ToggleHeadDevice += CheckForAimBlockers;
             WeaponStateInstance.OnWeaponStateChanged += CheckForAimBlockers;
-            RealismCommonLib.Events.PlayerEvents.OnWeaponEquipped += CheckForAimBlockers;
+            // raised by GearState when a gear flag changed (head device toggled, face shield or NVG put on or taken off),
+            // after the flags are updated, so the flags read below are never a step behind
+            GearStateInstance.OnGearStateChanged += CheckForAimBlockers;
+            // the new weapon is in hands and its sights are set up (they are not yet during the weapon state updates of an equip)
+            RealismCommonLib.Events.PlayerEvents.OnHandsControllerAssigned += CheckForAimBlockers;
             _canAim = BoolHandlers.CanAim.Add(true);
         }
 
@@ -62,9 +65,9 @@ namespace StanceOverhaul.SubSystem.Aiming
         {
             RealismCommonLib.Events.PlayerEvents.OnPlayerInit -= CheckForAimBlockers;
             RealismCommonLib.Events.PlayerEvents.AimStateChanged -= CheckForAimBlockers;
-            RealismCommonLib.Events.PlayerEvents.ToggleHeadDevice -= CheckForAimBlockers;
             WeaponStateInstance.OnWeaponStateChanged -= CheckForAimBlockers;
-            RealismCommonLib.Events.PlayerEvents.OnWeaponEquipped -= CheckForAimBlockers;
+            GearStateInstance.OnGearStateChanged -= CheckForAimBlockers;
+            RealismCommonLib.Events.PlayerEvents.OnHandsControllerAssigned -= CheckForAimBlockers;
             BoolHandlers.CanAim.Remove(_canAim);
         }
 

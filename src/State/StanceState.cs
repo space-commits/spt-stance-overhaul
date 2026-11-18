@@ -129,6 +129,13 @@ namespace StanceOverhaul.State
         public bool IsIdle => ActiveStance == null;
 
         /// <summary>
+        /// Speed (progress per second) of the slot driving the visible motion: the incoming once it's blending,
+        /// otherwise the primary. 0 when no slot exists.
+        /// </summary>
+        public float CurrentTransitionSpeed =>
+            _incoming != null && !_incomingPaused ? _incoming.Speed : PrimarySlot?.Speed ?? 0f;
+
+        /// <summary>
         /// How much of the given stance's pose is currently applied, 0 = none/idle, 1 = fully at pose.
         /// Follows the stance whether it's primary or incoming, entering or exiting.
         /// </summary>

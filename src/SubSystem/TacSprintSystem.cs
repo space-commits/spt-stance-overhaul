@@ -62,7 +62,7 @@ namespace StanceOverhaul.SubSystem
             StanceControllerInstance.StatsHandlerInstance.GetTacSprintStrengthWeightValue(PluginConfig.TacSprintBullpupWeightLimit.Value) :
             StanceControllerInstance.StatsHandlerInstance.GetTacSprintStrengthWeightValue(PluginConfig.TacSprintWeightLimit.Value);
 
-        private float ErgoLimit => StanceControllerInstance.StatsHandlerInstance.GetTacSprintStrengthWeightValue(PluginConfig.TacSprintErgoLimit.Value);
+        private float ErgoLimit => StanceControllerInstance.StatsHandlerInstance.GetTacSprintStrengthErgoValue(PluginConfig.TacSprintErgoLimit.Value);
 
         private bool WeaponMeetsCriteria
         {

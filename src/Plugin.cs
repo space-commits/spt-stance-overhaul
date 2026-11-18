@@ -20,7 +20,7 @@ namespace StanceOverhaul
 
         public const string MOD_GUID = "com.fontaine.spt-stance-overhaul";
         public const string MOD_NAME = "Fontaine-SPTStanceOverhaul";
-        public const string MOD_VERSION = "0.1.0";
+        public const string MOD_VERSION = "0.1.1";
 
         void Awake()
         {
@@ -64,6 +64,7 @@ namespace StanceOverhaul
             new WeaponOverlappingPatch().Enable();
             new ResetCanUsePropStatePatch().Enable();
             new SetInteractInHandsPatch().Enable();
+            new LaserBeamFovShearPatch().Enable();
 
             //Input
             new SelectionWheelAxesPatch().Enable();

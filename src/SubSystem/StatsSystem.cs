@@ -124,7 +124,8 @@ public class StatsSystem : ISubSystem
 
     public void CalculateEffectiveWeight()
     {
-        var ergonomics = WeaponStateInstance.TotalErgo;
+        // weapon ergonomics with the equipment penalty applied (armour, rig, backpack). EFT re-runs the weapon variables update when the penalty changes.
+        var ergonomics = WeaponStateInstance.TotalErgo * (1f + PlayerStateInstance.Player.ErgonomicsPenalty);
         var weight = WeaponStateInstance.TotalWeaponWeight * ReduceWeightByStrength();
         var minWeight = WeaponStateInstance.TotalWeaponWeight * MinimumWeaponWeghtPerc;
 
@@ -215,13 +216,31 @@ public class StatsSystem : ISubSystem
         return Mathf.Clamp(weightFactor * modifier, -5f, -0.5f);
     }
 
-    public float GetTacSprintStrengthWeightValue(float baseValue)
+    /// <summary>
+    /// The arm stamina that idle and stance drain stop at, scaled by Endurance: the base at level 0, rising linearly
+    /// to base × (1 + MaxEnduranceArmStaminaFloorBonus) at elite.
+    /// </summary>
+    public float GetMinimumArmStamina(float baseValue)
     {
-        return Mathf.Min(baseValue * (1f + StrengthWeightModifier), 7.5f);
-    }
-    public float GetTacSprintStrengthErgoValue(float baseValue)
-    {
-        return Mathf.Max(baseValue * StrengthWeightModifier, 10f);
+        float enduranceFactor = Mathf.Clamp01(SkillStateInstance.EndurancLevel / 51f);
+        return Mathf.Max(baseValue * (1f + enduranceFactor), baseValue);
     }
 
+    /// <summary>
+    /// Maximum weapon weight for tac sprint: Strength raises the configured limit, but the raised value is capped at 7.5 kg.
+    /// The cap only limits the Strength bonus, so a configured limit above 7.5 is never lowered.
+    /// </summary>
+    public float GetTacSprintStrengthWeightValue(float baseValue)
+    {
+        return Mathf.Max(baseValue, Mathf.Min(baseValue * (1f + StrengthWeightModifier), 7.5f));
+    }
+
+    /// <summary>
+    /// Minimum weapon ergonomics for tac sprint: Strength lowers the configured requirement, down to no less than 10.
+    /// Compare it with the gun's own ergonomics (WeaponState.TotalErgo), not the gear-adjusted value.
+    /// </summary>
+    public float GetTacSprintStrengthErgoValue(float baseValue)
+    {
+        return Mathf.Max(baseValue * (1f - StrengthWeightModifier), 10f);
+    }
 }
