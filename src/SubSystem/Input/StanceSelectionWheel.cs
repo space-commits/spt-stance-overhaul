@@ -11,39 +11,34 @@ using static StanceOverhaul.Plugin;
 
 namespace StanceOverhaul.SubSystem.StanceInput
 {
-    // Hold the key to open the wheel, move the mouse towards a stance, release the key to toggle it.
-    //
-    // The cursor stays locked. A virtual pointer is tracked from raw mouse movement, and the selected slice is
-    // the one the pointer's direction falls in. The slices fill the whole circle. The centre hub selects
-    // no slice. Releasing there cancels the stance that is on.
-    //
-    // While it is open, SelectionWheelAxesPatch stops the mouse turning the player and InputHookPipeline vetoes
-    // fire. Selecting raises the same StanceInputEvents as the stance keys, so StanceInputHandler decides the rest.
+    // Hold the key, move the mouse towards a stance, let go to toggle it. Letting go in the centre cancels the current stance.
+    // The cursor stays locked, so the pointer is tracked from raw mouse movement. While it's open SelectionWheelAxesPatch
+    // stops the mouse turning the player and InputHookPipeline blocks firing.
     // See docs/implementation-plans/Stance-Selection-Wheel-Plan.md.
     public class StanceSelectionWheel : ISubSystem
     {
         private class Slice
         {
-            // Fixed: the slot this slice sits in
+            // Fixed slot
             public readonly string Name;
-            public readonly float SlotStart;    // degrees, counter-clockwise from the right: 0 = right, 90 = up
-            public readonly float SlotWidth;    // degrees. All slots add up to 360
-            public readonly bool PairsWithNext; // the first half of a quarter: the next slot is its other half
+            public readonly float SlotStart;    // degrees CCW from the right
+            public readonly float SlotWidth;    // all slots add up to 360
+            public readonly bool PairsWithNext; // first half of a quarter, the next slot is the other half
             public readonly Func<EWheelStance> Stance;
 
-            // From the config, worked out each time the wheel opens (see ApplyLayout)
-            public bool InUse;       // false = set to None, its neighbours have taken the slot
-            public float StartAngle; // the slot, plus its share of the empty slots around it
+            // Set from config on each open
+            public bool InUse;       // false when set to None, its neighbours take the space
+            public float StartAngle; // includes its share of any empty neighbours
             public float Width;
-            public float GapAfter;   // empty degrees between this slice and the next, before they are shared out
+            public float GapAfter;   // empty space before the next slice, before it's shared out
             public string Label = string.Empty;
             public EStanceType StanceType;
             public Action Toggle = () => { };
 
             public float CentreAngle => StartAngle + Width * 0.5f;
 
-            public Image? Panel; // the dark base
-            public Image? Glow;  // on top of the base, shown for highlight or active
+            public Image? Panel; // dark base
+            public Image? Glow;  // shown when highlighted or active
             public TextMeshProUGUI? Text;
 
             public Slice(string name, float slotStart, float slotWidth, bool pairsWithNext, Func<EWheelStance> stance)
@@ -56,44 +51,39 @@ namespace StanceOverhaul.SubSystem.StanceInput
             }
         }
 
-        // Read by SelectionWheelAxesPatch and InputHookPipeline. Static so they never touch a destroyed controller.
+        // Static so the patches never hit a destroyed instance
         public static bool IsOpen { get; private set; }
 
-        // ---- Pointer, as a fraction of the wheel: 0 = centre, 1 = as far as it goes ----
-        private const float BasePointerSensitivity = 0.04f; // per unit of Unity's "Mouse X" / "Mouse Y" axes
+        // Pointer is in wheel radii, 0 = centre, 1 = edge
+        private const float BasePointerSensitivity = 0.04f;
         private const float DeadZone = 0.3f;
 
-        // ---- Layout, in pixels at 1080p ----
+        // Layout, pixels at 1080p
         private const float WheelDiameter = 420f;
         private const float InnerRadiusRatio = 0.5f;
         private const float LabelRadiusRatio = 0.75f;
-        private const float GapDegrees = 1.6f; // divider line between slices, drawing only
+        private const float GapDegrees = 1.6f; // divider between slices, visual only
         private const float PointerDotSize = 10f;
         private const float FontSize = 15f;
-        private const int SliceTextureSize = 512; // one base and one glow per distinct slice width in use
+        private const int SliceTextureSize = 512;
         private const int DotTextureSize = 32;
 
-        // ---- Look, modelled on EFT's gesture menu: near-black panels with a faint light rim, gold when selected ----
-        // Fade and rim widths are fractions of the ring's thickness, measured in from the nearest slice edge.
-        private const float BaseFadeWidth = 0.35f;   // solid in the middle, only this close to an edge does it thin out
-        private const float BaseEdgeAlpha = 0.45f;  // fraction of the fill's alpha left at the very edge
-        private const float GlowFadeWidth = 0.5f;   // 0.5 reaches the middle of the ring: brightest at the label
+        // Styled after EFT's gesture menu. Widths are fractions of the ring thickness, measured in from the nearest edge.
+        private const float BaseFadeWidth = 0.35f;
+        private const float BaseEdgeAlpha = 0.45f;  // fill alpha left at the edge
+        private const float GlowFadeWidth = 0.5f;   // 0.5 = brightest at the label
         private const float GlowEdgeAlpha = 0.45f;
         private const float RimWidth = 0.04f;
-        private const float OuterGlowWidth = 0.16f; // how far the rim's fuzzy glow reaches past the slice's edges
-        private const float ActiveGlowStrength = 0.4f; // the stance that is on, when not under the pointer
+        private const float OuterGlowWidth = 0.16f; // how far the glow reaches past the edges
+        private const float ActiveGlowStrength = 0.4f; // current stance when it isn't highlighted
 
-        // The ring is drawn smaller than its texture, and the image larger than the wheel by the same factor,
-        // which leaves a margin around the ring for the outer glow.
-        private const float OuterGlowReach = OuterGlowWidth * (1f - InnerRadiusRatio); // as a fraction of the wheel's radius
+        // The ring is drawn smaller than its texture to leave room for the outer glow
+        private const float OuterGlowReach = OuterGlowWidth * (1f - InnerRadiusRatio); // fraction of the wheel radius
         private const float RingScale = 1f / (1f + OuterGlowReach);
         private const float SliceImageSize = WheelDiameter / RingScale;
 
-        // The radial fill only cuts out the part of the texture a slice may draw in: the slice plus some padding
-        // past each divider for its outer glow. The slice's own edges are drawn by the texture.
-        //
-        // Dark panels stop at the middle of the gap, so neighbours meet there without overlapping. The gold glow
-        // gets enough padding to spread its full width over the neighbours.
+        // The radial fill only cuts out the slice plus some padding for its glow. Dark panels stop mid-gap so
+        // neighbours don't overlap, the gold glow gets enough padding to spread fully over them.
         private const float BasePad = GapDegrees * 0.5f;
         private static readonly float GlowPad = Mathf.Min(45f, 1f + Mathf.Rad2Deg * OuterGlowReach / Mathf.Max(InnerRadiusRatio - OuterGlowReach, 0.01f));
 
@@ -106,11 +96,8 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
         private readonly StanceInputListener _inputListener;
 
-        // The six slots, counter-clockwise from the right: the up and down quarters, and the left and right quarters
-        // in two halves each. Which stance each one holds comes from the config.
-        //
-        // A slot set to None has no slice, and its neighbours grow into it (see ApplyLayout). So there can be anything
-        // from six slices down to one that takes the whole circle, or none at all, and then the wheel doesn't open.
+        // CCW from the right. Up and down are quarters, left and right are split into halves.
+        // A slot set to None has no slice and its neighbours grow into it. If all six are None the wheel doesn't open.
         private readonly Slice[] _slices =
         {
             new Slice("Upper Right", 0f, 45f, false, () => PluginConfig.WheelUpperRightStance.Value),
@@ -129,7 +116,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
         private RectTransform? _pointerDot;
         private Sprite? _dotSprite;
 
-        // By slice width: slices of the same width share their textures. Only the widths in use are kept.
+        // Keyed by slice width, slices with the same width share textures
         private readonly Dictionary<float, Sprite> _baseSprites = new Dictionary<float, Sprite>();
         private readonly Dictionary<float, Sprite> _glowSprites = new Dictionary<float, Sprite>();
         private readonly List<float> _unusedWidths = new List<float>();
@@ -141,9 +128,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
         // ================= Lifecycle =================
 
-        // Built here, while the raid is still loading, so the first open doesn't hitch on making the textures.
-        // StanceController only exists on the local player (the common lib's PlayerInitPatch raises OnPlayerInit
-        // for IsYourPlayer only), so this never runs for bots.
+        // Built while the raid loads so the first open doesn't hitch. Only runs for the local player.
         public void RunOnAwake()
         {
             BuildCanvas();
@@ -161,12 +146,12 @@ namespace StanceOverhaul.SubSystem.StanceInput
             KeyboardShortcut key = PluginConfig.StanceSelectorKeybind.Value;
             bool keyIsHeld = key.MainKey != KeyCode.None && Input.GetKey(key.MainKey) && key.Modifiers.All(Input.GetKey);
 
-            // Same gate as the stance keys, plus: no wheel on pistols for now
+            // Same gate as the stance keys, no wheel on pistols for now
             bool canBeOpen = !_inputListener.StanceInputBlocked && !WeaponStateInstance.TreatAsPistol;
 
             if (!IsOpen)
             {
-                // Only a fresh press opens it, so a wheel that was forced shut doesn't pop back up while the key is still held
+                // Fresh press only, so a force-closed wheel doesn't reopen while the key is still held
                 if (keyIsHeld && !_keyWasHeld && canBeOpen)
                     Open();
             }
@@ -194,7 +179,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             if (_canvasObject == null)
                 BuildCanvas();
 
-            // Every slice set to None: there is nothing to pick, so the key does nothing
+            // Every slot is set to None
             if (!ApplyLayout())
                 return;
 
@@ -206,11 +191,8 @@ namespace StanceOverhaul.SubSystem.StanceInput
             _canvasObject!.SetActive(true);
         }
 
-        // Works out the slices from the config: which slots are in use, how far each one reaches, and its stance.
-        // Run on every open, so a changed setting shows up the next time. Returns false when no slot is in use.
-        //
-        // Textures are only made for a slice width that isn't cached yet, which is a first open after a config
-        // change at worst. Widths that are no longer used are dropped.
+        // Runs on every open so config changes show up. Returns false if no slot is in use.
+        // Textures are only made for new slice widths, and ones no longer used are dropped.
         private bool ApplyLayout()
         {
             int count = _slices.Length;
@@ -224,10 +206,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
                 anyInUse |= slice.InUse;
             }
 
-            // The empty slots go to their neighbours, so the slices still cover the whole circle.
-            //
-            // First the halves: where only one half of the left or right quarter is in use, it takes the other half
-            // and becomes the whole quarter.
+            // Empty slots go to their neighbours so the circle stays covered. Halves first: a lone half takes the whole quarter.
             for (int i = 0; i < count; i++)
             {
                 Slice first = _slices[i];
@@ -247,11 +226,8 @@ namespace StanceOverhaul.SubSystem.StanceInput
                 }
             }
 
-            // What is still empty is whole quarters. The slices on either side of an empty stretch take half of it
-            // each: up and down alone split the circle into a top and a bottom half, a left and a right slice into a
-            // left and a right half. A slice on its own gets both halves of its one stretch and so the whole circle.
-            //
-            // Measured before any of it is handed out, so one stretch doesn't change the size of the next.
+            // Anything still empty is whole quarters, split between the slices either side. A single slice ends up with the
+            // whole circle. Gaps are measured before any are shared out so one doesn't change the next.
             for (int i = 0; i < count; i++)
             {
                 Slice slice = _slices[i];
@@ -285,7 +261,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
                 if (!slice.InUse)
                 {
-                    // Its textures may be dropped below
+                    // So its textures can be dropped below
                     if (slice.Panel != null) slice.Panel.sprite = null;
                     if (slice.Glow != null) slice.Glow.sprite = null;
                     continue;
@@ -303,7 +279,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
                     slice.Text.rectTransform.anchoredPosition = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians)) * (radius * LabelRadiusRatio);
                 }
 
-                bool narrow = slice.Width < 90f; // a one-line label doesn't fit in the 45° slices
+                bool narrow = slice.Width < 90f; // one-line labels don't fit the 45° slices
 
                 switch (slice.Stance())
                 {
@@ -349,7 +325,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             return anyInUse;
         }
 
-        // The next slice in use counter-clockwise of this slot. The slice itself when it is the only one.
+        // Next slice in use CCW, or itself if it's the only one
         private Slice NextInUse(int index)
         {
             for (int step = 1; step < _slices.Length; step++)
@@ -363,8 +339,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             return _slices[index];
         }
 
-        // keyReleased = the player let go of the key. False when the wheel was forced shut (aiming, sprinting, ...),
-        // which changes nothing.
+        // keyReleased is false when force-closed (aiming, sprinting...), which leaves the stance alone
         private void Close(bool keyReleased)
         {
             if (!IsOpen)
@@ -381,7 +356,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             if (!keyReleased)
                 return;
 
-            // Released in the centre hub: drop whatever stance is on, so it doesn't have to be picked again to cancel it
+            // Released in the centre: cancel the current stance
             if (selected != null)
                 selected.Toggle();
             else
@@ -390,11 +365,11 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
         private void UpdatePointer()
         {
-            // Raw axes, so EFT's inverted mouse settings don't apply: mouse up is always up on the wheel
+            // Raw axes so EFT's mouse invert doesn't flip the wheel
             Vector2 mouseDelta = new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"));
 
             _pointer += mouseDelta * (BasePointerSensitivity * PluginConfig.StanceSelectorSensitivity.Value);
-            _pointer = Vector2.ClampMagnitude(_pointer, 1f); // so reversing direction is quick
+            _pointer = Vector2.ClampMagnitude(_pointer, 1f); // so changing direction is quick
 
             if (_pointer.magnitude < DeadZone)
             {
@@ -404,7 +379,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
             float angle = Mathf.Atan2(_pointer.y, _pointer.x) * Mathf.Rad2Deg;
 
-            // The slices in use cover the whole circle, so one of them always contains the angle
+            // Slices cover the whole circle, so one always matches
             foreach (Slice slice in _slices)
             {
                 if (slice.InUse && Mathf.Repeat(angle - slice.StartAngle, 360f) < slice.Width)
@@ -429,7 +404,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
                 bool highlighted = slice == _selected;
                 bool active = slice.StanceType == currentStance;
 
-                // The glow texture carries its own colours, so the tint only sets its strength
+                // The glow texture has its own colours, the tint only sets how strong it is
                 if (slice.Glow != null)
                 {
                     slice.Glow.enabled = highlighted || active;
@@ -453,7 +428,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 50;
 
-            // Scales with screen height, so the wheel stays round and the same relative size at any resolution
+            // Scale with screen height so the wheel keeps its size and shape at any resolution
             CanvasScaler scaler = _canvasObject.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
@@ -463,18 +438,18 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
             TMP_FontAsset? font = FindHudFont();
 
-            // One image of each kind per slot. ApplyLayout gives them their texture, angle and size.
+            // ApplyLayout sets their texture, angle and size
             foreach (Slice slice in _slices)
                 slice.Panel = AddSliceImage(slice.Name);
 
-            // Glows after every dark panel, so a glow that spills over a neighbour isn't covered by it
+            // Glows go after all the panels so a glow spilling onto a neighbour isn't covered by it
             foreach (Slice slice in _slices)
             {
                 slice.Glow = AddSliceImage(slice.Name + " Glow");
                 slice.Glow.enabled = false;
             }
 
-            // Labels after the slices, so they draw on top of them
+            // Labels last so they draw on top
             foreach (Slice slice in _slices)
             {
                 RectTransform textRect = CreateChild(slice.Name + " Label", _canvasObject.transform, 160f, 40f);
@@ -537,8 +512,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             return image;
         }
 
-        // Fill runs counter-clockwise from the right, and a positive z rotation is counter-clockwise too. In texture
-        // space the fill starts at 0°, and the slice itself at the padding (see CreateSliceSprite).
+        // Fill and z rotation both run CCW from the right. In texture space the slice starts at the padding.
         private static void PlaceSliceImage(Image image, Slice slice, Sprite sprite, float padDegrees)
         {
             float arc = ArcOf(slice.Width);
@@ -549,14 +523,13 @@ namespace StanceOverhaul.SubSystem.StanceInput
             image.rectTransform.localEulerAngles = new Vector3(0f, 0f, slice.StartAngle + (slice.Width - arc) * 0.5f - pad);
         }
 
-        // The part of a slice's width that is drawn: the rest is the divider line. A slice that takes the whole
-        // circle has no dividers.
+        // The drawn part of a slice, the rest is the divider. A full-circle slice has no dividers.
         private static float ArcOf(float width)
         {
             return width >= 360f ? 360f : width - GapDegrees;
         }
 
-        // No more padding than there is circle left, which is none at all for a slice that takes the whole circle
+        // Can't pad more than the circle that's left
         private static float PadOf(float width, float padDegrees)
         {
             return Mathf.Min(padDegrees, (360f - ArcOf(width)) * 0.5f);
@@ -577,7 +550,6 @@ namespace StanceOverhaul.SubSystem.StanceInput
             return sprite;
         }
 
-        // Frees the textures of slice widths the current layout doesn't have
         private void DropUnusedSprites(Dictionary<float, Sprite> cache)
         {
             _unusedWidths.Clear();
@@ -623,7 +595,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             return rect;
         }
 
-        // White ring with soft edges, tinted through Image.color. An inner ratio of 0 gives a disc.
+        // White soft-edged ring, tinted through Image.color. An inner ratio of 0 gives a disc.
         private static Sprite CreateRingSprite(int size, float innerRadiusRatio)
         {
             const float edgeSoftness = 1.5f; // pixels
@@ -655,21 +627,12 @@ namespace StanceOverhaul.SubSystem.StanceInput
             return Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f));
         }
 
-        // One slice of the ring, in its own colours (the Image tint stays white).
-        //
-        // Everything is driven by the signed distance to the nearest of the slice's four edges (inner arc, outer arc,
-        // both dividers), positive inside the slice:
-        //   inside   the fill is solid in the middle and thins to edgeAlpha over the last fadeWidth, with a light rim
-        //            drawn over it along the edges
-        //   outside  the rim colour carries on as a glow that fades out over OuterGlowWidth
-        // fadeWidth, RimWidth and OuterGlowWidth are fractions of the ring's thickness.
-        //
-        // The slice spans padDegrees to padDegrees + arcDegrees, counter-clockwise from the right. The radial fill
-        // draws from 0° to arcDegrees + 2 x padDegrees, so the padding is how far past a divider the glow can show.
-        // The ring takes up RingScale of the texture, the rest is the margin for the glow past the outer edge.
+        // One slice with its colours baked in, the Image tint stays white. Everything comes from the signed distance to
+        // the nearest edge: inside, the fill thins out towards the edges with a light rim on top, and outside the rim
+        // fades out as a glow. The slice sits at padDegrees so the padding leaves room for the glow past the dividers.
         private static Sprite CreateSliceSprite(int size, float arcDegrees, float padDegrees, Color fill, Color rim, float fadeWidth, float edgeAlpha)
         {
-            const float edgeSoftness = 1.5f; // pixels, antialiasing of the slice's edges
+            const float edgeSoftness = 1.5f; // pixels
 
             float centre = (size - 1) * 0.5f;
             float outerRadius = (size * 0.5f - 1f) * RingScale;
@@ -680,7 +643,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             float glowPixels = Mathf.Max(OuterGlowWidth * thickness, 0.001f);
             float halfArc = arcDegrees * 0.5f;
             float sliceCentre = padDegrees + halfArc;
-            bool hasDividers = arcDegrees < 360f; // a slice that takes the whole circle is a plain ring
+            bool hasDividers = arcDegrees < 360f; // a full-circle slice is just a ring
             Color32[] pixels = new Color32[size * size];
 
             for (int y = 0; y < size; y++)
@@ -691,7 +654,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
                     float dy = y - centre;
                     float distance = Mathf.Sqrt(dx * dx + dy * dy);
 
-                    // Distance to the dividers is measured along the arc, so it is in pixels like the radial ones
+                    // Measured along the arc so it's in pixels like the radial distances
                     float angle = Mathf.Atan2(dy, dx) * Mathf.Rad2Deg;
                     float toDividers = hasDividers
                         ? (halfArc - Mathf.Abs(Mathf.DeltaAngle(angle, sliceCentre))) * Mathf.Deg2Rad * distance
@@ -707,11 +670,11 @@ namespace StanceOverhaul.SubSystem.StanceInput
                     float insideAlpha = rimAlpha + fillAlpha * (1f - rimAlpha);
                     Color insideColor = insideAlpha > 0f ? (rim * rimAlpha + fill * (fillAlpha * (1f - rimAlpha))) / insideAlpha : fill;
 
-                    // Outside: the rim colour, starting at the rim's own strength so the two join up
+                    // Outside: starts at the rim's strength so the two join up
                     float glowStrength = 1f - Mathf.Clamp01(outside / glowPixels);
                     float outsideAlpha = rim.a * glowStrength * glowStrength;
 
-                    // Blend the two across the edge, weighted by alpha so neither colour bleeds into the other
+                    // Alpha-weighted so neither colour bleeds into the other across the edge
                     float coverage = Mathf.Clamp01(signedToEdge / edgeSoftness + 0.5f);
                     float alpha = Mathf.Lerp(outsideAlpha, insideAlpha, coverage);
                     Color color = alpha > 0f
@@ -731,7 +694,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
             return Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f));
         }
 
-        // EFT's HUD font, if it is loaded. Null leaves TextMeshPro's own default font in place.
+        // EFT's HUD font if it's loaded, otherwise TextMeshPro's default
         private static TMP_FontAsset? FindHudFont()
         {
             foreach (TMP_FontAsset font in Resources.FindObjectsOfTypeAll<TMP_FontAsset>())
