@@ -69,6 +69,55 @@ namespace StanceOverhaul.Patches
         }
     }
 
+    // Same shear fix for weapon flashlights. Lights are read when the cameras render, so the rotation is set in
+    // onBeforeRender and left until the next call, which puts the original back first. Nothing else reads it.
+    public static class WeaponLightFovShear
+    {
+        private static readonly AccessTools.FieldRef<TacticalComboVisualController, Light[]> _lightsRef =
+            AccessTools.FieldRefAccess<TacticalComboVisualController, Light[]>("_lights");
+        private static readonly List<(Transform t, Quaternion rot)> _saved = new List<(Transform, Quaternion)>();
+
+        public static void OnBeforeRender()
+        {
+            // the saved list still holds lights that went back to the pool, so they get restored too
+            for (int i = 0; i < _saved.Count; i++)
+            {
+                if (_saved[i].t != null) _saved[i].t.localRotation = _saved[i].rot;
+            }
+            _saved.Clear();
+
+            if (PlayerStateInstance == null) return;
+            Player player = PlayerStateInstance.Player;
+            if (player == null || !player.FirstPersonPointOfView || player.RibcageScaleCurrent >= 1f) return;
+            if (!(player.HandsController is FirearmController fc) || fc.Firearms == null) return;
+
+            TacticalComboVisualController[] controllers = fc.Firearms._tacticalComboVisualControllers;
+            if (controllers == null) return;
+
+            for (int i = 0; i < controllers.Length; i++)
+            {
+                if (controllers[i] == null) continue;
+                Light[] lights = _lightsRef(controllers[i]);
+                if (lights == null) continue;
+
+                for (int j = 0; j < lights.Length; j++)
+                {
+                    Light light = lights[j];
+                    if (light == null || !light.isActiveAndEnabled) continue;
+
+                    Transform t = light.transform;
+                    // laser dot light, LaserBeam places it itself
+                    if (t.parent == null || t.parent.TryGetComponent<LaserBeam>(out _)) continue;
+
+                    Quaternion q = t.localRotation;
+                    _saved.Add((t, q));
+                    Matrix4x4 m = t.parent.localToWorldMatrix;
+                    t.rotation = Quaternion.LookRotation(m.MultiplyVector(q * Vector3.forward), m.MultiplyVector(q * Vector3.up));
+                }
+            }
+        }
+    }
+
     // Stops the mouse turning the player and the free-look head while the stance selection wheel is open.
     // Movement and lean are left alone, so the player can keep walking. Indices follow EAxis:
     // 0-1 move, 2-3 turn, 4-5 free look, 6 lean. InputPreset.UpdateInput refills the array every Update,

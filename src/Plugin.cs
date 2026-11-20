@@ -44,7 +44,6 @@ namespace StanceOverhaul
             //Animation
             new SetFireModePatch().Enable();
             new InitTransformsPatch().Enable();
-            //new ComplexRotationsPatch().Enable();
             new ShouldMoveWeapCloserPatch().Enable();
             new HandIKPatch().Enable();
             new ElbowIKPatch().Enable();
@@ -54,7 +53,6 @@ namespace StanceOverhaul
             new UpdateCurrentScopeRotationPatch().Enable();
 
             //State & Stats
-            //new OperateStationaryWeaponPatch().Enable();
             new UpdateWeaponVariablesPatch().Enable();
             new UpdateHipInaccuracyPatch().Enable();
             new CalculateCameraPositionPatch().Enable();
@@ -64,13 +62,16 @@ namespace StanceOverhaul
             new WeaponOverlappingPatch().Enable();
             new ResetCanUsePropStatePatch().Enable();
             new SetInteractInHandsPatch().Enable();
-            new LaserBeamFovShearPatch().Enable();
+
+            if (PluginConfig.FixDeviceAlignment.Value)
+                new LaserBeamFovShearPatch().Enable();
+
             new AimLegStaminaSpillPatch().Enable();
 
             //Input
             new SelectionWheelAxesPatch().Enable();
 
-                        //new TacticalReloadPatch().Enable();
+            //new TacticalReloadPatch().Enable();
             /*            new SprintPatch().Enable();
                         new DisableAimOnReloadPatch().Enable();*/
             /*            new ChangeScopePatch().Enable();*/
@@ -129,6 +130,9 @@ namespace StanceOverhaul
         void SubscribeToEvents()
         {
             RealismCommonLib.Events.PlayerEvents.OnPlayerInitRef += AddStanceComponentsToPlayer;
+
+            if (PluginConfig.FixDeviceAlignment.Value)
+                Application.onBeforeRender += WeaponLightFovShear.OnBeforeRender;
         }
 
         void AddStanceComponentsToPlayer(Player player)
