@@ -151,7 +151,28 @@ namespace StanceOverhaul.Patches
         }
     }
 
-    public class WeaponOverlappingPatch: ModulePatch
+    // Stops arm stamina consumption from aiming spilling over into leg stamina. Still affects oxygen.
+    public class AimLegStaminaSpillPatch : ModulePatch
+    {
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(Stamina), nameof(Stamina.AddConsumption));
+        }
+
+        [PatchPrefix]
+        private static bool PatchPrefix(Stamina __instance, Physical.Consumption consumption, ref Action? __result)
+        {
+            if (!PluginConfig.EnableStanceStamChanges.Value) return true;
+            if (PlayerStateInstance?.Player == null || __instance != PlayerStateInstance.Player.Physical?.Stamina) return true;
+            if (consumption == null || consumption.ConsumptionType != Physical.EConsumptionType.Aim) return true;
+
+            // vanilla combines this into the consumption's stop action, and combining null is a no-op
+            __result = null;
+            return false;
+        }
+    }
+
+    public class WeaponOverlappingPatch : ModulePatch
     {
         protected override MethodBase GetTargetMethod()
         {

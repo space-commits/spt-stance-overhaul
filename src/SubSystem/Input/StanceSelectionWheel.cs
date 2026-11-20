@@ -71,7 +71,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
         // Styled after EFT's gesture menu. Widths are fractions of the ring thickness, measured in from the nearest edge.
         private const float BaseFadeWidth = 0.35f;
         private const float BaseEdgeAlpha = 0.45f;  // fill alpha left at the edge
-        private const float GlowFadeWidth = 0.5f;   // 0.5 = brightest at the label
+        private const float GlowFadeWidth = 0.4f;   // 0.5 = brightest at the label
         private const float GlowEdgeAlpha = 0.45f;
         private const float RimWidth = 0.04f;
         private const float OuterGlowWidth = 0.16f; // how far the glow reaches past the edges
@@ -87,9 +87,9 @@ namespace StanceOverhaul.SubSystem.StanceInput
         private const float BasePad = GapDegrees * 0.5f;
         private static readonly float GlowPad = Mathf.Min(45f, 1f + Mathf.Rad2Deg * OuterGlowReach / Mathf.Max(InnerRadiusRatio - OuterGlowReach, 0.01f));
 
-        private static readonly Color BaseFillColor = new Color(0.055f, 0.055f, 0.05f, 0.92f);
+        private static readonly Color BaseFillColor = new Color(0.055f, 0.055f, 0.05f, 0.88f);
         private static readonly Color BaseRimColor = new Color(0.62f, 0.62f, 0.58f, 0.15f);
-        private static readonly Color GlowFillColor = new Color(0.34f, 0.3f, 0.14f, 0.9f);
+        private static readonly Color GlowFillColor = new Color(0.34f, 0.3f, 0.14f, 0.8f);
         private static readonly Color GlowRimColor = new Color(1f, 0.88f, 0.5f, 0.35f);
         private static readonly Color TextColor = new Color(0.83f, 0.83f, 0.79f, 1f);
         private static readonly Color HighlightTextColor = new Color(1f, 0.93f, 0.66f, 1f);

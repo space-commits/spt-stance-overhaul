@@ -195,7 +195,11 @@ namespace StanceOverhaul.State
             //an idle primary still holds (1 - w) of the cross-fade: keep it until the incoming reaches its pose or fades out,
             //otherwise the incoming is promoted mid-blend and drawn at full weight in one frame
             bool incomingIsBlending = _incoming != null && !_incomingPaused && !_incoming.IsAtPose;
-            if (PrimarySlot?.IsAtIdle == true && !incomingIsBlending)
+
+            //an incoming holding its pose fully covers the primary, so drop the primary even if it's still exiting.
+            //otherwise a slow stance-to-stance exit lingers and shows again if the incoming is cancelled
+            bool incomingCoversPrimary = _incoming != null && !_incomingPaused && _incoming.IsAtPose && _incoming.Direction == 0;
+            if (PrimarySlot != null && (incomingCoversPrimary || (PrimarySlot.IsAtIdle && !incomingIsBlending)))
                 PrimarySlot = null;
 
             //promote incoming if primary is gone

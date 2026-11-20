@@ -65,6 +65,7 @@ namespace StanceOverhaul
             new ResetCanUsePropStatePatch().Enable();
             new SetInteractInHandsPatch().Enable();
             new LaserBeamFovShearPatch().Enable();
+            new AimLegStaminaSpillPatch().Enable();
 
             //Input
             new SelectionWheelAxesPatch().Enable();
