@@ -25,6 +25,8 @@ namespace StanceOverhaul.SubSystem
             StanceEvents.OnTacSprintEnded += OnExternalStateChange;
             RealismCommonLib.Events.PlayerEvents.OnWeaponEquipped += OnExternalStateChange;
             RealismCommonLib.Events.PlayerEvents.AimStateChanged += OnExternalStateChange;
+            // EFT overwrites SprintAcceleration and PreSprintAcceleration when it recalculates weight, re-apply the bonuses
+            RealismCommonLib.Events.PlayerEvents.OnWeightUpdated += OnExternalStateChange;
 
             _walkSpeed = StatModifiers.WalkSpeedModifier.Add(1f);
             _sprintSpeed = StatModifiers.SprintSpeedModifier.Add(1f);
@@ -40,6 +42,7 @@ namespace StanceOverhaul.SubSystem
             StanceEvents.OnTacSprintEnded -= OnExternalStateChange;
             RealismCommonLib.Events.PlayerEvents.OnWeaponEquipped -= OnExternalStateChange;
             RealismCommonLib.Events.PlayerEvents.AimStateChanged -= OnExternalStateChange;
+            RealismCommonLib.Events.PlayerEvents.OnWeightUpdated -= OnExternalStateChange;
 
             StatModifiers.WalkSpeedModifier.Remove(_walkSpeed);
             StatModifiers.SprintSpeedModifier.Remove(_sprintSpeed);
@@ -76,12 +79,14 @@ namespace StanceOverhaul.SubSystem
             physical.PreSprintAcceleration = inertia.PreSprintAccelerationLimits.Evaluate(physical.Inertia);
 
             float tacSprintAccelBonus = StanceControllerInstance.IsDoingTacSprint ? PluginConfig.TacSprintAccelBonus.Value : 1f;
+            bool stanceSpeedChanges = PluginConfig.EnableStanceMovementSpeedChanges.Value;
+            float stanceAccelBonus = stanceSpeedChanges ? stance.SprintAccelBonus : 1f;
 
             //Todo: move to common lib
-            physical.SprintAcceleration *= stance.SprintAccelBonus * tacSprintAccelBonus;
-            physical.PreSprintAcceleration *= stance.SprintAccelBonus * tacSprintAccelBonus;
+            physical.SprintAcceleration *= stanceAccelBonus * tacSprintAccelBonus;
+            physical.PreSprintAcceleration *= stanceAccelBonus * tacSprintAccelBonus;
 
-            _walkSpeed.Multiplier = stance.WalkSpeedBonus;
+            _walkSpeed.Multiplier = stanceSpeedChanges ? stance.WalkSpeedBonus : 1f;
 
             _sprintSpeed.Multiplier = StanceControllerInstance.IsDoingTacSprint ? PluginConfig.TacSprintSpeedBonus.Value : 1f;
 

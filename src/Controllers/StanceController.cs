@@ -152,6 +152,15 @@ namespace StanceOverhaul.Controllers
             }
         }
 
+        // progress per second of the stance transition currently moving the weapon, 0 when no stance slot exists
+        public float CurrentTransitionSpeed
+        {
+            get
+            {
+                return _stanceState != null ? _stanceState.CurrentTransitionSpeed : 0f;
+            }
+        }
+
         // 0 = not in active aim, 1 = fully at active aim pose, follows the stance's enter/exit progress
         public float ActiveAimPoseWeight
         {
@@ -298,6 +307,7 @@ namespace StanceOverhaul.Controllers
         private InputHookPipeline _inputHookPipeline;
         private StanceInputHandler _inputHandler;
         private StanceInputListener _inputListener;
+        private StanceSelectionWheel _selectionWheel;
         private StanceStaminaSystem _staminaSystem;
         private StanceMovementSystem _movementSystem;
         private TacSprintSystem _tacSprintSystem;
@@ -433,6 +443,9 @@ namespace StanceOverhaul.Controllers
             _inputListener =
                 InitStateController(() => new StanceInputListener());
 
+            _selectionWheel =
+                InitStateController(() => new StanceSelectionWheel(_inputListener));
+
             _stanceAudioSystem =
                 InitStateController(() => new StanceAudioSystem());
 
@@ -513,7 +526,7 @@ namespace StanceOverhaul.Controllers
         // (and a refresh during ADS, e.g. a scope change, doesn't leave the bonus off after aiming)
         private void UpdateHipInaccuracyOnAimChange()
         {
-            PlayerStateInstance.FirearmController?.UpdateHipInaccuracy();
+            PlayerStateInstance.RequestHipInaccuracyRefresh();
         }
 
         private void SubscribeToInputEvents()

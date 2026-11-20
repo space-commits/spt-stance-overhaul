@@ -129,6 +129,13 @@ namespace StanceOverhaul.State
         public bool IsIdle => ActiveStance == null;
 
         /// <summary>
+        /// Speed (progress per second) of the slot driving the visible motion: the incoming once it's blending,
+        /// otherwise the primary. 0 when no slot exists.
+        /// </summary>
+        public float CurrentTransitionSpeed =>
+            _incoming != null && !_incomingPaused ? _incoming.Speed : PrimarySlot?.Speed ?? 0f;
+
+        /// <summary>
         /// How much of the given stance's pose is currently applied, 0 = none/idle, 1 = fully at pose.
         /// Follows the stance whether it's primary or incoming, entering or exiting.
         /// </summary>
@@ -188,7 +195,11 @@ namespace StanceOverhaul.State
             //an idle primary still holds (1 - w) of the cross-fade: keep it until the incoming reaches its pose or fades out,
             //otherwise the incoming is promoted mid-blend and drawn at full weight in one frame
             bool incomingIsBlending = _incoming != null && !_incomingPaused && !_incoming.IsAtPose;
-            if (PrimarySlot?.IsAtIdle == true && !incomingIsBlending)
+
+            //an incoming holding its pose fully covers the primary, so drop the primary even if it's still exiting.
+            //otherwise a slow stance-to-stance exit lingers and shows again if the incoming is cancelled
+            bool incomingCoversPrimary = _incoming != null && !_incomingPaused && _incoming.IsAtPose && _incoming.Direction == 0;
+            if (PrimarySlot != null && (incomingCoversPrimary || (PrimarySlot.IsAtIdle && !incomingIsBlending)))
                 PrimarySlot = null;
 
             //promote incoming if primary is gone

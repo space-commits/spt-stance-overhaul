@@ -110,9 +110,10 @@ namespace StanceOverhaul.Stances
         public virtual Vector3 AltAimCorrectedPositionAxes => Vector3.zero;
 
         /// <summary>
-        /// Blend threshold for this stance when transitioning to another stance.
-        /// Value of 0 means it will immediately let the next stance's animation take over, 
-        /// while a value of 1 means it will fully play this stance's animation before transitioning.
+        /// How far the outgoing stance must get toward idle (its IdleProximity) before this stance starts blending in.
+        /// Called on the incoming stance with the outgoing stance's type, despite the parameter name,
+        /// so "Blend Threshold: X" in a stance's config controls X -> this stance.
+        /// 0 = this stance starts blending in right away, 1 = the outgoing stance fully exits first.
         /// </summary>
         public virtual float BlendIntoThreshold(EStanceType nextStance) { return 0.5f; }
 
