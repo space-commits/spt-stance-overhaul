@@ -50,6 +50,7 @@ namespace StanceOverhaul
             new PropSoundPatch().Enable();
             new PreRecoilPosePatch().Enable();
             new PostRecoilPosePatch().Enable();
+            new AfterRecoilOffsetPatch().Enable();
             new UpdateCurrentScopeRotationPatch().Enable();
 
             //State & Stats

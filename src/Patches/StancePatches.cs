@@ -27,10 +27,11 @@ namespace StanceOverhaul.Patches
     // that axis (e.g. a stance) is drawn sheared and its barrel looks more angled than its real rotation. LaserBeam aims along
     // transform.rotation, which ignores that shear, so the laser leaves at an angle to the visible barrel. For the duration of
     // LateUpdate, point the emitter along its sheared forward (the same direction AdjustShotVectors gives bullets), then restore it.
-    // No-op when the scale is 1 (bots, third person, FOV-Fix FOV Scale 1). See Realism docs/Assembly/Lasers-Lights-And-FOV-Scale.md.
+    // Skips other players' lasers, third person and a scale of 1 (FOV-Fix FOV Scale 1). See Realism docs/Assembly/Lasers-Lights-And-FOV-Scale.md.
     public class LaserBeamFovShearPatch : ModulePatch
     {
         private static readonly AccessTools.FieldRef<LaserBeam, Light> _lightRef = AccessTools.FieldRefAccess<LaserBeam, Light>("_light");
+        private static readonly AccessTools.FieldRef<LaserBeam, bool> _isYourPlayerRef = AccessTools.FieldRefAccess<LaserBeam, bool>("_isYourPlayer");
 
         protected override MethodBase GetTargetMethod()
         {
@@ -38,25 +39,36 @@ namespace StanceOverhaul.Patches
         }
 
         [PatchPrefix]
-        private static void Prefix(LaserBeam __instance, out Quaternion __state)
+        private static void Prefix(LaserBeam __instance, out Quaternion? __state)
         {
+            // null tells the postfix nothing was changed, so other players' lasers cost no transform work
+            __state = null;
+            if (!_isYourPlayerRef(__instance) || PlayerStateInstance == null) return;
+
+            // nothing is sheared unless the local player is in first person with a scale below 1
+            Player p = PlayerStateInstance.Player;
+            if (p == null || !p.FirstPersonPointOfView || p.RibcageScaleCurrent >= 1f) return;
+
             Transform t = __instance.transform;
-            __state = t.localRotation;
             if (t.parent == null) return;
 
+            Quaternion q = t.localRotation;
+            __state = q;
             // parent matrix only, so the emitter's own scale can't flip or skew its axes
             Matrix4x4 m = t.parent.localToWorldMatrix;
-            t.rotation = Quaternion.LookRotation(m.MultiplyVector(__state * Vector3.forward), m.MultiplyVector(__state * Vector3.up));
+            t.rotation = Quaternion.LookRotation(m.MultiplyVector(q * Vector3.forward), m.MultiplyVector(q * Vector3.up));
         }
 
         [PatchPostfix]
-        private static void Postfix(LaserBeam __instance, Quaternion __state)
+        private static void Postfix(LaserBeam __instance, Quaternion? __state)
         {
+            if (!__state.HasValue) return;
+
             Transform t = __instance.transform;
             Light light = _lightRef(__instance);
             if (light == null)
             {
-                t.localRotation = __state;
+                t.localRotation = __state.Value;
                 return;
             }
 
@@ -64,7 +76,7 @@ namespace StanceOverhaul.Patches
             Transform lt = light.transform;
             Vector3 lightPos = lt.position;
             Quaternion lightRot = lt.rotation;
-            t.localRotation = __state;
+            t.localRotation = __state.Value;
             lt.SetPositionAndRotation(lightPos, lightRot);
         }
     }
@@ -377,9 +389,10 @@ namespace StanceOverhaul.Patches
             // Elbow points down, outward (left, for the left arm), slightly forward.
             Vector3 elbowDir = (torso.up * -0.6f + (-torso.right) * 0.5f + torso.forward * -0.25f).normalized; // -0.8f + (-torso.right) * 1f + torso.forward * -0.25f
 
+            // Seems to make it worse, noticed with Scope Handjob mod.
             // Guard against collinearity with the target direction (the degenerate case above)
-            if (Mathf.Abs(Vector3.Dot(elbowDir, toTarget)) > 0.9f) // 0.1f
-                elbowDir = Vector3.Slerp(elbowDir, torso.forward, 0.5f).normalized; //  0f
+            // if (Mathf.Abs(Vector3.Dot(elbowDir, toTarget)) > 0.9f) // 0.1f
+            //     elbowDir = Vector3.Slerp(elbowDir, torso.forward, 0.5f).normalized; //  0f
 
             // Hand the elbow back to vanilla when an animation owns it. blind fire is a body animation
             // and Elbow_Left is vanilla's own "animated elbow" weight.
@@ -980,6 +993,30 @@ namespace StanceOverhaul.Patches
         {
             if (PlayerStateInstance?.PWA != __instance) return;
             RecoilPoseCapture.CapturePostRecoil(__instance.HandsContainer.WeaponRootAnim.parent, ____temporaryPosition, ____temporaryRotation);
+        }
+    }
+
+    // EFT rests the gun's rotation recoil at a random offset after firing instead of 0, and the aimed camera turns to it,
+    // so the camera moved on ADS in/out after a burst. Zero the target so recoil settles back where it started.
+    // See docs/implementation-plans/Recoil-Rest-Offset-Removal-Plan.md
+    public class AfterRecoilOffsetPatch : ModulePatch
+    {
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(NewRotationRecoilProcess), nameof(NewRotationRecoilProcess.CalculateAfterRecoilWeaponOffset));
+        }
+
+        [PatchPostfix]
+        private static void PatchPostfix(NewRotationRecoilProcess __instance)
+        {
+            if (!PluginConfig.EnableAltAim.Value)
+                return;
+
+            // shared with bots
+            if (!ReferenceEquals(__instance, PlayerStateInstance?.PWA?.Shootingg?.CurrentRecoilEffect?.HandRotationRecoilEffect))
+                return;
+
+            __instance._afterRecoilDefaultPosition = Vector2.zero;
         }
     }
 
