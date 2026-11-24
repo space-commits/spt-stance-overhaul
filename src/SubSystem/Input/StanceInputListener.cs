@@ -1,4 +1,5 @@
-﻿using RealismCommonLib.Events;
+﻿using BepInEx.Configuration;
+using RealismCommonLib.Events;
 using StanceOverhaul.Enums;
 using StanceOverhaul.State;
 using System;
@@ -215,7 +216,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
         public void CheckForPatrolInput()
         {
-            if (Input.GetKeyDown(PluginConfig.PatrolKeybind.Value.MainKey) && PluginConfig.PatrolKeybind.Value.Modifiers.All(Input.GetKey))
+            if (Input.GetKeyDown(PluginConfig.PatrolKeybind.Value.MainKey) && ModifiersMatch(PluginConfig.PatrolKeybind.Value))
             {
                 StanceInputEvents.RaiseTogglePatrolStance();
             }
@@ -223,7 +224,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
         public void CheckForLowReadyInput()
         {
-            if (Input.GetKeyDown(PluginConfig.LowReadyKeybind.Value.MainKey) && PluginConfig.LowReadyKeybind.Value.Modifiers.All(Input.GetKey))
+            if (Input.GetKeyDown(PluginConfig.LowReadyKeybind.Value.MainKey) && ModifiersMatch(PluginConfig.LowReadyKeybind.Value))
             {
                 StanceInputEvents.RaiseToggleLowReady();
             }
@@ -231,7 +232,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
         public void CheckForHighReadyInput()
         {
-            if (Input.GetKeyDown(PluginConfig.HighReadyKeybind.Value.MainKey) && PluginConfig.HighReadyKeybind.Value.Modifiers.All(Input.GetKey))
+            if (Input.GetKeyDown(PluginConfig.HighReadyKeybind.Value.MainKey) && ModifiersMatch(PluginConfig.HighReadyKeybind.Value))
             {
                 StanceInputEvents.RaiseToggleHighReady();
             }
@@ -239,7 +240,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
 
         public void CheckForShortStockInput()
         {
-            if (Input.GetKeyDown(PluginConfig.ShortStockKeybind.Value.MainKey) && PluginConfig.ShortStockKeybind.Value.Modifiers.All(Input.GetKey))
+            if (Input.GetKeyDown(PluginConfig.ShortStockKeybind.Value.MainKey) && ModifiersMatch(PluginConfig.ShortStockKeybind.Value))
             {
                 StanceInputEvents.RaiseToggleShortStock();
             }
@@ -249,11 +250,30 @@ namespace StanceOverhaul.SubSystem.StanceInput
         {
             if (!_meleeIsToggleable) return;
 
-            if (Input.GetKeyDown(PluginConfig.MeleeKeybind.Value.MainKey) && PluginConfig.MeleeKeybind.Value.Modifiers.All(Input.GetKey))
+            if (Input.GetKeyDown(PluginConfig.MeleeKeybind.Value.MainKey) && ModifiersMatch(PluginConfig.MeleeKeybind.Value))
             {
                 StanceInputEvents.RaiseToggleMelee();
                 _meleeIsToggleable = false;
             }
+        }
+
+        private static readonly KeyCode[] _modifierKeys =
+        {
+            KeyCode.LeftControl, KeyCode.RightControl,
+            KeyCode.LeftShift, KeyCode.RightShift,
+            KeyCode.LeftAlt, KeyCode.RightAlt,
+        };
+
+        internal static bool ModifiersMatch(KeyboardShortcut s) => s.Modifiers.All(Input.GetKey) && !HasUnboundModifierHeld(s);
+
+        private static bool HasUnboundModifierHeld(KeyboardShortcut shortcut)
+        {
+            foreach (KeyCode mod in _modifierKeys)
+            {
+                if (mod != shortcut.MainKey && Input.GetKey(mod) && !shortcut.Modifiers.Contains(mod))
+                    return true;
+            }
+            return false;
         }
 
         public void CheckForActimeAimInput()
@@ -268,9 +288,11 @@ namespace StanceOverhaul.SubSystem.StanceInput
             KeyCode activeAimKey = PluginConfig.ActiveAimKeybind.Value.MainKey;
             bool keyIsUsedByWheel = activeAimKey != KeyCode.None && activeAimKey == PluginConfig.StanceSelectorKeybind.Value.MainKey;
 
+            // Modifiers.All only checks the bound modifiers are held; extra held modifiers (Ctrl+key) must not trigger it.
             bool keyIsHeld = !keyIsUsedByWheel
                 && Input.GetKey(activeAimKey)
-                && PluginConfig.ActiveAimKeybind.Value.Modifiers.All(Input.GetKey);
+                && PluginConfig.ActiveAimKeybind.Value.Modifiers.All(Input.GetKey)
+                && !HasUnboundModifierHeld(PluginConfig.ActiveAimKeybind.Value);
             bool anyHeld = keyIsHeld || activeAimOverridesAds;
 
             if (!PluginConfig.ToggleActiveAim.Value)

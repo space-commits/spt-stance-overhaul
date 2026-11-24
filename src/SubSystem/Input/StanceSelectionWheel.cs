@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using BepInEx.Configuration;
@@ -144,7 +144,7 @@ namespace StanceOverhaul.SubSystem.StanceInput
         public void RunOnUpdate(float deltaTime)
         {
             KeyboardShortcut key = PluginConfig.StanceSelectorKeybind.Value;
-            bool keyIsHeld = key.MainKey != KeyCode.None && Input.GetKey(key.MainKey) && key.Modifiers.All(Input.GetKey);
+            bool keyIsHeld = key.MainKey != KeyCode.None && Input.GetKey(key.MainKey) && StanceInputListener.ModifiersMatch(key);
 
             // Same gate as the stance keys, no wheel on pistols for now
             bool canBeOpen = !_inputListener.StanceInputBlocked && !WeaponStateInstance.TreatAsPistol;
