@@ -1,0 +1,26 @@
+{
+  "EItemAttributeId/RealismBlocksAds": "Bloque la visée",
+  "EItemAttributeId/RealismBlocksAds/Value/WhenLowered": "Si abaissée",
+  "EItemAttributeId/RealismBlocksAds/Value/Always": "Toujours",
+  "EItemAttributeId/RealismBlocksAds/Tooltip/WhenLowered": "Cette visière pare-balles NE permet PAS d'utiliser les viseurs avec une crosse déployée/dépliée, sauf si l'arme/la crosse le permet.",
+  "EItemAttributeId/RealismBlocksAds/Tooltip/Always": "Cet équipement empêche d'utiliser les viseurs avec une crosse déployée/dépliée, sauf si l'arme/la crosse le permet.",
+
+  "EItemAttributeId/RealismAllowsAds": "Permet la visée",
+  "EItemAttributeId/RealismAllowsAds/Tooltip": "Cette visière pare-balles permet d'utiliser les viseurs avec n'importe quelle crosse déployée.",
+
+  "EItemAttributeId/RealismAllowsFaceShieldAds": "Permet la visée avec visière",
+  "EItemAttributeId/RealismAllowsFaceShieldAds/Tooltip": "Cette crosse permet de viser avec n'importe quelle visière pare-balles.",
+
+  "EItemAttributeId/RealismShoulderContact": "Appui à l'épaule",
+  "EItemAttributeId/RealismShoulderContact/Tooltip": "Déployée/dépliée, cette crosse s'appuie à l'épaule : l'équipement qui empêche d'utiliser les viseurs s'applique donc, sauf si l'arme/la crosse le permet.",
+
+  "EItemAttributeId/RealismFaceShieldAds": "Visée avec visière",
+  "EItemAttributeId/RealismFaceShieldAds/Value/Blocked": "Bloquée",
+  "EItemAttributeId/RealismFaceShieldAds/Value/WeaponAllows": "Permise (arme)",
+  "EItemAttributeId/RealismFaceShieldAds/Value/StockAllows": "Permise (crosse)",
+  "EItemAttributeId/RealismFaceShieldAds/Value/NoShoulderContact": "Permise (sans appui à l'épaule)",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/Blocked": "L'équipement qui empêche d'utiliser les viseurs, comme une visière pare-balles abaissée, empêche de viser avec cette arme lorsqu'elle est épaulée (crosse déployée/dépliée).",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/WeaponAllows": "Cette arme permet de viser avec n'importe quelle visière pare-balles.",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/StockAllows": "Une crosse de cette arme permet de viser avec n'importe quelle visière pare-balles.",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/NoShoulderContact": "Cette arme n'est pas épaulée (pas de crosse, ou crosse repliée) : les visières pare-balles et les autres équipements n'empêchent donc pas d'utiliser les viseurs."
+}

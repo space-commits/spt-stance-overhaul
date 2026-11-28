@@ -1,0 +1,26 @@
+{
+  "EItemAttributeId/RealismBlocksAds": "Bloqueia a mira",
+  "EItemAttributeId/RealismBlocksAds/Value/WhenLowered": "Quando abaixada",
+  "EItemAttributeId/RealismBlocksAds/Value/Always": "Sempre",
+  "EItemAttributeId/RealismBlocksAds/Tooltip/WhenLowered": "Esta proteção de rosto NÃO permite usar as miras com uma coronha estendida/desdobrada, a menos que a arma/coronha o permita.",
+  "EItemAttributeId/RealismBlocksAds/Tooltip/Always": "Este equipamento impede o uso das miras com uma coronha estendida/desdobrada, a menos que a arma/coronha o permita.",
+
+  "EItemAttributeId/RealismAllowsAds": "Permite mirar",
+  "EItemAttributeId/RealismAllowsAds/Tooltip": "Esta proteção de rosto permite usar as miras com qualquer coronha estendida.",
+
+  "EItemAttributeId/RealismAllowsFaceShieldAds": "Permite mirar com proteção de rosto",
+  "EItemAttributeId/RealismAllowsFaceShieldAds/Tooltip": "Esta coronha permite mirar com qualquer proteção de rosto.",
+
+  "EItemAttributeId/RealismShoulderContact": "Apoio no ombro",
+  "EItemAttributeId/RealismShoulderContact/Tooltip": "Esta coronha se apoia no ombro quando estendida/desdobrada, por isso o equipamento que impede o uso das miras se aplica, a menos que a arma/coronha o permita.",
+
+  "EItemAttributeId/RealismFaceShieldAds": "Mirar com proteção de rosto",
+  "EItemAttributeId/RealismFaceShieldAds/Value/Blocked": "Bloqueado",
+  "EItemAttributeId/RealismFaceShieldAds/Value/WeaponAllows": "Permitido (arma)",
+  "EItemAttributeId/RealismFaceShieldAds/Value/StockAllows": "Permitido (coronha)",
+  "EItemAttributeId/RealismFaceShieldAds/Value/NoShoulderContact": "Permitido (sem apoio no ombro)",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/Blocked": "Equipamentos que impedem o uso das miras, como uma proteção de rosto abaixada, impedem mirar com esta arma enquanto ela estiver apoiada no ombro (coronha estendida/desdobrada).",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/WeaponAllows": "Esta arma permite mirar com qualquer proteção de rosto.",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/StockAllows": "Uma coronha nesta arma permite mirar com qualquer proteção de rosto.",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/NoShoulderContact": "Esta arma não está apoiada no ombro (sem coronha, ou com a coronha dobrada), por isso proteções de rosto e outros equipamentos não impedem o uso das miras."
+}

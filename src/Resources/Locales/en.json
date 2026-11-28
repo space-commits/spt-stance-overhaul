@@ -1,0 +1,26 @@
+{
+  "EItemAttributeId/RealismBlocksAds": "Blocks ADS",
+  "EItemAttributeId/RealismBlocksAds/Value/WhenLowered": "When lowered",
+  "EItemAttributeId/RealismBlocksAds/Value/Always": "Always",
+  "EItemAttributeId/RealismBlocksAds/Tooltip/WhenLowered": "This faceshield does NOT allow the use of sights while using a stock in the extended/unfolded position, unless the weapon/stock allows it.",
+  "EItemAttributeId/RealismBlocksAds/Tooltip/Always": "This gear item blocks the use of sights while using a stock in the extended/unfolded position, unless the weapon/stock allows it.",
+
+  "EItemAttributeId/RealismAllowsAds": "Allows ADS",
+  "EItemAttributeId/RealismAllowsAds/Tooltip": "This faceshield allows the use of sights while using any stock in the extended position.",
+
+  "EItemAttributeId/RealismAllowsFaceShieldAds": "Allows ADS with face shield",
+  "EItemAttributeId/RealismAllowsFaceShieldAds/Tooltip": "This stock allows aiming down sights with any faceshield.",
+
+  "EItemAttributeId/RealismShoulderContact": "Shoulder contact",
+  "EItemAttributeId/RealismShoulderContact/Tooltip": "This stock is shouldered while extended/unfolded, so gear that blocks the use of sights applies unless the weapon/stock allows it.",
+
+  "EItemAttributeId/RealismFaceShieldAds": "Face shield ADS",
+  "EItemAttributeId/RealismFaceShieldAds/Value/Blocked": "Blocked",
+  "EItemAttributeId/RealismFaceShieldAds/Value/WeaponAllows": "Allowed (weapon)",
+  "EItemAttributeId/RealismFaceShieldAds/Value/StockAllows": "Allowed (stock)",
+  "EItemAttributeId/RealismFaceShieldAds/Value/NoShoulderContact": "Allowed (no shoulder contact)",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/Blocked": "Gear that blocks the use of sights, such as a lowered faceshield, prevents aiming down sights with this weapon while it is shouldered (stock extended/unfolded).",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/WeaponAllows": "This weapon allows aiming down sights with any faceshield.",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/StockAllows": "A stock on this weapon allows aiming down sights with any faceshield.",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/NoShoulderContact": "This weapon isn't shouldered (no stock, or the stock is folded), so faceshields and other gear don't block the use of sights."
+}

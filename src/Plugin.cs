@@ -28,6 +28,8 @@ namespace StanceOverhaul
 
             ModuleServices.Register<IStanceInfo>(new StanceInfoProvider());
 
+            ItemStats.FaceShieldAdsAttributes.Register();
+
             SubscribeToEvents();
 
             EnablePatches();

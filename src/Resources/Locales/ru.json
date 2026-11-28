@@ -1,0 +1,26 @@
+{
+  "EItemAttributeId/RealismBlocksAds": "Блокирует прицеливание",
+  "EItemAttributeId/RealismBlocksAds/Value/WhenLowered": "В опущенном положении",
+  "EItemAttributeId/RealismBlocksAds/Value/Always": "Всегда",
+  "EItemAttributeId/RealismBlocksAds/Tooltip/WhenLowered": "Это бронезабрало НЕ позволяет пользоваться прицелами при выдвинутом/разложенном прикладе, если только оружие/приклад этого не разрешает.",
+  "EItemAttributeId/RealismBlocksAds/Tooltip/Always": "Этот предмет снаряжения не позволяет пользоваться прицелами при выдвинутом/разложенном прикладе, если только оружие/приклад этого не разрешает.",
+
+  "EItemAttributeId/RealismAllowsAds": "Разрешает прицеливание",
+  "EItemAttributeId/RealismAllowsAds/Tooltip": "Это бронезабрало позволяет пользоваться прицелами с любым выдвинутым прикладом.",
+
+  "EItemAttributeId/RealismAllowsFaceShieldAds": "Разрешает прицеливание с бронезабралом",
+  "EItemAttributeId/RealismAllowsFaceShieldAds/Tooltip": "Этот приклад позволяет прицеливаться с любым бронезабралом.",
+
+  "EItemAttributeId/RealismShoulderContact": "Упор в плечо",
+  "EItemAttributeId/RealismShoulderContact/Tooltip": "В выдвинутом/разложенном положении этот приклад упирается в плечо, поэтому снаряжение, мешающее пользоваться прицелами, действует, если только оружие/приклад этого не разрешает.",
+
+  "EItemAttributeId/RealismFaceShieldAds": "Прицеливание с бронезабралом",
+  "EItemAttributeId/RealismFaceShieldAds/Value/Blocked": "Заблокировано",
+  "EItemAttributeId/RealismFaceShieldAds/Value/WeaponAllows": "Разрешено (оружие)",
+  "EItemAttributeId/RealismFaceShieldAds/Value/StockAllows": "Разрешено (приклад)",
+  "EItemAttributeId/RealismFaceShieldAds/Value/NoShoulderContact": "Разрешено (нет упора в плечо)",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/Blocked": "Снаряжение, мешающее пользоваться прицелами, например опущенное бронезабрало, не позволяет прицеливаться из этого оружия, пока оно упёрто в плечо (приклад выдвинут/разложен).",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/WeaponAllows": "Это оружие позволяет прицеливаться с любым бронезабралом.",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/StockAllows": "Приклад на этом оружии позволяет прицеливаться с любым бронезабралом.",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/NoShoulderContact": "Это оружие не упирается в плечо (нет приклада или он сложен), поэтому бронезабрала и другое снаряжение не мешают пользоваться прицелами."
+}

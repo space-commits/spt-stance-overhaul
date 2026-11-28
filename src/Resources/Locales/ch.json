@@ -1,0 +1,26 @@
+{
+  "EItemAttributeId/RealismBlocksAds": "阻挡瞄准",
+  "EItemAttributeId/RealismBlocksAds/Value/WhenLowered": "放下时",
+  "EItemAttributeId/RealismBlocksAds/Value/Always": "始终",
+  "EItemAttributeId/RealismBlocksAds/Tooltip/WhenLowered": "枪托处于伸出/展开状态时，此面罩不允许使用瞄具，除非武器/枪托允许。",
+  "EItemAttributeId/RealismBlocksAds/Tooltip/Always": "枪托处于伸出/展开状态时，此装备会阻挡瞄具的使用，除非武器/枪托允许。",
+
+  "EItemAttributeId/RealismAllowsAds": "允许瞄准",
+  "EItemAttributeId/RealismAllowsAds/Tooltip": "使用任何伸出的枪托时，此面罩均允许使用瞄具。",
+
+  "EItemAttributeId/RealismAllowsFaceShieldAds": "允许佩戴面罩瞄准",
+  "EItemAttributeId/RealismAllowsFaceShieldAds/Tooltip": "此枪托允许佩戴任何面罩时使用瞄具瞄准。",
+
+  "EItemAttributeId/RealismShoulderContact": "抵肩",
+  "EItemAttributeId/RealismShoulderContact/Tooltip": "此枪托伸出/展开时会抵住肩部，因此阻挡瞄具使用的装备会生效，除非武器/枪托允许。",
+
+  "EItemAttributeId/RealismFaceShieldAds": "佩戴面罩瞄准",
+  "EItemAttributeId/RealismFaceShieldAds/Value/Blocked": "受阻",
+  "EItemAttributeId/RealismFaceShieldAds/Value/WeaponAllows": "允许（武器）",
+  "EItemAttributeId/RealismFaceShieldAds/Value/StockAllows": "允许（枪托）",
+  "EItemAttributeId/RealismFaceShieldAds/Value/NoShoulderContact": "允许（未抵肩）",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/Blocked": "阻挡瞄具使用的装备（如放下的面罩）会在此武器抵肩时（枪托伸出/展开）阻止瞄准。",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/WeaponAllows": "此武器允许佩戴任何面罩时使用瞄具瞄准。",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/StockAllows": "此武器上的枪托允许佩戴任何面罩时使用瞄具瞄准。",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/NoShoulderContact": "此武器未抵肩（没有枪托或枪托已折叠），因此面罩和其他装备不会阻挡瞄具的使用。"
+}

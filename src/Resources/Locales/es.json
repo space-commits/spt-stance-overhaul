@@ -1,0 +1,26 @@
+{
+  "EItemAttributeId/RealismBlocksAds": "Bloquea el apuntado",
+  "EItemAttributeId/RealismBlocksAds/Value/WhenLowered": "Cuando está bajado",
+  "EItemAttributeId/RealismBlocksAds/Value/Always": "Siempre",
+  "EItemAttributeId/RealismBlocksAds/Tooltip/WhenLowered": "Este protector facial NO permite usar las miras con una culata extendida/desplegada, salvo que el arma/la culata lo permita.",
+  "EItemAttributeId/RealismBlocksAds/Tooltip/Always": "Este equipo impide usar las miras con una culata extendida/desplegada, salvo que el arma/la culata lo permita.",
+
+  "EItemAttributeId/RealismAllowsAds": "Permite apuntar",
+  "EItemAttributeId/RealismAllowsAds/Tooltip": "Este protector facial permite usar las miras con cualquier culata extendida.",
+
+  "EItemAttributeId/RealismAllowsFaceShieldAds": "Permite apuntar con protector facial",
+  "EItemAttributeId/RealismAllowsFaceShieldAds/Tooltip": "Esta culata permite apuntar con cualquier protector facial.",
+
+  "EItemAttributeId/RealismShoulderContact": "Apoyo en el hombro",
+  "EItemAttributeId/RealismShoulderContact/Tooltip": "Esta culata se apoya en el hombro cuando está extendida/desplegada, por lo que el equipo que impide usar las miras se aplica, salvo que el arma/la culata lo permita.",
+
+  "EItemAttributeId/RealismFaceShieldAds": "Apuntar con protector facial",
+  "EItemAttributeId/RealismFaceShieldAds/Value/Blocked": "Bloqueado",
+  "EItemAttributeId/RealismFaceShieldAds/Value/WeaponAllows": "Permitido (arma)",
+  "EItemAttributeId/RealismFaceShieldAds/Value/StockAllows": "Permitido (culata)",
+  "EItemAttributeId/RealismFaceShieldAds/Value/NoShoulderContact": "Permitido (sin apoyo en el hombro)",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/Blocked": "El equipo que impide usar las miras, como un protector facial bajado, impide apuntar con esta arma mientras está apoyada en el hombro (culata extendida/desplegada).",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/WeaponAllows": "Esta arma permite apuntar con cualquier protector facial.",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/StockAllows": "Una culata de esta arma permite apuntar con cualquier protector facial.",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/NoShoulderContact": "Esta arma no está apoyada en el hombro (sin culata o con la culata plegada), por lo que los protectores faciales y otros equipos no impiden usar las miras."
+}

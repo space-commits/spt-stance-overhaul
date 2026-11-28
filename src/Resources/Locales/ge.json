@@ -1,0 +1,26 @@
+{
+  "EItemAttributeId/RealismBlocksAds": "Blockiert Zielen",
+  "EItemAttributeId/RealismBlocksAds/Value/WhenLowered": "Wenn heruntergeklappt",
+  "EItemAttributeId/RealismBlocksAds/Value/Always": "Immer",
+  "EItemAttributeId/RealismBlocksAds/Tooltip/WhenLowered": "Dieser Gesichtsschild erlaubt KEIN Zielen über Visiere, solange eine Schulterstütze ausgezogen/ausgeklappt ist, es sei denn, die Waffe/Schulterstütze erlaubt es.",
+  "EItemAttributeId/RealismBlocksAds/Tooltip/Always": "Dieser Ausrüstungsgegenstand blockiert das Zielen über Visiere, solange eine Schulterstütze ausgezogen/ausgeklappt ist, es sei denn, die Waffe/Schulterstütze erlaubt es.",
+
+  "EItemAttributeId/RealismAllowsAds": "Erlaubt Zielen",
+  "EItemAttributeId/RealismAllowsAds/Tooltip": "Dieser Gesichtsschild erlaubt das Zielen über Visiere mit jeder ausgezogenen Schulterstütze.",
+
+  "EItemAttributeId/RealismAllowsFaceShieldAds": "Erlaubt Zielen mit Gesichtsschild",
+  "EItemAttributeId/RealismAllowsFaceShieldAds/Tooltip": "Diese Schulterstütze erlaubt das Zielen über Visiere mit jedem Gesichtsschild.",
+
+  "EItemAttributeId/RealismShoulderContact": "Schulteranlage",
+  "EItemAttributeId/RealismShoulderContact/Tooltip": "Diese Schulterstütze liegt ausgezogen/ausgeklappt an der Schulter an. Ausrüstung, die das Zielen über Visiere blockiert, wirkt daher, es sei denn, die Waffe/Schulterstütze erlaubt es.",
+
+  "EItemAttributeId/RealismFaceShieldAds": "Zielen mit Gesichtsschild",
+  "EItemAttributeId/RealismFaceShieldAds/Value/Blocked": "Blockiert",
+  "EItemAttributeId/RealismFaceShieldAds/Value/WeaponAllows": "Erlaubt (Waffe)",
+  "EItemAttributeId/RealismFaceShieldAds/Value/StockAllows": "Erlaubt (Schulterstütze)",
+  "EItemAttributeId/RealismFaceShieldAds/Value/NoShoulderContact": "Erlaubt (keine Schulteranlage)",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/Blocked": "Ausrüstung, die das Zielen über Visiere blockiert, etwa ein heruntergeklappter Gesichtsschild, verhindert das Zielen mit dieser Waffe, solange sie an der Schulter anliegt (Schulterstütze ausgezogen/ausgeklappt).",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/WeaponAllows": "Diese Waffe erlaubt das Zielen über Visiere mit jedem Gesichtsschild.",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/StockAllows": "Eine Schulterstütze an dieser Waffe erlaubt das Zielen über Visiere mit jedem Gesichtsschild.",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/NoShoulderContact": "Diese Waffe liegt nicht an der Schulter an (keine Schulterstütze oder eingeklappt), daher blockieren Gesichtsschilde und andere Ausrüstung das Zielen über Visiere nicht."
+}

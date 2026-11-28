@@ -265,6 +265,17 @@ The provider returns `false` when `StanceControllerInstance` is destroyed (Unity
 - `StatModifiers.MagReloadSpeed`, `QuickMagReloadSpeed`, `CheckAmmoSpeed`, etc. — registered in `StanceController.AssignReloadHandlers()`
 - `BoolHandlers.CanAim` — gate handle managed by `StanceAimHandler`
 
+### Face shield ADS block (2026-11-25)
+`StanceAimSystem.CheckForAimBlockers` blocks ADS when `EnableFSAimBlock && GearStateInstance.GearBlocksAds && !WeaponStateInstance.AllowsFaceShieldAds`:
+- worn gear with `RealismAllowADS = false` that's in effect (face shields only while lowered);
+- a weapon that doesn't allow it. Weapons without shoulder contact, or whose weapon/stock stat allows face shield ADS, are exempt.
+
+The facts come from the common lib (`WeaponRules`, `GearState`); the policy and config are Stance's.
+- Dev config "Log Aim Blocks" logs the reason on every change.
+- `ItemStats/FaceShieldAdsAttributes` registers inspect rows with the common lib's `ItemAttributeRegistry`: gear "Blocks ADS", face shields (template `FaceShieldComponent`) that don't block "Allows ADS", stock "Shoulder contact" / "Allows ADS with face shield", weapon "Face shield ADS" (live; no shoulder contact row on guns).
+- Stance compiles against `Realism/References/Assembly-CSharp.dll` for the `Realism*` fields.
+- Design: `Realism/docs/Item-Stats-ADS-Plan.md`.
+
 ### Patches
 In `CameraDeltaTimePatch.cs`:
 - `CameraDeltaTimePatch`: Replaces the `dt` passed to `LerpCamera` so the camera moves evenly and ADS speed matches vanilla at 60 fps, at any frame rate

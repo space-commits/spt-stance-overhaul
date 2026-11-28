@@ -86,10 +86,12 @@ namespace StanceOverhaul.SubSystem.Aiming
                 PluginConfig.EnableThermalAimBlock.Value
                 && GearStateInstance.ThermalIsActive;
 
+            // Worn gear with RealismAllowADS = false (face shields only while lowered) blocks a shouldered weapon unless
+            // the weapon or one of its stocks allows it. Facts come from the common lib, the policy is ours.
             bool faceshieldBlocksADS =
                 PluginConfig.EnableFSAimBlock.Value
-                && GearStateInstance.FaceShieldIsActive
-                && WeaponStateInstance.HasShoulderContact;
+                && GearStateInstance.GearBlocksAds
+                && !WeaponStateInstance.AllowsFaceShieldAds;
 
             bool blocked = nvgBlocksAds || faceshieldBlocksADS || thermalBlocksAds;
             _canAim.Allowed = !blocked;

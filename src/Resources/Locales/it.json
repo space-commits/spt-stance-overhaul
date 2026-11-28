@@ -1,0 +1,26 @@
+{
+  "EItemAttributeId/RealismBlocksAds": "Blocca la mira",
+  "EItemAttributeId/RealismBlocksAds/Value/WhenLowered": "Se abbassata",
+  "EItemAttributeId/RealismBlocksAds/Value/Always": "Sempre",
+  "EItemAttributeId/RealismBlocksAds/Tooltip/WhenLowered": "Questa visiera NON consente l'uso dei mirini con un calcio esteso/aperto, a meno che l'arma/il calcio non lo consenta.",
+  "EItemAttributeId/RealismBlocksAds/Tooltip/Always": "Questo equipaggiamento impedisce l'uso dei mirini con un calcio esteso/aperto, a meno che l'arma/il calcio non lo consenta.",
+
+  "EItemAttributeId/RealismAllowsAds": "Consente la mira",
+  "EItemAttributeId/RealismAllowsAds/Tooltip": "Questa visiera consente l'uso dei mirini con qualsiasi calcio esteso.",
+
+  "EItemAttributeId/RealismAllowsFaceShieldAds": "Consente la mira con visiera",
+  "EItemAttributeId/RealismAllowsFaceShieldAds/Tooltip": "Questo calcio consente di mirare con qualsiasi visiera.",
+
+  "EItemAttributeId/RealismShoulderContact": "Appoggio alla spalla",
+  "EItemAttributeId/RealismShoulderContact/Tooltip": "Questo calcio poggia sulla spalla quando è esteso/aperto, quindi l'equipaggiamento che impedisce l'uso dei mirini ha effetto, a meno che l'arma/il calcio non lo consenta.",
+
+  "EItemAttributeId/RealismFaceShieldAds": "Mira con visiera",
+  "EItemAttributeId/RealismFaceShieldAds/Value/Blocked": "Bloccata",
+  "EItemAttributeId/RealismFaceShieldAds/Value/WeaponAllows": "Consentita (arma)",
+  "EItemAttributeId/RealismFaceShieldAds/Value/StockAllows": "Consentita (calcio)",
+  "EItemAttributeId/RealismFaceShieldAds/Value/NoShoulderContact": "Consentita (senza appoggio alla spalla)",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/Blocked": "L'equipaggiamento che impedisce l'uso dei mirini, come una visiera abbassata, impedisce di mirare con quest'arma mentre è imbracciata (calcio esteso/aperto).",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/WeaponAllows": "Quest'arma consente di mirare con qualsiasi visiera.",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/StockAllows": "Un calcio su quest'arma consente di mirare con qualsiasi visiera.",
+  "EItemAttributeId/RealismFaceShieldAds/Tooltip/NoShoulderContact": "Quest'arma non è imbracciata (senza calcio, o con il calcio ripiegato), quindi le visiere e gli altri equipaggiamenti non impediscono l'uso dei mirini."
+}
